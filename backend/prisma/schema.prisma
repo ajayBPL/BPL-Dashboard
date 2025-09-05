@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "darwin-arm64"]
@@ -11,74 +8,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model with role-based access control
 model User {
-  id                    String   @id @default(cuid())
-  email                 String   @unique
-  name                  String
-  password              String
-  role                  Role
-  designation           String
-  managerId             String?  @map("manager_id")
-  department            String?
-  skills                String[]
-  workloadCap           Int      @default(100) @map("workload_cap")
-  overBeyondCap         Int      @default(20) @map("over_beyond_cap")
-  avatar                String?
-  phoneNumber           String?  @map("phone_number")
-  timezone              String?
-  preferredCurrency     String?  @default("USD") @map("preferred_currency")
-  notificationSettings  Json     @default("{}") @map("notification_settings")
-  isActive              Boolean  @default(true) @map("is_active")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  lastLoginAt           DateTime? @map("last_login_at")
-
-  // Relations
-  manager               User?     @relation("UserManager", fields: [managerId], references: [id])
-  subordinates          User[]    @relation("UserManager")
-  managedProjects       Project[] @relation("ProjectManager")
-  assignments           ProjectAssignment[]
-  assignedInitiatives   Initiative[] @relation("InitiativeAssignee")
-  createdInitiatives    Initiative[] @relation("InitiativeCreator")
-  comments              Comment[]
-  activityLogs          ActivityLog[]
-  notifications         Notification[]
+  id                   String              @id @default(cuid())
+  email                String              @unique
+  name                 String
+  password             String
+  role                 Role
+  designation          String
+  managerId            String?             @map("manager_id")
+  department           String?
+  skills               String[]
+  workloadCap          Int                 @default(100) @map("workload_cap")
+  overBeyondCap        Int                 @default(20) @map("over_beyond_cap")
+  avatar               String?
+  phoneNumber          String?             @map("phone_number")
+  timezone             String?
+  preferredCurrency    String?             @default("USD") @map("preferred_currency")
+  notificationSettings Json                @default("{}") @map("notification_settings")
+  isActive             Boolean             @default(true) @map("is_active")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  lastLoginAt          DateTime?           @map("last_login_at")
+  activityLogs         ActivityLog[]
+  comments             Comment[]
+  assignedInitiatives  Initiative[]        @relation("InitiativeAssignee")
+  createdInitiatives   Initiative[]        @relation("InitiativeCreator")
+  notifications        Notification[]
+  assignments          ProjectAssignment[]
+  managedProjects      Project[]           @relation("ProjectManager")
+  manager              User?               @relation("UserManager", fields: [managerId], references: [id])
+  subordinates         User[]              @relation("UserManager")
 
   @@map("users")
 }
 
-// Project model with comprehensive tracking
 model Project {
-  id              String    @id @default(cuid())
-  title           String
-  description     String?
-  managerId       String    @map("manager_id")
-  status          Status    @default(PENDING)
-  priority        Priority  @default(MEDIUM)
-  estimatedHours  Int?      @map("estimated_hours")
-  actualHours     Int?      @map("actual_hours")
-  budgetAmount    Decimal?  @map("budget_amount")
-  budgetCurrency  String?   @default("USD") @map("budget_currency")
-  timeline        String?
-  tags            String[]
-  version         Int       @default(1)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  lastActivity    DateTime? @map("last_activity")
-
-  // Relations
-  manager         User      @relation("ProjectManager", fields: [managerId], references: [id])
-  assignments     ProjectAssignment[]
-  milestones      Milestone[]
-  comments        Comment[]
-  activityLogs    ActivityLog[]
-  versions        ProjectVersion[]
+  id             String              @id @default(cuid())
+  title          String
+  description    String?
+  managerId      String              @map("manager_id")
+  status         Status              @default(PENDING)
+  priority       Priority            @default(MEDIUM)
+  estimatedHours Int?                @map("estimated_hours")
+  actualHours    Int?                @map("actual_hours")
+  budgetAmount   Decimal?            @map("budget_amount")
+  budgetCurrency String?             @default("USD") @map("budget_currency")
+  timeline       String?
+  tags           String[]
+  version        Int                 @default(1)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  lastActivity   DateTime?           @map("last_activity")
+  activityLogs   ActivityLog[]
+  comments       Comment[]
+  milestones     Milestone[]
+  assignments    ProjectAssignment[]
+  versions       ProjectVersion[]
+  manager        User                @relation("ProjectManager", fields: [managerId], references: [id])
 
   @@map("projects")
 }
 
-// Project assignments with workload tracking
 model ProjectAssignment {
   id                    String   @id @default(cuid())
   projectId             String   @map("project_id")
@@ -87,16 +77,13 @@ model ProjectAssignment {
   role                  String?
   assignedAt            DateTime @default(now()) @map("assigned_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   employee              User     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, employeeId])
   @@map("project_assignments")
 }
 
-// Project milestones
 model Milestone {
   id          String    @id @default(cuid())
   projectId   String    @map("project_id")
@@ -107,41 +94,35 @@ model Milestone {
   completedAt DateTime? @map("completed_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  // Relations
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("milestones")
 }
 
-// Over & Beyond initiatives
 model Initiative {
-  id                  String           @id @default(cuid())
-  title               String
-  description         String?
-  category            String?
-  priority            Priority         @default(MEDIUM)
-  status              InitiativeStatus @default(PENDING)
-  estimatedHours      Int              @default(10) @map("estimated_hours")
-  actualHours         Int?             @map("actual_hours")
-  workloadPercentage  Int              @map("workload_percentage")
-  assignedTo          String?          @map("assigned_to")
-  createdBy           String           @map("created_by")
-  dueDate             DateTime?        @map("due_date")
-  completedAt         DateTime?        @map("completed_at")
-  createdAt           DateTime         @default(now()) @map("created_at")
-  updatedAt           DateTime         @updatedAt @map("updated_at")
-
-  // Relations
-  assignee            User?            @relation("InitiativeAssignee", fields: [assignedTo], references: [id])
-  creator             User             @relation("InitiativeCreator", fields: [createdBy], references: [id])
-  comments            Comment[]
-  activityLogs        ActivityLog[]
+  id                 String           @id @default(cuid())
+  title              String
+  description        String?
+  category           String?
+  priority           Priority         @default(MEDIUM)
+  status             InitiativeStatus @default(PENDING)
+  estimatedHours     Int              @default(10) @map("estimated_hours")
+  actualHours        Int?             @map("actual_hours")
+  workloadPercentage Int              @map("workload_percentage")
+  assignedTo         String?          @map("assigned_to")
+  createdBy          String           @map("created_by")
+  dueDate            DateTime?        @map("due_date")
+  completedAt        DateTime?        @map("completed_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  activityLogs       ActivityLog[]
+  comments           Comment[]
+  assignee           User?            @relation("InitiativeAssignee", fields: [assignedTo], references: [id])
+  creator            User             @relation("InitiativeCreator", fields: [createdBy], references: [id])
 
   @@map("initiatives")
 }
 
-// Comments for projects and initiatives
 model Comment {
   id           String      @id @default(cuid())
   content      String
@@ -150,16 +131,13 @@ model Comment {
   initiativeId String?     @map("initiative_id")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project      Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   initiative   Initiative? @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+  project      Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("comments")
 }
 
-// Activity logging for audit trail
 model ActivityLog {
   id           String      @id @default(cuid())
   userId       String      @map("user_id")
@@ -171,36 +149,30 @@ model ActivityLog {
   details      String?
   metadata     Json?
   timestamp    DateTime    @default(now())
-
-  // Relations
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project      Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   initiative   Initiative? @relation(fields: [initiativeId], references: [id], onDelete: Cascade)
+  project      Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
 }
 
-// Notifications system
 model Notification {
-  id         String            @id @default(cuid())
-  userId     String            @map("user_id")
+  id         String           @id @default(cuid())
+  userId     String           @map("user_id")
   type       NotificationType
   title      String
   message    String
-  entityType EntityType?       @map("entity_type")
-  entityId   String?           @map("entity_id")
-  priority   Priority          @default(MEDIUM)
-  read       Boolean           @default(false)
-  actionUrl  String?           @map("action_url")
-  createdAt  DateTime          @default(now()) @map("created_at")
-
-  // Relations
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType EntityType?      @map("entity_type")
+  entityId   String?          @map("entity_id")
+  priority   Priority         @default(MEDIUM)
+  read       Boolean          @default(false)
+  actionUrl  String?          @map("action_url")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
 
-// Project version control
 model ProjectVersion {
   id         String   @id @default(cuid())
   projectId  String   @map("project_id")
@@ -209,31 +181,27 @@ model ProjectVersion {
   changedBy  String   @map("changed_by")
   changeType String   @map("change_type")
   createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, version])
   @@map("project_versions")
 }
 
-// File uploads
 model File {
-  id        String   @id @default(cuid())
-  filename  String
-  originalName String @map("original_name")
-  mimetype  String
-  size      Int
-  path      String
-  userId    String?  @map("user_id")
-  entityType EntityType? @map("entity_type")
-  entityId  String?  @map("entity_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String      @id @default(cuid())
+  filename     String
+  originalName String      @map("original_name")
+  mimetype     String
+  size         Int
+  path         String
+  userId       String?     @map("user_id")
+  entityType   EntityType? @map("entity_type")
+  entityId     String?     @map("entity_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
 
   @@map("files")
 }
 
-// Enums
 enum Role {
   ADMIN
   PROGRAM_MANAGER

@@ -31,15 +31,15 @@ export function LoginForm() {
 
   const defaultUsers = [
     { 
-      email: 'admin@bplcommander.com', 
-      password: 'admin123', 
+      email: 'admin@bpl.com', 
+      password: 'password123', 
       role: 'Admin', 
       color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
       description: 'Full system access, can manage users and view all data'
     },
     { 
-      email: 'program.manager@bplcommander.com', 
-      password: 'program123', 
+      email: 'pm@bpl.com', 
+      password: 'password123', 
       role: 'Program Manager', 
       color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
       description: 'Can create projects and manage program initiatives'
@@ -77,7 +77,7 @@ export function LoginForm() {
             </div>
             <CardTitle className="text-2xl text-center">BPL Commander</CardTitle>
             <CardDescription className="text-center">
-              Project Management System - Demo Mode
+              Project Management System
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -153,6 +153,25 @@ export function LoginForm() {
                 </div>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center text-blue-800 dark:text-blue-400">
+              🧪 API Tester Available
+            </CardTitle>
+            <CardDescription className="text-blue-700 dark:text-blue-300">
+              Test backend API endpoints and monitor network requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+              <p><strong>1.</strong> Login as <Badge variant="outline" className="mx-1">Admin</Badge> (admin@bpl.com / password123)</p>
+              <p><strong>2.</strong> Look for the <Badge variant="outline" className="mx-1">⚡ API</Badge> button in the top navigation</p>
+              <p><strong>3.</strong> Open DevTools → Network tab to see API calls</p>
+              <p><strong>4.</strong> Test endpoints and view request/response data</p>
+            </div>
           </CardContent>
         </Card>
 

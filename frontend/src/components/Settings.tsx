@@ -337,7 +337,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   <div className="pt-4 border-t">
                     <h4 className="text-sm font-medium mb-2">Data Management</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Demo mode data is stored locally and will be reset when you refresh the page.
+                      Export your data for backup or migration purposes.
                     </p>
                     <Button variant="outline" disabled>
                       Export Data (Coming Soon)
@@ -349,9 +349,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>BPL Commander v1.0 Demo</strong><br />
-                  This is a demonstration version with simulated backend functionality. 
-                  In production, all data would be securely stored and managed through proper database systems.
+                  <strong>BPL Commander v1.0</strong><br />
+                  A comprehensive project management system with secure data storage 
+                  and advanced user management capabilities.
                 </AlertDescription>
               </Alert>
             </TabsContent>

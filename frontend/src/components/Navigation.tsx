@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { Settings } from './Settings'
 import { UserProfile } from './UserProfile'
 import { NotificationSystem } from './NotificationSystem'
+import { ApiTester } from './ApiTester'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { 
@@ -14,7 +15,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from './ui/dropdown-menu'
-import { Building2, LogOut, User, Settings as SettingsIcon, Palette, Sun, Moon, Paintbrush } from 'lucide-react'
+import { Building2, LogOut, User, Settings as SettingsIcon, Palette, Sun, Moon, Paintbrush, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function Navigation() {
@@ -22,6 +23,7 @@ export function Navigation() {
   const { theme, setTheme } = useTheme()
   const [showSettings, setShowSettings] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showApiTester, setShowApiTester] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -95,9 +97,6 @@ export function Navigation() {
               <span className="ml-2 text-xl font-semibold text-foreground">
                 BPL Commander
               </span>
-              <Badge variant="outline" className="ml-3 text-xs">
-                Demo Mode
-              </Badge>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -148,6 +147,20 @@ export function Navigation() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              
+              {/* API Tester Button (Admin Only) */}
+              {user.role === 'admin' && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowApiTester(true)}
+                  className="h-8 px-3 relative z-50"
+                  title="Open API Tester"
+                >
+                  <Zap className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">API</span>
+                </Button>
+              )}
               
               {/* User Menu */}
               <DropdownMenu>
@@ -213,6 +226,28 @@ export function Navigation() {
       {/* Modals */}
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <UserProfile isOpen={showProfile} onClose={() => setShowProfile(false)} />
+      
+      {/* API Tester Dialog */}
+      {showApiTester && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">🧪 API Tester</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowApiTester(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  ✕
+                </Button>
+              </div>
+              <ApiTester />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

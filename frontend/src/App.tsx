@@ -6,7 +6,6 @@ import { Navigation } from './components/Navigation'
 import { AdminDashboard } from './components/AdminDashboard'
 import { ManagerDashboard } from './components/ManagerDashboard'
 import { EmployeeDashboard } from './components/EmployeeDashboard'
-import { OwlAnimation } from './components/OwlAnimation'
 import { Toaster } from './components/ui/sonner'
 
 function AppContent() {
@@ -53,7 +52,6 @@ function AppContent() {
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {renderDashboard()}
       </main>
-      <OwlAnimation isActive={!!user} />
       <Toaster />
     </div>
   )

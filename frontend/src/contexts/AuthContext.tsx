@@ -122,41 +122,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const allUsers = getAllUsers()
-      const foundUser = allUsers.find(u => u.email === email && u.password === password)
-      
-      if (!foundUser) {
-        return { success: false, error: 'Invalid email or password' }
+      // Call the real API
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        return { success: false, error: data.error || 'Invalid email or password' };
       }
 
-      // Create user object without password
+      // Extract user data and token from API response
       const userData: User = {
-        id: foundUser.id,
-        email: foundUser.email,
-        name: foundUser.name,
-        role: foundUser.role,
-        designation: foundUser.designation,
-        managerId: foundUser.managerId
-      }
+        id: data.data.user.id,
+        email: data.data.user.email,
+        name: data.data.user.name,
+        role: data.data.user.role,
+        designation: data.data.user.designation,
+        managerId: data.data.user.managerId
+      };
 
-      // Generate a demo access token
-      const demoToken = `demo-token-${userData.id}-${Date.now()}`
+      const token = data.data.token;
 
       // Store in state and localStorage
-      setUser(userData)
-      setAccessToken(demoToken)
-      localStorage.setItem('bpl-user', JSON.stringify(userData))
-      localStorage.setItem('bpl-token', demoToken)
+      setUser(userData);
+      setAccessToken(token);
+      localStorage.setItem('bpl-user', JSON.stringify(userData));
+      localStorage.setItem('bpl-token', token);
 
-      // Update last login time in centralized database
-      centralizedDb.updateUser(userData.id, {
-        lastLoginAt: new Date().toISOString()
-      })
-
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      console.error('Login error:', error)
-      return { success: false, error: 'Login failed. Please try again.' }
+      console.error('Login error:', error);
+      return { success: false, error: 'Login failed. Please try again.' };
     }
   }
 

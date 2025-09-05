@@ -9,17 +9,19 @@
     "shared"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
-    "build:frontend": "npm run build --workspace=frontend",
-    "build:backend": "npm run build --workspace=backend",
-    "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
-    "start": "npm run start --workspace=backend",
-    "db:migrate": "npm run db:migrate --workspace=backend",
-    "db:seed": "npm run db:seed --workspace=backend",
-    "db:studio": "npm run db:studio --workspace=backend"
+    "predev": "pkill -f 'nodemon|vite' || true",
+    "dev": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --prefix \"[{name}]\" --names \"backend,frontend\" \"cd backend && yarn dev\" \"cd frontend && yarn dev\"",
+    "dev:frontend": "cd frontend && yarn dev",
+    "dev:backend": "cd backend && yarn dev",
+    "build": "cd backend && yarn build && cd ../frontend && yarn build",
+    "build:frontend": "cd frontend && yarn build",
+    "build:backend": "cd backend && yarn build",
+    "test": "cd backend && yarn test && cd ../frontend && yarn test",
+    "start": "cd backend && yarn start",
+    "db:migrate": "cd backend && yarn db:migrate",
+    "db:seed": "cd backend && yarn db:seed",
+    "db:studio": "cd backend && yarn db:studio",
+    "clean": "pkill -f 'nodemon|vite' || true"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"

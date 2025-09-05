@@ -19,27 +19,22 @@ import { Switch } from './ui/switch'
 import { 
   Users, 
   UserPlus, 
-  Settings, 
   Activity, 
   Building, 
-  Lightbulb, 
   Info, 
   Eye, 
   EyeOff,
   Download,
   Search,
   Filter,
-  BarChart3,
   Shield,
   Clock,
-  MapPin,
   Mail,
-  Phone,
-  Edit,
-  Trash2
+  Phone
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CurrencySelector } from './CurrencySelector'
+import { ApiTester } from './ApiTester'
 
 export function AdminDashboard() {
   const [users, setUsers] = useState<CentralizedUser[]>([])
@@ -87,11 +82,55 @@ export function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const usersData = centralizedDb.getUsers()
-      setUsers(usersData)
+      // Get the access token from localStorage
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
+        return
+      }
+
+      const response = await fetch('http://localhost:3001/api/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      if (data.success && data.data) {
+        // Convert API response to match the expected format
+        const usersData = data.data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          designation: user.designation,
+          managerId: user.managerId,
+          department: user.department,
+          skills: user.skills || [],
+          workloadCap: user.workloadCap,
+          overBeyondCap: user.overBeyondCap,
+          phoneNumber: user.phoneNumber,
+          timezone: user.timezone,
+          preferredCurrency: user.preferredCurrency,
+          notificationSettings: user.notificationSettings,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          lastLoginAt: user.lastLoginAt
+        }))
+        setUsers(usersData)
+      }
     } catch (error) {
       console.error('Error fetching users:', error)
       toast.error('Failed to fetch users')
+      // Fallback to demo data if API fails
+      const usersData = centralizedDb.getUsers()
+      setUsers(usersData)
     } finally {
       setLoading(false)
     }
@@ -104,11 +143,11 @@ export function AdminDashboard() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.designation.toLowerCase().includes(query) ||
-        user.department.toLowerCase().includes(query) ||
-        user.skills.some(skill => skill.toLowerCase().includes(query))
+        (user.name?.toLowerCase() || '').includes(query) ||
+        (user.email?.toLowerCase() || '').includes(query) ||
+        (user.designation?.toLowerCase() || '').includes(query) ||
+        (user.department?.toLowerCase() || '').includes(query) ||
+        (user.skills || []).some(skill => (skill?.toLowerCase() || '').includes(query))
       )
     }
 
@@ -165,48 +204,137 @@ export function AdminDashboard() {
         return
       }
 
-      const newUser = centralizedDb.addUser({
+      // Get the access token
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
+        return
+      }
+
+      // Prepare user data for API
+      const userData = {
         email: formData.email,
         name: formData.name,
-        role: formData.role as CentralizedUser['role'],
+        password: formData.password || 'password123',
+        role: formData.role.toLowerCase(), // API expects lowercase roles
         designation: formData.designation,
         managerId: formData.managerId || undefined,
-        isActive: true,
-        password: formData.password || 'defaultpass123',
-        skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : [],
         department: formData.department || 'General',
+        skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : [],
         workloadCap: formData.workloadCap,
         overBeyondCap: formData.overBeyondCap,
         phoneNumber: formData.phoneNumber || undefined,
         timezone: formData.timezone,
         preferredCurrency: formData.preferredCurrency,
         notificationSettings: formData.notificationSettings
-      }, currentUser.id)
+      }
 
-      setUsers([...users, newUser])
-      toast.success(`User "${newUser.name}" created successfully! Login: ${newUser.email} / ${formData.password}`)
-      
-      resetForm()
-      setShowAddUser(false)
+      console.log('🌐 Creating user via API:', userData)
+
+      // Make API call to create user
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      })
+
+      const data = await response.json()
+      console.log('📡 API Response:', response.status, data)
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      if (data.success && data.data) {
+        // Convert API response to match the expected format
+        const newUser: CentralizedUser = {
+          id: data.data.user.id,
+          email: data.data.user.email,
+          name: data.data.user.name,
+          role: data.data.user.role,
+          designation: data.data.user.designation,
+          managerId: data.data.user.managerId,
+          department: data.data.user.department,
+          skills: userData.skills,
+          workloadCap: userData.workloadCap,
+          overBeyondCap: userData.overBeyondCap,
+          phoneNumber: userData.phoneNumber,
+          timezone: userData.timezone,
+          preferredCurrency: userData.preferredCurrency,
+          notificationSettings: userData.notificationSettings,
+          isActive: true,
+          password: formData.password, // Add password for type compatibility
+          createdAt: new Date().toISOString()
+        }
+
+        setUsers([...users, newUser])
+        toast.success(`User "${newUser.name}" created successfully! Login: ${newUser.email} / ${formData.password}`)
+        
+        resetForm()
+        setShowAddUser(false)
+      }
     } catch (error) {
       console.error('Error adding user:', error)
-      toast.error('Failed to add user')
+      toast.error(`Failed to add user: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
-  const toggleUserStatus = (userId: string) => {
+  const toggleUserStatus = async (userId: string) => {
     if (!currentUser) return
     
     const user = users.find(u => u.id === userId)
     if (!user) return
 
-    const updatedUser = centralizedDb.updateUser(userId, {
-      isActive: !user.isActive
-    }, currentUser.id)
+    try {
+      // Get the access token
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
+        return
+      }
 
-    if (updatedUser) {
-      setUsers(users.map(u => u.id === userId ? updatedUser : u))
-      toast.success(`User ${user.isActive ? 'deactivated' : 'activated'} successfully`)
+      const action = user.isActive ? 'deactivate' : 'activate'
+      console.log(`🌐 ${action}ing user ${user.email}`)
+
+      // Make API call to update user status using the action-based endpoint
+      const response = await fetch('http://localhost:3001/api/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: action,
+          id: userId
+        })
+      })
+
+      const data = await response.json()
+      console.log('📡 API Response:', response.status, data)
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      if (data.success) {
+        // Update the user in the local state based on the action performed
+        const newActiveStatus = action === 'activate'
+        console.log(`✅ User ${user.email}: ${user.isActive} -> ${newActiveStatus}`)
+        
+        const updatedUser: CentralizedUser = {
+          ...user,
+          isActive: newActiveStatus
+        }
+        
+        setUsers(users.map(u => u.id === userId ? updatedUser : u))
+        toast.success(`User ${action === 'activate' ? 'activated' : 'deactivated'} successfully`)
+      }
+    } catch (error) {
+      console.error('Error toggling user status:', error)
+      toast.error(`Failed to ${user.isActive ? 'deactivate' : 'activate'} user: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -222,7 +350,7 @@ export function AdminDashboard() {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as object),
           [child]: value
         }
       }))
@@ -358,11 +486,12 @@ export function AdminDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users">User Management ({users.length})</TabsTrigger>
           <TabsTrigger value="roles">Role Management</TabsTrigger>
           <TabsTrigger value="analytics">Analytics & Reports</TabsTrigger>
           <TabsTrigger value="activity">Activity Feed</TabsTrigger>
+          <TabsTrigger value="api">API Tester</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-6">
@@ -539,6 +668,10 @@ export function AdminDashboard() {
 
         <TabsContent value="activity" className="space-y-6">
           <ActivityFeed showUserFilter={true} maxItems={50} />
+        </TabsContent>
+
+        <TabsContent value="api" className="space-y-6">
+          <ApiTester />
         </TabsContent>
       </Tabs>
 
@@ -802,8 +935,8 @@ export function AdminDashboard() {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <strong>Demo Mode:</strong> This is a demonstration of the BPL Commander admin interface. 
-          User data is stored in the centralized VM database and persists during your session. 
+          <strong>BPL Commander Admin:</strong> Manage users, projects, and system settings. 
+          User data is stored in the database and persists across sessions. 
           New users can login with their credentials immediately after creation.
         </AlertDescription>
       </Alert>

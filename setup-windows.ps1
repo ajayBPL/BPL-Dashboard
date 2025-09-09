@@ -70,6 +70,9 @@ if (Test-Path "node_modules") {
 if (Test-Path "package-lock.json") {
     Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
 }
+if (Test-Path "yarn.lock") {
+    Remove-Item -Force yarn.lock -ErrorAction SilentlyContinue
+}
 if (Test-Path "backend/node_modules") {
     Remove-Item -Recurse -Force backend/node_modules -ErrorAction SilentlyContinue
 }

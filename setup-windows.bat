@@ -54,6 +54,7 @@ REM Remove existing dependencies
 echo [INFO] Removing old dependencies...
 if exist node_modules rmdir /s /q node_modules >nul 2>&1
 if exist package-lock.json del /q package-lock.json >nul 2>&1
+if exist yarn.lock del /q yarn.lock >nul 2>&1
 if exist backend\node_modules rmdir /s /q backend\node_modules >nul 2>&1
 if exist frontend\node_modules rmdir /s /q frontend\node_modules >nul 2>&1
 if exist shared\node_modules rmdir /s /q shared\node_modules >nul 2>&1

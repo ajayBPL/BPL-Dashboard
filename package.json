@@ -12,7 +12,7 @@
     "predev": "cross-env-shell \"taskkill /f /im node.exe 2>nul || pkill -f 'nodemon|vite' || true\"",
     "setup:windows": "powershell -ExecutionPolicy Bypass -File setup-windows.ps1",
     "setup:registry": "npm config set registry https://registry.npmjs.org/ && yarn config set registry https://registry.npmjs.org/",
-    "setup:clean": "npm cache clean --force && (rmdir /s /q node_modules 2>nul || rm -rf node_modules) && (del package-lock.json 2>nul || rm -f package-lock.json)",
+    "setup:clean": "npm cache clean --force && (rmdir /s /q node_modules 2>nul || rm -rf node_modules) && (del package-lock.json 2>nul || rm -f package-lock.json) && (del yarn.lock 2>nul || rm -f yarn.lock)",
     "dev": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --prefix \"[{name}]\" --names \"backend,frontend\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:yarn": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --prefix \"[{name}]\" --names \"backend,frontend\" \"cd backend && yarn dev\" \"cd frontend && yarn dev\"",
     "dev:frontend": "cd frontend && npm run dev",

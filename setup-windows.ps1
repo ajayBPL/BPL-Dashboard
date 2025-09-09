@@ -1,141 +1,166 @@
 # BPL Commander Windows Setup Script
 # Run this script as Administrator in PowerShell
 
-Write-Host "🚀 BPL Commander Windows Setup" -ForegroundColor Green
-Write-Host "=================================" -ForegroundColor Green
+Write-Host "🚀 BPL Commander Windows Setup Starting..." -ForegroundColor Green
 
 # Check if running as Administrator
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "❌ Please run this script as Administrator" -ForegroundColor Red
+    Write-Host "❌ This script must be run as Administrator!" -ForegroundColor Red
     Write-Host "Right-click PowerShell and select 'Run as Administrator'" -ForegroundColor Yellow
-    pause
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
 # Set execution policy
-Write-Host "📋 Setting PowerShell execution policy..." -ForegroundColor Blue
+Write-Host "🔧 Setting PowerShell execution policy..." -ForegroundColor Blue
 try {
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     Write-Host "✅ Execution policy set successfully" -ForegroundColor Green
 } catch {
-    Write-Host "⚠️  Warning: Could not set execution policy" -ForegroundColor Yellow
-}
-
-# Enable long path support
-Write-Host "📁 Enabling long path support..." -ForegroundColor Blue
-try {
-    reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f | Out-Null
-    Write-Host "✅ Long path support enabled" -ForegroundColor Green
-} catch {
-    Write-Host "⚠️  Warning: Could not enable long path support" -ForegroundColor Yellow
+    Write-Host "⚠️ Warning: Could not set execution policy: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
 # Check Node.js version
 Write-Host "🔍 Checking Node.js version..." -ForegroundColor Blue
 try {
     $nodeVersion = node --version
-    $majorVersion = [int]($nodeVersion -replace 'v(\d+)\..*', '$1')
+    Write-Host "✅ Node.js version: $nodeVersion" -ForegroundColor Green
     
-    if ($majorVersion -ge 18) {
-        Write-Host "✅ Node.js $nodeVersion is compatible" -ForegroundColor Green
-    } else {
-        Write-Host "❌ Node.js version $nodeVersion is too old. Please install Node.js 18+" -ForegroundColor Red
-        Write-Host "Download from: https://nodejs.org/" -ForegroundColor Yellow
-        pause
+    # Extract version number and check if it's >= 18
+    $versionNumber = [int]($nodeVersion -replace 'v(\d+)\..*', '$1')
+    if ($versionNumber -lt 18) {
+        Write-Host "❌ Node.js version 18 or higher is required. Current version: $nodeVersion" -ForegroundColor Red
+        Write-Host "Please download and install Node.js 18+ from https://nodejs.org/" -ForegroundColor Yellow
+        Read-Host "Press Enter to exit"
         exit 1
     }
 } catch {
-    Write-Host "❌ Node.js not found. Please install Node.js 18+" -ForegroundColor Red
-    Write-Host "Download from: https://nodejs.org/" -ForegroundColor Yellow
-    pause
+    Write-Host "❌ Node.js is not installed or not in PATH" -ForegroundColor Red
+    Write-Host "Please download and install Node.js 18+ from https://nodejs.org/" -ForegroundColor Yellow
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
-# Configure npm registry
-Write-Host "🌐 Configuring npm registry..." -ForegroundColor Blue
-npm config set registry https://registry.npmjs.org/
-Write-Host "✅ Registry set to public npm" -ForegroundColor Green
-
 # Clean npm cache
 Write-Host "🧹 Cleaning npm cache..." -ForegroundColor Blue
-npm cache clean --force
-Write-Host "✅ Cache cleaned" -ForegroundColor Green
+try {
+    npm cache clean --force
+    Write-Host "✅ npm cache cleaned" -ForegroundColor Green
+} catch {
+    Write-Host "⚠️ Warning: Could not clean npm cache: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# Configure npm registry
+Write-Host "🔧 Configuring npm registry..." -ForegroundColor Blue
+try {
+    npm config set registry https://registry.npmjs.org/
+    npm config delete proxy 2>$null
+    npm config delete https-proxy 2>$null
+    Write-Host "✅ npm registry configured" -ForegroundColor Green
+} catch {
+    Write-Host "⚠️ Warning: Could not configure npm registry: $($_.Exception.Message)" -ForegroundColor Yellow
+}
 
 # Remove existing node_modules and lock files
-Write-Host "🗑️  Removing existing dependencies..." -ForegroundColor Blue
-if (Test-Path "node_modules") {
-    Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-}
-if (Test-Path "package-lock.json") {
-    Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
-}
-if (Test-Path "yarn.lock") {
-    Remove-Item -Force yarn.lock -ErrorAction SilentlyContinue
-}
-if (Test-Path "backend/node_modules") {
-    Remove-Item -Recurse -Force backend/node_modules -ErrorAction SilentlyContinue
-}
-if (Test-Path "frontend/node_modules") {
-    Remove-Item -Recurse -Force frontend/node_modules -ErrorAction SilentlyContinue
-}
-if (Test-Path "shared/node_modules") {
-    Remove-Item -Recurse -Force shared/node_modules -ErrorAction SilentlyContinue
-}
-Write-Host "✅ Old dependencies removed" -ForegroundColor Green
-
-# Install Yarn globally
-Write-Host "📦 Installing Yarn globally..." -ForegroundColor Blue
+Write-Host "🗑️ Removing existing node_modules and lock files..." -ForegroundColor Blue
 try {
-    npm install -g yarn
-    Write-Host "✅ Yarn installed successfully" -ForegroundColor Green
+    if (Test-Path "node_modules") { Remove-Item -Recurse -Force "node_modules" }
+    if (Test-Path "package-lock.json") { Remove-Item -Force "package-lock.json" }
+    if (Test-Path "backend/node_modules") { Remove-Item -Recurse -Force "backend/node_modules" }
+    if (Test-Path "backend/package-lock.json") { Remove-Item -Force "backend/package-lock.json" }
+    if (Test-Path "frontend/node_modules") { Remove-Item -Recurse -Force "frontend/node_modules" }
+    if (Test-Path "frontend/package-lock.json") { Remove-Item -Force "frontend/package-lock.json" }
+    if (Test-Path "shared/node_modules") { Remove-Item -Recurse -Force "shared/node_modules" }
+    if (Test-Path "shared/package-lock.json") { Remove-Item -Force "shared/package-lock.json" }
+    Write-Host "✅ Cleanup completed" -ForegroundColor Green
 } catch {
-    Write-Host "⚠️  Warning: Could not install Yarn globally" -ForegroundColor Yellow
+    Write-Host "⚠️ Warning: Some files could not be removed: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
-# Install dependencies using Yarn
-Write-Host "📥 Installing project dependencies..." -ForegroundColor Blue
+# Install dependencies
+Write-Host "📦 Installing dependencies..." -ForegroundColor Blue
 try {
-    yarn install
-    Write-Host "✅ Dependencies installed successfully" -ForegroundColor Green
-} catch {
-    Write-Host "❌ Yarn installation failed. Trying with npm..." -ForegroundColor Yellow
+    Write-Host "Installing root dependencies..." -ForegroundColor Cyan
+    npm install
     
-    # Fallback to npm
+    Write-Host "Installing backend dependencies..." -ForegroundColor Cyan
+    Set-Location "backend"
+    npm install
+    Set-Location ".."
+    
+    Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
+    Set-Location "frontend"
+    npm install
+    Set-Location ".."
+    
+    Write-Host "Installing shared dependencies..." -ForegroundColor Cyan
+    Set-Location "shared"
+    npm install
+    Set-Location ".."
+    
+    Write-Host "✅ All dependencies installed successfully" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Error installing dependencies: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Trying alternative installation method..." -ForegroundColor Yellow
+    
     try {
-        npm install
-        Write-Host "✅ Dependencies installed with npm" -ForegroundColor Green
+        # Try with yarn if npm fails
+        Write-Host "Installing yarn globally..." -ForegroundColor Cyan
+        npm install -g yarn
+        
+        Write-Host "Installing dependencies with yarn..." -ForegroundColor Cyan
+        yarn install
+        Write-Host "✅ Dependencies installed with yarn" -ForegroundColor Green
     } catch {
-        Write-Host "❌ Both Yarn and npm installation failed" -ForegroundColor Red
-        Write-Host "Please check your internet connection and try again" -ForegroundColor Yellow
-        pause
-        exit 1
+        Write-Host "❌ Both npm and yarn installation failed" -ForegroundColor Red
+        Write-Host "Please check your internet connection and try manual installation" -ForegroundColor Yellow
+        Read-Host "Press Enter to continue anyway"
     }
 }
 
 # Copy environment file
-Write-Host "⚙️  Setting up environment configuration..." -ForegroundColor Blue
-if (Test-Path "backend/env.example") {
-    if (-not (Test-Path "backend/.env")) {
-        Copy-Item "backend/env.example" "backend/.env"
-        Write-Host "✅ Environment file created" -ForegroundColor Green
-        Write-Host "📝 Please edit backend/.env with your database credentials" -ForegroundColor Yellow
+Write-Host "📋 Setting up environment file..." -ForegroundColor Blue
+try {
+    if (Test-Path "backend/env.example") {
+        if (-not (Test-Path "backend/.env")) {
+            Copy-Item "backend/env.example" "backend/.env"
+            Write-Host "✅ Environment file created from template" -ForegroundColor Green
+            Write-Host "📝 Please edit backend/.env with your database credentials" -ForegroundColor Yellow
+        } else {
+            Write-Host "✅ Environment file already exists" -ForegroundColor Green
+        }
     } else {
-        Write-Host "✅ Environment file already exists" -ForegroundColor Green
+        Write-Host "⚠️ Warning: backend/env.example not found" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "⚠️  Warning: backend/env.example not found" -ForegroundColor Yellow
+} catch {
+    Write-Host "⚠️ Warning: Could not copy environment file: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# Test build
+Write-Host "🔨 Testing build process..." -ForegroundColor Blue
+try {
+    npm run build
+    Write-Host "✅ Build test successful!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ Build test failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "This might be due to missing database configuration" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "🎉 Setup completed successfully!" -ForegroundColor Green
-Write-Host "=================================" -ForegroundColor Green
+Write-Host "🎉 Setup completed!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Blue
-Write-Host "1. Configure your database in backend/.env" -ForegroundColor White
-Write-Host "2. Run: yarn dev (or npm run dev)" -ForegroundColor White
-Write-Host "3. Open http://localhost:3000 in your browser" -ForegroundColor White
+Write-Host "Next steps:" -ForegroundColor Cyan
+Write-Host "1. Install and configure PostgreSQL" -ForegroundColor White
+Write-Host "2. Edit backend/.env with your database credentials" -ForegroundColor White
+Write-Host "3. Run: npm run db:migrate" -ForegroundColor White
+Write-Host "4. Run: npm run db:seed (optional)" -ForegroundColor White
+Write-Host "5. Run: npm run dev" -ForegroundColor White
 Write-Host ""
-Write-Host "For troubleshooting, see the README.md file" -ForegroundColor Yellow
+Write-Host "Demo accounts:" -ForegroundColor Cyan
+Write-Host "Admin: admin@bpl.com / admin123" -ForegroundColor White
+Write-Host "Manager: lisa.garcia@bpl.com / lisa123" -ForegroundColor White
+Write-Host "Employee: john.doe@bpl.com / john123" -ForegroundColor White
 Write-Host ""
-pause
+
+Read-Host "Press Enter to exit"

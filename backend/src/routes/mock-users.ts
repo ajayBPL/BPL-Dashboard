@@ -1,16 +1,18 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { mockDb } from '../services/mockDb';
+import { User } from '../../../shared/types';
 
 const router = express.Router();
 
 // Simple auth middleware for mock routes
-const mockAuth = (req: Request, res: Response, next: Function) => {
+const mockAuth = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error: 'Authentication required'
     });
+    return;
   }
   // For demo purposes, just continue without JWT verification
   next();
@@ -25,7 +27,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const users = await mockDb.getAllUsers();
     
     // Remove sensitive data
-    const safeUsers = users.map(user => ({
+    const safeUsers = users.map((user: User) => ({
       id: user.id,
       email: user.email,
       name: user.name,

@@ -183,6 +183,19 @@ export interface FilterParams {
   search?: string;
 }
 
+export interface QueryParams extends PaginationParams, FilterParams {
+  id?: string;
+  include?: string; // comma-separated relations to include
+  analytics?: boolean;
+  workload?: boolean;
+  count?: boolean;
+  manager?: string;
+  assignee?: string;
+  creator?: string;
+  unread?: boolean;
+  type?: string;
+}
+
 // Authentication types
 export interface LoginRequest {
   email: string;
@@ -369,16 +382,3 @@ export interface ActionRequest<T = any> {
   data?: T;
 }
 
-// Query parameter types for smart endpoints
-export interface QueryParams extends PaginationParams, FilterParams {
-  id?: string;
-  include?: string; // comma-separated relations to include
-  analytics?: boolean;
-  workload?: boolean;
-  count?: boolean;
-  manager?: string;
-  assignee?: string;
-  creator?: string;
-  unread?: boolean;
-  type?: string;
-}

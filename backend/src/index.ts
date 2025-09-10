@@ -24,6 +24,7 @@ import activityRoutes from './routes/activity';
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
+import { db } from './services/database';
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +36,18 @@ const PORT = process.env.PORT || 3001;
 // Initialize Prisma client
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+// Initialize database service (with fallback to mock data)
+db.initialize().then(() => {
+  console.log('Database service initialized');
+  if (db.isUsingMock()) {
+    console.log('⚠️  Using mock database - install PostgreSQL for full functionality');
+  } else {
+    console.log('✅ Connected to PostgreSQL database');
+  }
+}).catch((error) => {
+  console.error('Database initialization failed:', error);
 });
 
 // Security middleware

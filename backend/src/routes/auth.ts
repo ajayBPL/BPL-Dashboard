@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
-import { prisma } from '../index';
+import { db } from '../services/database';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
 
@@ -30,9 +30,7 @@ router.post('/register', [
   const { email, password, name, role, designation, managerId, department } = req.body;
 
   // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
-  });
+  const existingUser = await db.findUserByEmail(email);
 
   if (existingUser) {
     res.status(409).json({
@@ -44,9 +42,7 @@ router.post('/register', [
 
   // Validate manager exists if managerId provided
   if (managerId) {
-    const manager = await prisma.user.findUnique({
-      where: { id: managerId }
-    });
+    const manager = await db.findUserById(managerId);
 
     if (!manager) {
       res.status(400).json({
@@ -62,41 +58,23 @@ router.post('/register', [
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   // Create user
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      name,
-      role: role.toUpperCase(),
-      designation,
-      managerId,
-      department,
-      skills: [],
-      workloadCap: 100,
-      overBeyondCap: 20,
-      notificationSettings: {
-        email: true,
-        inApp: true,
-        projectUpdates: true,
-        deadlineReminders: true,
-        weeklyReports: false
-      }
-    },
-    select: {
-      id: true,
+  const user = await db.createUser({
+    email,
+    password: hashedPassword,
+    name,
+    role: role.toUpperCase(),
+    designation,
+    managerId,
+    department,
+    skills: [],
+    workloadCap: 100,
+    overBeyondCap: 20,
+    notificationSettings: {
       email: true,
-      name: true,
-      role: true,
-      designation: true,
-      managerId: true,
-      department: true,
-      skills: true,
-      workloadCap: true,
-      overBeyondCap: true,
-      notificationSettings: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
+      inApp: true,
+      projectUpdates: true,
+      deadlineReminders: true,
+      weeklyReports: false
     }
   });
 
@@ -117,26 +95,22 @@ router.post('/register', [
   );
 
   // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      action: 'USER_REGISTERED',
-      entityType: 'USER',
-      entityId: user.id,
-      details: `User registered: ${user.name} (${user.email})`
-    }
+  await db.createActivityLog({
+    userId: user.id,
+    action: 'USER_REGISTERED',
+    entityType: 'USER',
+    entityId: user.id,
+    details: `User registered: ${user.name} (${user.email})`
   });
 
   // Create welcome notification
-  await prisma.notification.create({
-    data: {
-      userId: user.id,
-      type: 'SYSTEM',
-      title: 'Welcome to BPL Commander!',
-      message: 'Your account has been created successfully. Complete your profile to get started.',
-      priority: 'MEDIUM',
-      actionUrl: '/profile'
-    }
+  await db.createNotification({
+    userId: user.id,
+    type: 'SYSTEM',
+    title: 'Welcome to BPL Commander!',
+    message: 'Your account has been created successfully. Complete your profile to get started.',
+    priority: 'MEDIUM',
+    actionUrl: '/profile'
   });
 
   res.status(201).json({
@@ -147,8 +121,8 @@ router.post('/register', [
         role: user.role.toLowerCase(),
         managerId: user.managerId || undefined,
         department: user.department || undefined,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
         notificationSettings: user.notificationSettings || {}
       },
       token,
@@ -180,31 +154,7 @@ router.post('/login', [
   const { email, password } = req.body;
 
   // Find user by email
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      password: true,
-      role: true,
-      designation: true,
-      managerId: true,
-      department: true,
-      skills: true,
-      workloadCap: true,
-      overBeyondCap: true,
-      avatar: true,
-      phoneNumber: true,
-      timezone: true,
-      preferredCurrency: true,
-      notificationSettings: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-      lastLoginAt: true
-    }
-  });
+  const user = await db.findUserByEmail(email);
 
   if (!user || !user.isActive) {
     res.status(401).json({
@@ -215,7 +165,7 @@ router.post('/login', [
   }
 
   // Verify password
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await bcrypt.compare(password, (user as any).password);
   if (!isPasswordValid) {
     res.status(401).json({
       success: false,
@@ -241,13 +191,10 @@ router.post('/login', [
   );
 
   // Update last login time
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { lastLoginAt: new Date() }
-  });
+  await db.updateUser(user.id, { lastLoginAt: new Date() });
 
   // Remove password from response
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _, ...userWithoutPassword } = user as any;
 
   res.json({
     success: true,
@@ -256,8 +203,8 @@ router.post('/login', [
         ...userWithoutPassword,
         role: user.role.toLowerCase(),
         managerId: user.managerId || undefined,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
         lastLoginAt: new Date().toISOString(),
         notificationSettings: user.notificationSettings || {}
       },
@@ -365,10 +312,7 @@ router.post('/change-password', [
   const { currentPassword, newPassword } = req.body;
 
   // Get user with password
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    select: { password: true }
-  });
+  const user = await db.findUserById(req.user.id);
 
   if (!user) {
     res.status(404).json({
@@ -379,7 +323,7 @@ router.post('/change-password', [
   }
 
   // Verify current password
-  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, (user as any).password);
   if (!isCurrentPasswordValid) {
     res.status(400).json({
       success: false,
@@ -393,10 +337,7 @@ router.post('/change-password', [
   const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
   // Update password
-  await prisma.user.update({
-    where: { id: req.user.id },
-    data: { password: hashedNewPassword }
-  });
+  await db.updateUser(req.user.id, { password: hashedNewPassword });
 
   res.json({
     success: true,

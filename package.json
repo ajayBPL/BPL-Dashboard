@@ -11,8 +11,8 @@
   "scripts": {
     "predev": "cross-env-shell \"taskkill /f /im node.exe 2>nul || pkill -f 'nodemon|vite' || true\"",
     "setup:windows": "powershell -ExecutionPolicy Bypass -File setup-windows.ps1",
-    "setup:registry": "npm config set registry https://registry.npmjs.org/ && yarn config set registry https://registry.npmjs.org/",
-    "setup:clean": "npm cache clean --force && (rmdir /s /q node_modules 2>nul || rm -rf node_modules) && (del package-lock.json 2>nul || rm -f package-lock.json) && (del yarn.lock 2>nul || rm -f yarn.lock)",
+    "setup:registry": "npm config set registry https://registry.npmjs.org/ && npm config delete proxy && npm config delete https-proxy",
+    "setup:clean": "npm cache clean --force && rimraf node_modules package-lock.json backend/node_modules backend/package-lock.json frontend/node_modules frontend/package-lock.json shared/node_modules shared/package-lock.json",
     "dev": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --prefix \"[{name}]\" --names \"backend,frontend\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:yarn": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --prefix \"[{name}]\" --names \"backend,frontend\" \"cd backend && yarn dev\" \"cd frontend && yarn dev\"",
     "dev:frontend": "cd frontend && npm run dev",
@@ -43,10 +43,7 @@
     "db:generate:yarn": "cd backend && yarn db:generate",
     "clean": "cross-env-shell \"taskkill /f /im node.exe 2>nul || pkill -f 'nodemon|vite' || true\"",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../shared && npm install",
-    "install:all:yarn": "yarn install",
-    "setup:windows": "powershell -ExecutionPolicy Bypass -File setup-windows.ps1",
-    "setup:registry": "npm config set registry https://registry.npmjs.org/ && npm config delete proxy && npm config delete https-proxy",
-    "setup:clean": "npm cache clean --force && rimraf node_modules package-lock.json backend/node_modules backend/package-lock.json frontend/node_modules frontend/package-lock.json shared/node_modules shared/package-lock.json"
+    "install:all:yarn": "yarn install"
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
@@ -57,5 +54,8 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.50.1"
+  }
 }

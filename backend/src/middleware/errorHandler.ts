@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -31,37 +30,6 @@ export const errorHandler = (
   if ('statusCode' in error && error.statusCode) {
     statusCode = error.statusCode;
     message = error.message;
-  } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    // Handle Prisma errors
-    switch (error.code) {
-      case 'P2002':
-        statusCode = 409;
-        message = 'A record with this data already exists';
-        details = { field: error.meta?.target };
-        break;
-      case 'P2025':
-        statusCode = 404;
-        message = 'Record not found';
-        break;
-      case 'P2003':
-        statusCode = 400;
-        message = 'Invalid reference to related record';
-        break;
-      case 'P2014':
-        statusCode = 400;
-        message = 'Invalid ID provided';
-        break;
-      default:
-        statusCode = 400;
-        message = 'Database operation failed';
-        details = { code: error.code };
-    }
-  } else if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-    statusCode = 500;
-    message = 'Database connection error';
-  } else if (error instanceof Prisma.PrismaClientValidationError) {
-    statusCode = 400;
-    message = 'Invalid data provided';
   } else if (error.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation failed';

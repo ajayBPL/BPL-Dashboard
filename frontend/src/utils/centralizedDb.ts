@@ -55,6 +55,35 @@ export const SUPPORTED_CURRENCIES: CurrencyInfo[] = [
   { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', decimalPlaces: 2, locale: 'ar-SA' },
 ]
 
+// Timezone options
+export interface TimezoneInfo {
+  value: string
+  label: string
+  offset: string
+}
+
+export const SUPPORTED_TIMEZONES: TimezoneInfo[] = [
+  { value: 'UTC', label: 'UTC', offset: '+00:00' },
+  { value: 'America/New_York', label: 'Eastern Time (ET)', offset: '-05:00' },
+  { value: 'America/Chicago', label: 'Central Time (CT)', offset: '-06:00' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)', offset: '-07:00' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)', offset: '-08:00' },
+  { value: 'Europe/London', label: 'London (GMT)', offset: '+00:00' },
+  { value: 'Europe/Paris', label: 'Paris (CET)', offset: '+01:00' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET)', offset: '+01:00' },
+  { value: 'Asia/Kolkata', label: 'India Standard Time (IST)', offset: '+05:30' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)', offset: '+09:00' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)', offset: '+08:00' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)', offset: '+04:00' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)', offset: '+08:00' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEDT)', offset: '+11:00' },
+  { value: 'Australia/Melbourne', label: 'Melbourne (AEDT)', offset: '+11:00' },
+  { value: 'America/Toronto', label: 'Toronto (ET)', offset: '-05:00' },
+  { value: 'America/Vancouver', label: 'Vancouver (PT)', offset: '-08:00' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)', offset: '-03:00' },
+  { value: 'Africa/Johannesburg', label: 'Johannesburg (SAST)', offset: '+02:00' }
+]
+
 // Budget information with currency support
 export interface BudgetInfo {
   amount: number
@@ -68,10 +97,12 @@ export interface CentralizedProject {
   id: string
   title: string
   description: string
+  projectDetails: string
   managerId: string
   timeline: string
   status: 'pending' | 'active' | 'completed' | 'on-hold' | 'cancelled'
   priority: 'low' | 'medium' | 'high' | 'critical'
+  category?: 'standard' | 'over_beyond'
   createdAt: string
   updatedAt: string
   version: number
@@ -90,11 +121,25 @@ export interface CentralizedProject {
     completedAt?: string
   }[]
   tags: string[]
+  requiredSkills: string[]
   budget?: BudgetInfo
   estimatedHours?: number
   actualHours?: number
   discussionCount?: number
   lastActivity?: string
+  changeHistory?: ProjectChange[]
+}
+
+export interface ProjectChange {
+  id: string
+  projectId: string
+  changeType: 'timeline' | 'details' | 'status' | 'priority' | 'budget' | 'description' | 'other'
+  fieldName: string
+  oldValue: string
+  newValue: string
+  changedBy: string
+  changedAt: string
+  reason?: string
 }
 
 export interface CentralizedUser {
@@ -157,6 +202,8 @@ export interface CentralizedComment {
     name: string
     url: string
     type: string
+    size?: number
+    uploadedAt?: string
   }[]
 }
 
@@ -302,6 +349,7 @@ class CentralizedDatabase {
       id: 'project-001',
       title: 'E-commerce Platform Development',
       description: 'Build a modern e-commerce platform with React and Node.js including payment integration, user management, and analytics dashboard.',
+      projectDetails: 'Comprehensive e-commerce platform development including frontend React application, backend Node.js API, payment gateway integration, user authentication, product catalog management, shopping cart functionality, order processing, and analytics dashboard.',
       managerId: 'program-manager-001',
       timeline: '3 months',
       status: 'active',
@@ -335,6 +383,7 @@ class CentralizedDatabase {
         }
       ],
       tags: ['E-commerce', 'React', 'Node.js'],
+      requiredSkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Payment Integration'],
       budget: {
         amount: 150000,
         currency: 'USD',
@@ -351,6 +400,7 @@ class CentralizedDatabase {
       id: 'project-002',
       title: 'Mobile App UI/UX Design',
       description: 'Design user interface and experience for mobile application with focus on accessibility and modern design patterns.',
+      projectDetails: 'Complete UI/UX design for mobile application including wireframes, mockups, user flow diagrams, accessibility guidelines, and design system documentation.',
       managerId: 'program-manager-001',
       timeline: '2 months',
       status: 'pending',
@@ -369,6 +419,7 @@ class CentralizedDatabase {
         }
       ],
       tags: ['UI/UX', 'Mobile', 'Design'],
+      requiredSkills: ['Figma', 'Adobe XD', 'UI/UX Design', 'Prototyping', 'Accessibility'],
       budget: {
         amount: 75000,
         currency: 'USD',
@@ -510,12 +561,41 @@ class CentralizedDatabase {
   // Permission checking methods
   canCreateProjects(userId: string): boolean {
     const user = this.getUserById(userId)
-    if (!user) return false
+    console.log('canCreateProjects Debug:', {
+      userId,
+      user,
+      userRole: user?.role,
+      hasUser: !!user
+    })
     
-    return user.role === 'admin' || 
+    if (!user) {
+      console.log('User not found in centralizedDb, checking localStorage...')
+      // Fallback: check localStorage for user data
+      const storedUser = localStorage.getItem('bpl-user')
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          console.log('Found user in localStorage:', userData)
+          if (userData.id === userId) {
+            return userData.role === 'admin' || 
+                   userData.role === 'program_manager' || 
+                   userData.role === 'rd_manager' || 
+                   userData.role === 'manager'
+          }
+        } catch (error) {
+          console.error('Error parsing stored user data:', error)
+        }
+      }
+      return false
+    }
+    
+    const canCreate = user.role === 'admin' || 
            user.role === 'program_manager' || 
            user.role === 'rd_manager' || 
            user.role === 'manager'
+    
+    console.log('canCreateProjects Result:', canCreate)
+    return canCreate
   }
 
   canCreateInitiatives(userId: string): boolean {
@@ -738,6 +818,109 @@ class CentralizedDatabase {
     return true
   }
 
+  // Project change tracking methods
+  trackProjectChange(
+    projectId: string, 
+    changeType: ProjectChange['changeType'],
+    fieldName: string,
+    oldValue: any,
+    newValue: any,
+    changedBy: string,
+    reason?: string
+  ): void {
+    const project = this.getProjectById(projectId)
+    if (!project) return
+
+    const change: ProjectChange = {
+      id: `change-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      projectId,
+      changeType,
+      fieldName,
+      oldValue: String(oldValue),
+      newValue: String(newValue),
+      changedBy,
+      changedAt: new Date().toISOString(),
+      reason
+    }
+
+    if (!project.changeHistory) {
+      project.changeHistory = []
+    }
+
+    project.changeHistory.push(change)
+    this.saveToStorage()
+    
+    // Log the change as an activity
+    const user = this.getUserById(changedBy)
+    this.logActivity(
+      changedBy, 
+      'UPDATE_PROJECT', 
+      'project', 
+      projectId, 
+      `${user?.name} changed ${fieldName} from "${oldValue}" to "${newValue}"${reason ? ` (Reason: ${reason})` : ''}`
+    )
+  }
+
+  updateProjectWithTracking(
+    projectId: string, 
+    updates: Partial<CentralizedProject>, 
+    updatedBy: string,
+    reason?: string
+  ): CentralizedProject | null {
+    const project = this.getProjectById(projectId)
+    if (!project) return null
+
+    // Track individual field changes
+    Object.keys(updates).forEach(key => {
+      const fieldName = key as keyof CentralizedProject
+      const oldValue = project[fieldName]
+      const newValue = updates[fieldName]
+
+      if (oldValue !== newValue && newValue !== undefined) {
+        let changeType: ProjectChange['changeType'] = 'other'
+        
+        switch (fieldName) {
+          case 'timeline':
+            changeType = 'timeline'
+            break
+          case 'projectDetails':
+          case 'description':
+            changeType = fieldName === 'projectDetails' ? 'details' : 'description'
+            break
+          case 'status':
+            changeType = 'status'
+            break
+          case 'priority':
+            changeType = 'priority'
+            break
+          case 'budget':
+            changeType = 'budget'
+            break
+          default:
+            changeType = 'other'
+        }
+
+        this.trackProjectChange(
+          projectId,
+          changeType,
+          fieldName,
+          oldValue,
+          newValue,
+          updatedBy,
+          reason
+        )
+      }
+    })
+
+    // Update the project
+    return this.updateProject(projectId, updates, updatedBy)
+  }
+
+  getProjectChangeHistory(projectId: string): ProjectChange[] {
+    const project = this.getProjectById(projectId)
+    return project?.changeHistory || []
+  }
+
   // Initiative Management with 20% cap enforcement
   getInitiatives(): CentralizedInitiative[] {
     return [...this.initiatives]
@@ -865,12 +1048,12 @@ class CentralizedDatabase {
 
     const projectWorkload = this.getEmployeeWorkload(employeeId)
     const initiativeWorkload = this.getEmployeeOverBeyondWorkload(employeeId)
-    const totalWorkload = projectWorkload + initiativeWorkload
+    const totalWorkload = projectWorkload.totalWorkload + initiativeWorkload.totalWorkload
     const isOverloaded = totalWorkload > (user.workloadCap + user.overBeyondCap)
 
     return {
-      projectWorkload,
-      initiativeWorkload,
+      projectWorkload: projectWorkload.totalWorkload,
+      initiativeWorkload: initiativeWorkload.totalWorkload,
       totalWorkload,
       isOverloaded
     }

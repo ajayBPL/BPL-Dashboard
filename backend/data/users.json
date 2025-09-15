@@ -1,0 +1,132 @@
+[
+  {
+    "id": "admin-001",
+    "email": "admin@bpl.com",
+    "name": "System Administrator",
+    "password": "$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW",
+    "role": "admin",
+    "designation": "System Administrator",
+    "department": "IT",
+    "skills": [
+      "System Administration",
+      "Security",
+      "Database Management"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": true
+    },
+    "isActive": true,
+    "createdAt": "2025-09-15T10:25:11.234Z",
+    "updatedAt": "2025-09-15T13:20:30.029Z",
+    "lastLoginAt": "2025-09-15T13:20:30.028Z"
+  },
+  {
+    "id": "pm-001",
+    "email": "sarah.wilson@bpl.com",
+    "name": "Sarah Wilson",
+    "password": "$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW",
+    "role": "program_manager",
+    "designation": "Senior Program Manager",
+    "department": "Program Management",
+    "skills": [
+      "Program Management",
+      "Strategic Planning",
+      "Stakeholder Management"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": true
+    },
+    "isActive": true,
+    "createdAt": "2025-09-15T10:25:11.234Z",
+    "updatedAt": "2025-09-15T10:34:55.776Z",
+    "lastLoginAt": "2025-09-15T10:34:55.775Z"
+  },
+  {
+    "id": "user-1757932070077",
+    "email": "inderjot.singh@bpl.in",
+    "name": "Inderjot Singh",
+    "password": "$2b$12$tNRYWYehRUXd4QenUstjTO2xQhDdXOyGZvwZSxZL2SCBcP9Tr6wQu",
+    "role": "PROGRAM_MANAGER",
+    "designation": "PM",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-15T10:27:50.077Z",
+    "updatedAt": "2025-09-15T13:19:46.860Z",
+    "lastLoginAt": "2025-09-15T13:19:46.859Z"
+  },
+  {
+    "id": "user-1757932094744",
+    "email": "rohith.v@bpl.in",
+    "name": "Rohith V",
+    "password": "$2b$12$uMSOerMz3V7/2nRUAJIQ2uqISvapPqASUvBJlfwFNHiJJpi7.GRku",
+    "role": "EMPLOYEE",
+    "designation": "R&D Engineer",
+    "managerId": "pm-001",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-15T10:28:14.744Z",
+    "updatedAt": "2025-09-15T10:42:56.679Z",
+    "lastLoginAt": "2025-09-15T10:42:56.678Z"
+  },
+  {
+    "id": "user-1757932856400",
+    "email": "ajay.k@bpl.in",
+    "name": "Ajay Jabaji Khatake",
+    "password": "$2b$12$il3obRVcltUrddlVW4XM.ufi1em4k4kY.o7OMLwS9fogopCMXklvO",
+    "role": "EMPLOYEE",
+    "designation": "Engineer R&D",
+    "managerId": "user-1757932070077",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-15T10:40:56.400Z",
+    "updatedAt": "2025-09-15T10:41:26.033Z",
+    "lastLoginAt": "2025-09-15T10:41:26.032Z"
+  }
+]

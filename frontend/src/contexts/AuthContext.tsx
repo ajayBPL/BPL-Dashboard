@@ -23,54 +23,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Demo users for testing (these will be merged with dynamic users)
-const DEMO_USERS = [
-  {
-    id: 'admin-001',
-    email: 'admin@bplcommander.com',
-    password: 'admin123',
-    name: 'System Admin',
-    role: 'admin' as const,
-    designation: 'System Administrator',
-    managerId: undefined
-  },
-  {
-    id: 'program-manager-001',
-    email: 'program.manager@bplcommander.com',
-    password: 'program123',
-    name: 'Program Manager',
-    role: 'program_manager' as const,
-    designation: 'Senior Program Manager',
-    managerId: undefined
-  },
-  {
-    id: 'rd-manager-001',
-    email: 'rd.manager@bplcommander.com',
-    password: 'rd123',
-    name: 'R&D Manager',
-    role: 'rd_manager' as const,
-    designation: 'Research & Development Manager',
-    managerId: undefined
-  },
-  {
-    id: 'manager-001',
-    email: 'manager@bplcommander.com',
-    password: 'manager123',
-    name: 'Team Manager',
-    role: 'manager' as const,
-    designation: 'Team Lead',
-    managerId: 'program-manager-001'
-  },
-  {
-    id: 'employee-001',
-    email: 'employee@bplcommander.com',
-    password: 'employee123',
-    name: 'Test Employee',
-    role: 'employee' as const,
-    designation: 'Software Developer',
-    managerId: 'manager-001'
-  }
-]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -90,6 +42,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser && storedToken) {
       try {
         const userData = JSON.parse(storedUser)
+        
+        // Ensure user exists in centralizedDb
+        const existingUser = centralizedDb.getUserById(userData.id);
+        if (!existingUser) {
+          centralizedDb.addUser({
+            email: userData.email,
+            name: userData.name,
+            role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee',
+            designation: userData.designation,
+            managerId: userData.managerId,
+            lastLoginAt: new Date().toISOString(),
+            isActive: true,
+            password: 'defaultpass123',
+            skills: [],
+            department: 'General',
+            workloadCap: 100,
+            overBeyondCap: 20,
+            preferredCurrency: 'USD',
+            notificationSettings: {
+              email: true,
+              inApp: true,
+              projectUpdates: true,
+              deadlineReminders: true,
+              weeklyReports: false
+            }
+          }, userData.id);
+        }
+        
         setUser(userData)
         setAccessToken(storedToken)
       } catch (error) {
@@ -102,28 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }, [])
 
-  const getAllUsers = () => {
-    // Get dynamically added users from centralized database
-    const dynamicUsers = centralizedDb.getUsers().map(user => ({
-      ...user,
-      password: user.password || 'defaultpass123' // Default password for new users
-    }))
-    
-    // Merge with demo users, ensuring no duplicates by email
-    const allUsers = [...DEMO_USERS]
-    dynamicUsers.forEach(dynamicUser => {
-      if (!allUsers.find(demoUser => demoUser.email === dynamicUser.email)) {
-        allUsers.push(dynamicUser)
-      }
-    })
-    
-    return allUsers
-  }
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // Call the real API
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('http://192.168.10.205:3001/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,6 +111,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       const token = data.data.token;
+
+      // Add or update user in centralizedDb
+      const existingUser = centralizedDb.getUserById(userData.id);
+      console.log('AuthContext Debug - User data:', userData);
+      console.log('AuthContext Debug - Existing user:', existingUser);
+      
+      if (!existingUser) {
+        console.log('AuthContext Debug - Adding new user to centralizedDb');
+        const addedUser =         centralizedDb.addUser({
+          email: userData.email,
+          name: userData.name,
+          role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee',
+          designation: userData.designation,
+          managerId: userData.managerId,
+          lastLoginAt: new Date().toISOString(),
+          isActive: true,
+          password: 'defaultpass123',
+          skills: [],
+          department: 'General',
+          workloadCap: 100,
+          overBeyondCap: 20,
+          preferredCurrency: 'USD',
+          notificationSettings: {
+            email: true,
+            inApp: true,
+            projectUpdates: true,
+            deadlineReminders: true,
+            weeklyReports: false
+          }
+        }, userData.id);
+        console.log('AuthContext Debug - Added user:', addedUser);
+      } else {
+        console.log('AuthContext Debug - Updating existing user');
+        // Update existing user with latest data
+        centralizedDb.updateUser(userData.id, {
+          name: userData.name,
+          role: userData.role,
+          designation: userData.designation,
+          managerId: userData.managerId,
+          lastLoginAt: new Date().toISOString()
+        });
+      }
 
       // Store in state and localStorage
       setUser(userData);

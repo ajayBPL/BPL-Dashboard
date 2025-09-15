@@ -7,6 +7,7 @@ class MockDatabase {
       id: 'admin-001',
       email: 'admin@bpl.com',
       name: 'System Administrator',
+      password: '$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW', // password123
       role: 'admin',
       designation: 'System Administrator',
       department: 'IT',
@@ -30,6 +31,7 @@ class MockDatabase {
       id: 'pm-001',
       email: 'sarah.wilson@bpl.com',
       name: 'Sarah Wilson',
+      password: '$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW', // password123
       role: 'program_manager',
       designation: 'Senior Program Manager',
       department: 'Program Management',
@@ -53,6 +55,7 @@ class MockDatabase {
       id: 'rdm-001',
       email: 'mike.chen@bpl.com',
       name: 'Mike Chen',
+      password: '$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW', // password123
       role: 'rd_manager',
       designation: 'R&D Manager',
       department: 'Research & Development',
@@ -76,6 +79,7 @@ class MockDatabase {
       id: 'mgr-001',
       email: 'lisa.garcia@bpl.com',
       name: 'Lisa Garcia',
+      password: '$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW', // password123
       role: 'manager',
       designation: 'Team Manager',
       department: 'Operations',
@@ -99,6 +103,7 @@ class MockDatabase {
       id: 'emp-001',
       email: 'john.doe@bpl.com',
       name: 'John Doe',
+      password: '$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW', // password123
       role: 'employee',
       designation: 'Software Developer',
       managerId: 'mgr-001',
@@ -140,6 +145,7 @@ class MockDatabase {
       id: `user-${Date.now()}`,
       email: userData.email!,
       name: userData.name!,
+      password: userData.password!, // Store the hashed password
       role: userData.role!,
       designation: userData.designation!,
       managerId: userData.managerId,

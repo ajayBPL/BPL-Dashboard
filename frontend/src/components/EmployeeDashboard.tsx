@@ -50,21 +50,80 @@ export function EmployeeDashboard() {
     if (!currentUser) return
 
     try {
-      // Get projects assigned to current user
-      const assignedProjects = centralizedDb.getProjectsByAssignee(currentUser.id)
-      setProjects(assignedProjects)
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        console.error('No authentication token found')
+        return
+      }
 
-      // Get initiatives assigned to current user
-      const assignedInitiatives = centralizedDb.getInitiativesByAssignee(currentUser.id)
-      setInitiatives(assignedInitiatives)
+      // Fetch projects assigned to current user from backend
+      const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-      // Calculate workload
-      const employeeWorkload = centralizedDb.getEmployeeWorkload(currentUser.id)
-      setWorkload(employeeWorkload)
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json()
+        if (projectsData.success && projectsData.data) {
+          // Filter projects where current user is assigned
+          const assignedProjects = projectsData.data.filter((project: any) => 
+            project.assignments && project.assignments.some((assignment: any) => 
+              assignment.employeeId === currentUser.id
+            )
+          )
+          setProjects(assignedProjects)
+
+          // Calculate workload from backend data
+          let projectWorkload = 0
+          let overBeyondWorkload = 0
+
+          assignedProjects.forEach((project: any) => {
+            const assignment = project.assignments.find((a: any) => a.employeeId === currentUser.id)
+            if (assignment) {
+              projectWorkload += assignment.involvementPercentage
+            }
+          })
+
+          // Get initiatives assigned to current user (fallback to centralizedDb for now)
+          const assignedInitiatives = centralizedDb.getInitiativesByAssignee(currentUser.id)
+          setInitiatives(assignedInitiatives)
+
+          overBeyondWorkload = assignedInitiatives
+            .filter(i => i.status === 'active')
+            .reduce((total, initiative) => total + initiative.workloadPercentage, 0)
+
+          const totalWorkload = projectWorkload + overBeyondWorkload
+          const workloadCap = currentUser.workloadCap || 100
+          const overBeyondCap = currentUser.overBeyondCap || 20
+
+          setWorkload({
+            projectWorkload,
+            overBeyondWorkload,
+            totalWorkload,
+            availableCapacity: Math.max(0, workloadCap - projectWorkload),
+            overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
+          })
+        }
+      } else {
+        throw new Error(`HTTP ${projectsResponse.status}: ${projectsResponse.statusText}`)
+      }
 
     } catch (error) {
       console.error('Error fetching employee data:', error)
-      toast.error('Failed to load dashboard data')
+      
+      // Fallback to centralizedDb if API fails
+      const assignedProjects = centralizedDb.getProjectsByAssignee(currentUser.id)
+      setProjects(assignedProjects)
+
+      const assignedInitiatives = centralizedDb.getInitiativesByAssignee(currentUser.id)
+      setInitiatives(assignedInitiatives)
+
+      const employeeWorkload = centralizedDb.getEmployeeWorkload(currentUser.id)
+      setWorkload(employeeWorkload)
+      
+      toast.error('Using offline data - some information may be outdated')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { mockDb } from './mockDb';
+import { fileBasedMockDb } from './fileBasedMockDb';
 
 // Database service that can fallback to mock data
 class DatabaseService {
@@ -28,7 +29,7 @@ class DatabaseService {
   // User operations
   async findUserByEmail(email: string) {
     if (this.useMock) {
-      return await mockDb.findUserByEmail(email);
+      return await fileBasedMockDb.findUserByEmail(email);
     }
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -69,7 +70,7 @@ class DatabaseService {
 
   async findUserById(id: string) {
     if (this.useMock) {
-      return await mockDb.findUserById(id);
+      return await fileBasedMockDb.findUserById(id);
     }
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -110,7 +111,7 @@ class DatabaseService {
 
   async createUser(userData: any) {
     if (this.useMock) {
-      return await mockDb.createUser(userData);
+      return await fileBasedMockDb.createUser(userData);
     }
     const user = await this.prisma.user.create({
       data: userData,
@@ -147,7 +148,7 @@ class DatabaseService {
 
   async updateUser(id: string, userData: any) {
     if (this.useMock) {
-      return await mockDb.updateUser(id, userData);
+      return await fileBasedMockDb.updateUser(id, userData);
     }
     const user = await this.prisma.user.update({
       where: { id },
@@ -185,7 +186,7 @@ class DatabaseService {
 
   async getAllUsers() {
     if (this.useMock) {
-      return await mockDb.getAllUsers();
+      return await fileBasedMockDb.getAllUsers();
     }
     const users = await this.prisma.user.findMany({
       select: {
@@ -237,19 +238,180 @@ class DatabaseService {
   // Activity log operations
   async createActivityLog(data: any) {
     if (this.useMock) {
-      // Mock activity log - just log to console
-      console.log('Activity Log:', data);
-      return { id: `log-${Date.now()}`, ...data };
+      return await fileBasedMockDb.createActivityLog(data);
     }
     return await this.prisma.activityLog.create({ data });
+  }
+
+  // Project operations
+  async createProject(projectData: any) {
+    if (this.useMock) {
+      return await fileBasedMockDb.createProject(projectData);
+    }
+    const project = await this.prisma.project.create({
+      data: projectData,
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      }
+    });
+    
+    return {
+      ...project,
+      createdAt: project.createdAt.toISOString(),
+      updatedAt: project.updatedAt.toISOString()
+    };
+  }
+
+  async getAllProjects() {
+    if (this.useMock) {
+      return await fileBasedMockDb.getAllProjects();
+    }
+    const projects = await this.prisma.project.findMany({
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            designation: true
+          }
+        },
+        assignments: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                designation: true
+              }
+            }
+          }
+        },
+        milestones: {
+          orderBy: { dueDate: 'asc' }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+    
+    return projects.map(project => ({
+      ...project,
+      createdAt: project.createdAt.toISOString(),
+      updatedAt: project.updatedAt.toISOString(),
+      assignments: project.assignments?.map(assignment => ({
+        ...assignment,
+        assignedAt: assignment.assignedAt.toISOString(),
+        updatedAt: assignment.updatedAt.toISOString(),
+        employee: assignment.employee
+      })),
+      milestones: project.milestones?.map(milestone => ({
+        ...milestone,
+        dueDate: milestone.dueDate.toISOString(),
+        completedAt: milestone.completedAt?.toISOString(),
+        createdAt: milestone.createdAt.toISOString(),
+        updatedAt: milestone.updatedAt.toISOString()
+      }))
+    }));
+  }
+
+  async getProjectById(id: string) {
+    if (this.useMock) {
+      const projects = await fileBasedMockDb.getAllProjects();
+      return projects.find(project => project.id === id) || null;
+    }
+    const project = await this.prisma.project.findUnique({
+      where: { id },
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            designation: true
+          }
+        },
+        assignments: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                designation: true,
+                avatar: true
+              }
+            }
+          }
+        },
+        milestones: {
+          orderBy: { dueDate: 'asc' }
+        },
+        comments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        }
+      }
+    });
+    
+    if (!project) return null;
+    
+    return {
+      ...project,
+      createdAt: project.createdAt.toISOString(),
+      updatedAt: project.updatedAt.toISOString(),
+      assignments: project.assignments?.map(assignment => ({
+        ...assignment,
+        assignedAt: assignment.assignedAt.toISOString(),
+        updatedAt: assignment.updatedAt.toISOString(),
+        employee: assignment.employee
+      })),
+      milestones: project.milestones?.map(milestone => ({
+        ...milestone,
+        dueDate: milestone.dueDate.toISOString(),
+        completedAt: milestone.completedAt?.toISOString(),
+        createdAt: milestone.createdAt.toISOString(),
+        updatedAt: milestone.updatedAt.toISOString()
+      })),
+      comments: project.comments?.map(comment => ({
+        ...comment,
+        createdAt: comment.createdAt.toISOString(),
+        updatedAt: comment.updatedAt.toISOString()
+      })),
+      versions: project.versions?.map(version => ({
+        ...version,
+        createdAt: version.createdAt.toISOString()
+      }))
+    };
   }
 
   // Notification operations
   async createNotification(data: any) {
     if (this.useMock) {
-      // Mock notification - just log to console
-      console.log('Notification:', data);
-      return { id: `notif-${Date.now()}`, ...data };
+      return await fileBasedMockDb.createNotification(data);
     }
     return await this.prisma.notification.create({ data });
   }

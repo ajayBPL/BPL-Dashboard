@@ -2,6 +2,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
+    password?: string;
     role: 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee';
     designation: string;
     managerId?: string;

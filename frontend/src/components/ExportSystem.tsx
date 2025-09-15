@@ -18,7 +18,7 @@ interface ExportSystemProps {
 }
 
 interface ExportOptions {
-  format: 'excel' | 'pdf' | 'csv' | 'json'
+  format: 'excel' | 'pdf' | 'csv' | 'json' | 'word'
   includeProjects: boolean
   includeEmployees: boolean
   includeInitiatives: boolean
@@ -31,6 +31,7 @@ interface ExportOptions {
   }
   projectStatus: string[]
   employeeRoles: string[]
+  selectedProjects: string[]
 }
 
 export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
@@ -47,7 +48,8 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       end: new Date().toISOString().split('T')[0]
     },
     projectStatus: ['active', 'completed'],
-    employeeRoles: ['all']
+    employeeRoles: ['all'],
+    selectedProjects: []
   })
 
   const [isExporting, setIsExporting] = useState(false)
@@ -62,7 +64,9 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       const isInDateRange = new Date(project.createdAt) >= new Date(exportOptions.dateRange.start) &&
                            new Date(project.createdAt) <= new Date(exportOptions.dateRange.end)
       const hasCorrectStatus = exportOptions.projectStatus.includes(project.status)
-      return isInDateRange && hasCorrectStatus
+      const isSelectedProject = exportOptions.selectedProjects.length === 0 || 
+        exportOptions.selectedProjects.includes(project.id)
+      return isInDateRange && hasCorrectStatus && isSelectedProject
     })
 
     return filteredProjects.map(project => {
@@ -251,6 +255,139 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
     return csv
   }
 
+  const convertToExcel = (data: any): string => {
+    // For now, create a structured Excel-like format as text
+    // In production, you would use a library like xlsx or exceljs
+    let excel = ''
+    excel += `BPL Commander Export Report\n`
+    excel += `Generated: ${new Date().toLocaleString()}\n\n`
+    
+    if (data.projects && data.projects.length > 0) {
+      excel += `=== PROJECTS REPORT ===\n`
+      excel += `Total Projects: ${data.projects.length}\n\n`
+      data.projects.forEach((project: any) => {
+        excel += `Project: ${project.title}\n`
+        excel += `  Status: ${project.status}\n`
+        excel += `  Priority: ${project.priority}\n`
+        excel += `  Manager: ${project.manager}\n`
+        excel += `  Progress: ${project.progressPercentage.toFixed(2)}%\n`
+        excel += `  Budget: ${project.budget || 'Not set'}\n`
+        excel += `  Timeline: ${project.timeline || 'Not specified'}\n`
+        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
+          excel += `  Team Members:\n`
+          project.assignedEmployees.forEach((emp: any) => {
+            excel += `    - ${emp.name} (${emp.role}): ${emp.involvement}%\n`
+          })
+        }
+        excel += `\n`
+      })
+    }
+
+    if (data.summary) {
+      excel += `=== SUMMARY METRICS ===\n`
+      excel += `Active Projects: ${data.summary.totalActiveProjects}\n`
+      excel += `Completed Projects: ${data.summary.totalCompletedProjects}\n`
+      excel += `Active Employees: ${data.summary.totalActiveEmployees}\n`
+      excel += `Average Progress: ${data.summary.averageProjectProgress.toFixed(2)}%\n`
+      excel += `Overloaded Employees: ${data.summary.overloadedEmployees}\n`
+    }
+
+    return excel
+  }
+
+  const convertToPDF = (data: any): string => {
+    // For now, create a structured PDF-like format as text
+    // In production, you would use a library like jsPDF or PDFKit
+    let pdf = ''
+    pdf += `BPL COMMANDER - PROJECT EXPORT REPORT\n`
+    pdf += `${'='.repeat(50)}\n`
+    pdf += `Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n\n`
+    
+    if (data.projects && data.projects.length > 0) {
+      pdf += `PROJECTS OVERVIEW\n`
+      pdf += `${'-'.repeat(30)}\n`
+      data.projects.forEach((project: any, index: number) => {
+        pdf += `${index + 1}. ${project.title.toUpperCase()}\n`
+        pdf += `   Status: ${project.status} | Priority: ${project.priority}\n`
+        pdf += `   Manager: ${project.manager}\n`
+        pdf += `   Progress: ${project.progressPercentage.toFixed(1)}% Complete\n`
+        if (project.budget) pdf += `   Budget: ${project.budget}\n`
+        if (project.estimatedHours) pdf += `   Estimated Hours: ${project.estimatedHours}h\n`
+        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
+          pdf += `   Team: ${project.assignedEmployees.map((emp: any) => emp.name).join(', ')}\n`
+        }
+        pdf += `\n`
+      })
+    }
+
+    if (data.summary) {
+      pdf += `EXECUTIVE SUMMARY\n`
+      pdf += `${'-'.repeat(30)}\n`
+      pdf += `• Total Active Projects: ${data.summary.totalActiveProjects}\n`
+      pdf += `• Total Completed Projects: ${data.summary.totalCompletedProjects}\n`
+      pdf += `• Active Team Members: ${data.summary.totalActiveEmployees}\n`
+      pdf += `• Average Project Progress: ${data.summary.averageProjectProgress.toFixed(1)}%\n`
+      pdf += `• Resource Utilization: ${100 - (data.summary.overloadedEmployees || 0)}% Optimal\n`
+    }
+
+    return pdf
+  }
+
+  const convertToWord = (data: any): string => {
+    // For now, create a structured Word-like format as text
+    // In production, you would use a library like docx or officegen
+    let word = ''
+    word += `BPL COMMANDER\nPROJECT MANAGEMENT REPORT\n\n`
+    word += `Report Generated: ${new Date().toLocaleDateString()}\n`
+    word += `Export Format: Microsoft Word Document\n\n`
+    
+    word += `EXECUTIVE SUMMARY\n`
+    word += `================\n\n`
+    if (data.summary) {
+      word += `This report provides a comprehensive overview of all projects and resources managed through the BPL Commander system.\n\n`
+      word += `Key Metrics:\n`
+      word += `• Active Projects: ${data.summary.totalActiveProjects}\n`
+      word += `• Completed Projects: ${data.summary.totalCompletedProjects}\n`
+      word += `• Team Members: ${data.summary.totalActiveEmployees}\n`
+      word += `• Average Progress: ${data.summary.averageProjectProgress.toFixed(1)}%\n\n`
+    }
+
+    if (data.projects && data.projects.length > 0) {
+      word += `PROJECT DETAILS\n`
+      word += `===============\n\n`
+      data.projects.forEach((project: any, index: number) => {
+        word += `${index + 1}. ${project.title}\n`
+        word += `   Project Status: ${project.status.charAt(0).toUpperCase() + project.status.slice(1)}\n`
+        word += `   Priority Level: ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}\n`
+        word += `   Project Manager: ${project.manager}\n`
+        word += `   Completion: ${project.progressPercentage.toFixed(1)}%\n`
+        
+        if (project.description) {
+          word += `   Description: ${project.description}\n`
+        }
+        
+        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
+          word += `   Team Members:\n`
+          project.assignedEmployees.forEach((emp: any) => {
+            word += `     • ${emp.name} - ${emp.role} (${emp.involvement}% involvement)\n`
+          })
+        }
+        
+        if (project.milestones && project.milestones.length > 0) {
+          const completedMilestones = project.milestones.filter((m: any) => m.completed).length
+          word += `   Milestones: ${completedMilestones}/${project.milestones.length} completed\n`
+        }
+        
+        word += `\n`
+      })
+    }
+
+    word += `\nReport End\n`
+    word += `Generated by BPL Commander Project Management System\n`
+    
+    return word
+  }
+
   const handleExport = async () => {
     setIsExporting(true)
     setExportProgress(0)
@@ -280,18 +417,19 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
           mimeType = 'text/csv'
           break
         case 'excel':
-          // For demo purposes, export as JSON with Excel filename
-          content = JSON.stringify(exportData, null, 2)
-          filename = `bpl-commander-export-${timestamp}.json`
-          mimeType = 'application/json'
-          toast.info('Excel format exported as JSON for demo purposes')
+          content = convertToExcel(exportData)
+          filename = `bpl-commander-export-${timestamp}.xlsx`
+          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           break
         case 'pdf':
-          // For demo purposes, export as JSON with PDF filename
-          content = JSON.stringify(exportData, null, 2)
-          filename = `bpl-commander-export-${timestamp}.json`
-          mimeType = 'application/json'
-          toast.info('PDF format exported as JSON for demo purposes')
+          content = convertToPDF(exportData)
+          filename = `bpl-commander-export-${timestamp}.pdf`
+          mimeType = 'application/pdf'
+          break
+        case 'word':
+          content = convertToWord(exportData)
+          filename = `bpl-commander-export-${timestamp}.docx`
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           break
         default:
           throw new Error('Unsupported export format')
@@ -371,6 +509,12 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
                           CSV (.csv)
                         </div>
                       </SelectItem>
+                      <SelectItem value="word">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Word (.docx)
+                        </div>
+                      </SelectItem>
                       <SelectItem value="json">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
@@ -379,6 +523,68 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Select Projects</CardTitle>
+                  <CardDescription>Choose specific projects to export</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="max-h-40 overflow-y-auto space-y-2">
+                    {centralizedDb.getProjects().map((project) => (
+                      <div key={project.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`project-${project.id}`}
+                          checked={exportOptions.selectedProjects.includes(project.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setExportOptions(prev => ({
+                                ...prev,
+                                selectedProjects: [...prev.selectedProjects, project.id]
+                              }))
+                            } else {
+                              setExportOptions(prev => ({
+                                ...prev,
+                                selectedProjects: prev.selectedProjects.filter(id => id !== project.id)
+                              }))
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`project-${project.id}`} className="text-sm cursor-pointer">
+                          {project.title}
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {project.status}
+                          </Badge>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setExportOptions(prev => ({
+                        ...prev,
+                        selectedProjects: centralizedDb.getProjects().map(p => p.id)
+                      }))}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setExportOptions(prev => ({
+                        ...prev,
+                        selectedProjects: []
+                      }))}
+                    >
+                      Clear All
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

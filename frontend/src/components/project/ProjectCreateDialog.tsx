@@ -13,12 +13,15 @@ import { Alert, AlertDescription } from '../ui/alert'
 interface ProjectForm {
   title: string
   description: string
+  projectDetails: string
   timeline: string
   priority: 'low' | 'medium' | 'high' | 'critical'
   estimatedHours: string
   budget: string
   currency: string
   tags: string[]
+  requiredSkills: string[]
+  category?: 'standard' | 'over_beyond'
 }
 
 interface ProjectCreateDialogProps {
@@ -65,6 +68,12 @@ export function ProjectCreateDialog({
       newErrors.description = 'Please provide a more detailed description (minimum 20 characters)'
     }
 
+    if (!formData.projectDetails.trim()) {
+      newErrors.projectDetails = 'Project details are required'
+    } else if (formData.projectDetails.length < 50) {
+      newErrors.projectDetails = 'Please provide comprehensive project details (minimum 50 characters)'
+    }
+
     if (!formData.timeline.trim()) {
       newErrors.timeline = 'Timeline is required'
     }
@@ -97,6 +106,17 @@ export function ProjectCreateDialog({
 
   const removeTag = (tagToRemove: string) => {
     updateField('tags', formData.tags.filter(tag => tag !== tagToRemove))
+  }
+
+  const addSkill = () => {
+    if (newTag.trim() && !formData.requiredSkills.includes(newTag.trim()) && formData.requiredSkills.length < 15) {
+      updateField('requiredSkills', [...formData.requiredSkills, newTag.trim()])
+      setNewTag('')
+    }
+  }
+
+  const removeSkill = (skillToRemove: string) => {
+    updateField('requiredSkills', formData.requiredSkills.filter(skill => skill !== skillToRemove))
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -193,9 +213,30 @@ export function ProjectCreateDialog({
                 {formData.description.length}/1000 characters
               </p>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="project-details" className="flex items-center gap-1">
+                Comprehensive Project Details *
+              </Label>
+              <Textarea
+                id="project-details"
+                value={formData.projectDetails}
+                onChange={(e) => updateField('projectDetails', e.target.value)}
+                placeholder="Provide comprehensive project details including technical requirements, scope, resources needed, deliverables, milestones, and any specific constraints or considerations..."
+                rows={5}
+                className={errors.projectDetails ? 'border-destructive' : ''}
+                maxLength={2000}
+              />
+              {errors.projectDetails && (
+                <p className="text-sm text-destructive">{errors.projectDetails}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {formData.projectDetails.length}/2000 characters • Minimum 50 characters required
+              </p>
+            </div>
           </div>
 
-          {/* Project Details Section */}
+          {/* Project Configuration Section */}
           <div className="space-y-4">
             <h3 className="font-medium flex items-center gap-2">
               <AlertTriangleIcon className="h-4 w-4" />
@@ -344,6 +385,55 @@ export function ProjectCreateDialog({
               
               <p className="text-xs text-muted-foreground">
                 {formData.tags.length}/10 tags. Click on tags to remove them.
+              </p>
+            </div>
+          </div>
+          
+          {/* Required Skills Section */}
+          <div className="space-y-4">
+            <h3 className="font-medium">Required Skills</h3>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addSkill()
+                    }
+                  }}
+                  placeholder="Add required skill (press Enter)"
+                  className="flex-1"
+                  maxLength={30}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={addSkill}
+                  disabled={!newTag.trim() || formData.requiredSkills.length >= 15}
+                >
+                  Add Skill
+                </Button>
+              </div>
+              
+              {formData.requiredSkills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.requiredSkills.map((skill, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      onClick={() => removeSkill(skill)}
+                    >
+                      {skill} ×
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground">
+                {formData.requiredSkills.length}/15 skills. Click on skills to remove them.
               </p>
             </div>
           </div>

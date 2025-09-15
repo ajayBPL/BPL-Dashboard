@@ -4,7 +4,9 @@ import { authenticateToken, canManageProjects } from '../middleware/auth';
 import { parseQuery, buildWhereClause, buildIncludeClause, getPaginationMeta } from '../middleware/queryParser';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { prisma } from '../index';
+import { db } from '../services/database';
 import { Project, CreateProjectRequest, UpdateProjectRequest, ActionRequest, AssignEmployeeRequest } from '../../../shared/types';
+import { notificationService } from '../services/notificationService';
 
 const router = express.Router();
 
@@ -13,145 +15,61 @@ router.use(parseQuery);
 
 // GET /projects - List projects with filtering, pagination, and includes
 router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { pagination, filters, include, flags, parsedQuery } = req;
-  
-  // Build where clause
-  let where = buildWhereClause(filters);
+  try {
+    // Use the database service to get all projects
+    const projects = await db.getAllProjects();
+    
+    // Apply role-based filtering
+    let filteredProjects = projects;
+    if (req.user!.role === 'manager') {
+      // Managers can only see their own projects and projects they're assigned to
+      filteredProjects = projects.filter(project => 
+        project.managerId === req.user!.id || 
+        (project.assignments && project.assignments.some((assignment: any) => assignment.employeeId === req.user!.id))
+      );
+    } else if (req.user!.role === 'employee') {
+      // Employees can only see projects they're assigned to
+      filteredProjects = projects.filter(project => 
+        project.assignments && project.assignments.some((assignment: any) => assignment.employeeId === req.user!.id)
+      );
+    }
 
-  // Add role-based filtering
-  if (req.user!.role === 'manager') {
-    // Managers can only see their own projects and projects they're assigned to
-    where = {
-      ...where,
-      OR: [
-        { managerId: req.user!.id },
-        { assignments: { some: { employeeId: req.user!.id } } }
-      ]
-    };
-  } else if (req.user!.role === 'employee') {
-    // Employees can only see projects they're assigned to
-    where = {
-      ...where,
-      assignments: { some: { employeeId: req.user!.id } }
-    };
-  }
+    const total = filteredProjects.length;
 
-  // Filter by manager if specified
-  if (parsedQuery.manager) {
-    where.managerId = parsedQuery.manager;
-  }
+    // Convert to shared Project type format
+    const convertedProjects = filteredProjects.map(project => ({
+      ...project,
+      status: project.status?.toLowerCase() || 'pending',
+      priority: project.priority?.toLowerCase() || 'medium',
+      budgetAmount: project.budgetAmount ? Number(project.budgetAmount) : undefined,
+      timeline: project.timeline || undefined,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      lastActivity: project.updatedAt,
+      assignments: project.assignments || [],
+      milestones: project.milestones || [],
+      comments: project.comments || []
+    }));
 
-  // Get total count for pagination
-  const total = await prisma.project.count({ where });
-
-  // Get projects with pagination
-  const projects = await prisma.project.findMany({
-    where,
-    include: {
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          designation: true
-        }
-      },
-      assignments: {
-        include: {
-          employee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-              designation: true
-            }
-          }
-        }
-      },
-      milestones: {
-        orderBy: { dueDate: 'asc' }
-      },
-      comments: include.includes('comments') ? {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 5 // Limit recent comments
-      } : false,
-      _count: {
-        select: {
-          assignments: true,
-          milestones: true,
-          comments: true
-        }
-      }
-    },
-    skip: ((pagination.page || 1) - 1) * (pagination.limit || 10),
-    take: pagination.limit || 10,
-    orderBy: { updatedAt: 'desc' }
-  });
-
-  // Convert Prisma projects to shared Project type
-  const convertedProjects = projects.map(project => ({
-    ...project,
-    status: project.status.toLowerCase() as any,
-    priority: project.priority.toLowerCase() as any,
-    budgetAmount: project.budgetAmount ? Number(project.budgetAmount) : undefined,
-    timeline: project.timeline || undefined,
-    createdAt: project.createdAt.toISOString(),
-    updatedAt: project.updatedAt.toISOString(),
-    lastActivity: project.updatedAt.toISOString(),
-    assignments: project.assignments?.map(assignment => ({
-      ...assignment,
-      assignedAt: assignment.assignedAt.toISOString(),
-      updatedAt: assignment.updatedAt.toISOString(),
-      employee: assignment.employee
-    })),
-    milestones: project.milestones?.map(milestone => ({
-      ...milestone,
-      dueDate: milestone.dueDate.toISOString(),
-      completedAt: milestone.completedAt?.toISOString(),
-      createdAt: milestone.createdAt.toISOString(),
-      updatedAt: milestone.updatedAt.toISOString()
-    })),
-    comments: project.comments?.map(comment => ({
-      ...comment,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString()
-    }))
-  }));
-
-  // Add analytics if requested
-  if (flags.analytics) {
-    const analytics = await calculateProjectAnalytics(where);
     res.json({
       success: true,
       data: convertedProjects,
-      analytics,
       meta: {
-        ...getPaginationMeta(total, pagination.page || 1, pagination.limit || 10),
+        total: convertedProjects.length,
+        page: 1,
+        limit: convertedProjects.length,
+        totalPages: 1,
         timestamp: new Date().toISOString()
       }
     });
-    return;
+  } catch (error) {
+    console.error('Error occurred:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch projects',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
-
-  res.json({
-    success: true,
-    data: convertedProjects,
-    meta: {
-      ...getPaginationMeta(total, pagination.page || 1, pagination.limit || 10),
-      timestamp: new Date().toISOString()
-    }
-  });
 }));
 
 // GET /projects/:id - Get specific project
@@ -159,53 +77,7 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<voi
   const { id } = req.params;
   const { include, flags } = req;
 
-  const project = await prisma.project.findUnique({
-    where: { id },
-    include: {
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          designation: true
-        }
-      },
-      assignments: {
-        include: {
-          employee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              role: true,
-              designation: true,
-              avatar: true
-            }
-          }
-        }
-      },
-      milestones: {
-        orderBy: { dueDate: 'asc' }
-      },
-      comments: include.includes('comments') ? {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      } : false,
-      versions: include.includes('versions') ? {
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      } : false
-    }
-  });
+  const project = await db.getProjectById(id);
 
   if (!project) {
     throw new NotFoundError('Project not found');
@@ -216,44 +88,26 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<voi
                    req.user!.role === 'program_manager' ||
                    req.user!.role === 'rd_manager' ||
                    project.managerId === req.user!.id ||
-                   project.assignments.some(a => a.employeeId === req.user!.id);
+                   (project.assignments && project.assignments.some((a: any) => a.employeeId === req.user!.id));
 
   if (!hasAccess) {
     throw new NotFoundError('Project not found'); // Don't reveal existence
   }
 
-  // Convert to shared Project type
+  // Convert to shared Project type format
   const convertedProject = {
     ...project,
-    status: project.status.toLowerCase() as any,
-    priority: project.priority.toLowerCase() as any,
+    status: project.status?.toLowerCase() || 'pending',
+    priority: project.priority?.toLowerCase() || 'medium',
     budgetAmount: project.budgetAmount ? Number(project.budgetAmount) : undefined,
     timeline: project.timeline || undefined,
-    createdAt: project.createdAt.toISOString(),
-    updatedAt: project.updatedAt.toISOString(),
-    lastActivity: project.updatedAt.toISOString(),
-    assignments: project.assignments?.map(assignment => ({
-      ...assignment,
-      assignedAt: assignment.assignedAt.toISOString(),
-      updatedAt: assignment.updatedAt.toISOString(),
-      employee: assignment.employee
-    })),
-    milestones: project.milestones?.map(milestone => ({
-      ...milestone,
-      dueDate: milestone.dueDate.toISOString(),
-      completedAt: milestone.completedAt?.toISOString(),
-      createdAt: milestone.createdAt.toISOString(),
-      updatedAt: milestone.updatedAt.toISOString()
-    })),
-    comments: project.comments?.map(comment => ({
-      ...comment,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString()
-    })),
-    versions: project.versions?.map(version => ({
-      ...version,
-      createdAt: version.createdAt.toISOString()
-    }))
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+    lastActivity: project.updatedAt,
+    assignments: project.assignments || [],
+    milestones: project.milestones || [],
+    comments: project.comments || [],
+    versions: project.versions || []
   };
 
   res.json({
@@ -309,52 +163,39 @@ async function handleCreateProject(req: Request, res: Response, projectData: Cre
     throw new ValidationError('Insufficient permissions to create projects');
   }
 
-  const project = await prisma.project.create({
-    data: {
-      title: projectData.title,
-      description: projectData.description,
-      managerId: req.user!.id, // Creator becomes manager
-      priority: (projectData.priority?.toUpperCase() as any) || 'MEDIUM',
-      estimatedHours: projectData.estimatedHours,
-      budgetAmount: projectData.budgetAmount,
-      budgetCurrency: projectData.budgetCurrency || 'USD',
-      timeline: projectData.timeline,
-      tags: projectData.tags || []
-    },
-    include: {
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true
-        }
-      }
-    }
+  const project = await db.createProject({
+    title: projectData.title,
+    description: projectData.description,
+    managerId: req.user!.id, // Creator becomes manager
+    priority: (projectData.priority?.toUpperCase() as any) || 'MEDIUM',
+    estimatedHours: projectData.estimatedHours,
+    budgetAmount: projectData.budgetAmount,
+    budgetCurrency: projectData.budgetCurrency || 'USD',
+    timeline: projectData.timeline,
+    tags: projectData.tags || [],
+    status: 'PENDING'
   });
 
   // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'PROJECT_CREATED',
-      entityType: 'PROJECT',
-      entityId: project.id,
-      projectId: project.id,
-      details: `Created project: ${project.title}`
-    }
+  await db.createActivityLog({
+    userId: req.user!.id,
+    action: 'PROJECT_CREATED',
+    entityType: 'PROJECT',
+    entityId: project.id,
+    projectId: project.id,
+    details: `Created project: ${project.title}`
   });
 
   res.status(201).json({
     success: true,
     data: {
       ...project,
-      status: project.status.toLowerCase(),
-      priority: project.priority.toLowerCase(),
+      status: project.status?.toLowerCase() || 'pending',
+      priority: project.priority?.toLowerCase() || 'medium',
       budgetAmount: project.budgetAmount ? Number(project.budgetAmount) : undefined,
       timeline: project.timeline || undefined,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt
     },
     message: 'Project created successfully',
     meta: {
@@ -533,19 +374,8 @@ async function handleAssignEmployee(req: Request, res: Response, projectId: stri
     }
   });
 
-  // Create notification for assigned employee
-  await prisma.notification.create({
-    data: {
-      userId: assignmentData.employeeId,
-      type: 'ASSIGNMENT',
-      title: 'New Project Assignment',
-      message: `You have been assigned to project: ${project.title}`,
-      entityType: 'PROJECT',
-      entityId: projectId,
-      priority: 'MEDIUM',
-      actionUrl: `/projects/${projectId}`
-    }
-  });
+  // Send notification for assigned employee
+  await notificationService.sendProjectAssignmentNotification(projectId, assignmentData.employeeId, req.user!.id);
 
   res.json({
     success: true,

@@ -8,6 +8,7 @@ import { ProjectCreateDialog } from './project/ProjectCreateDialog'
 import { DashboardStats } from './project/DashboardStats'
 import { InitiativeCreateDialog } from './initiatives/InitiativeCreateDialog'
 import { InitiativesList } from './initiatives/InitiativesList'
+import { EmployeeManagement } from './EmployeeManagement'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Dialog, DialogTrigger } from './ui/dialog'
@@ -38,12 +39,15 @@ export function ManagerDashboard() {
   const [projectForm, setProjectForm] = useState({
     title: '',
     description: '',
+    projectDetails: '',
     timeline: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     estimatedHours: '',
     budget: '',
     currency: 'USD',
-    tags: [] as string[]
+    tags: [] as string[],
+    requiredSkills: [] as string[],
+    category: 'standard' as 'standard' | 'over_beyond'
   })
 
   const [initiativeForm, setInitiativeForm] = useState({
@@ -70,27 +74,130 @@ export function ManagerDashboard() {
     
     try {
       setLoading(true)
-      const allProjects = centralizedDb.getProjects()
-      const allInitiatives = centralizedDb.getInitiatives()
       
-      // Filter based on user role and permissions
-      if (currentUser.role === 'admin') {
-        setProjects(allProjects)
-        setInitiatives(allInitiatives)
-      } else if (currentUser.role === 'program_manager') {
-        setProjects(allProjects)
-        setInitiatives(allInitiatives)
-      } else if (currentUser.role === 'rd_manager') {
-        setProjects(allProjects.filter(p => 
-          p.managerId === currentUser.id || 
-          p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-        ))
+      // Fetch projects from backend API
+      const token = localStorage.getItem('bpl-token')
+      if (token) {
+        try {
+          const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (projectsResponse.ok) {
+            const projectsData = await projectsResponse.json()
+            if (projectsData.success && projectsData.data) {
+              // Convert backend projects to frontend format
+              const backendProjects = projectsData.data.map((project: any) => ({
+                id: project.id,
+                title: project.title,
+                description: project.description,
+                projectDetails: project.description || '', // Use description as projectDetails
+                managerId: project.managerId,
+                timeline: project.timeline,
+                status: project.status?.toLowerCase() || 'pending',
+                priority: project.priority?.toLowerCase() || 'medium',
+                category: 'standard',
+                assignedEmployees: project.assignments || [],
+                milestones: [],
+                tags: project.tags || [],
+                requiredSkills: [],
+                estimatedHours: project.estimatedHours,
+                budget: project.budgetAmount ? {
+                  amount: project.budgetAmount,
+                  currency: project.budgetCurrency || 'USD',
+                  allocatedAt: project.createdAt,
+                  allocatedBy: project.managerId,
+                  notes: 'Initial budget allocation'
+                } : undefined,
+                createdAt: project.createdAt,
+                updatedAt: project.updatedAt,
+                version: project.version || 1,
+                discussionCount: 0,
+                lastActivity: project.updatedAt
+              }))
+
+              // Filter based on user role and permissions
+              if (currentUser.role === 'admin') {
+                setProjects(backendProjects)
+              } else if (currentUser.role === 'program_manager') {
+                setProjects(backendProjects)
+              } else if (currentUser.role === 'rd_manager') {
+                setProjects(backendProjects.filter(p => 
+                  p.managerId === currentUser.id || 
+                  p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+                ))
+              } else if (currentUser.role === 'manager') {
+                setProjects(backendProjects.filter(p => 
+                  p.managerId === currentUser.id ||
+                  p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+                ))
+              }
+            }
+          }
+        } catch (apiError) {
+          console.error('Error fetching projects from API:', apiError)
+          // Fallback to centralizedDb
+          const allProjects = centralizedDb.getProjects()
+          const allInitiatives = centralizedDb.getInitiatives()
+          
+          if (currentUser.role === 'admin') {
+            setProjects(allProjects)
+            setInitiatives(allInitiatives)
+          } else if (currentUser.role === 'program_manager') {
+            setProjects(allProjects)
+            setInitiatives(allInitiatives)
+          } else if (currentUser.role === 'rd_manager') {
+            setProjects(allProjects.filter(p => 
+              p.managerId === currentUser.id || 
+              p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+            ))
+            setInitiatives(allInitiatives)
+          } else if (currentUser.role === 'manager') {
+            setProjects(allProjects.filter(p => 
+              p.managerId === currentUser.id ||
+              p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+            ))
+            setInitiatives(allInitiatives.filter(i => 
+              i.createdBy === currentUser.id || i.assignedTo === currentUser.id
+            ))
+          }
+        }
+      } else {
+        // No token, use centralizedDb
+        const allProjects = centralizedDb.getProjects()
+        const allInitiatives = centralizedDb.getInitiatives()
+        
+        if (currentUser.role === 'admin') {
+          setProjects(allProjects)
+          setInitiatives(allInitiatives)
+        } else if (currentUser.role === 'program_manager') {
+          setProjects(allProjects)
+          setInitiatives(allInitiatives)
+        } else if (currentUser.role === 'rd_manager') {
+          setProjects(allProjects.filter(p => 
+            p.managerId === currentUser.id || 
+            p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+          ))
+          setInitiatives(allInitiatives)
+        } else if (currentUser.role === 'manager') {
+          setProjects(allProjects.filter(p => 
+            p.managerId === currentUser.id ||
+            p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
+          ))
+          setInitiatives(allInitiatives.filter(i => 
+            i.createdBy === currentUser.id || i.assignedTo === currentUser.id
+          ))
+        }
+      }
+
+      // Always fetch initiatives from centralizedDb for now
+      const allInitiatives = centralizedDb.getInitiatives()
+      if (currentUser.role === 'admin' || currentUser.role === 'program_manager' || currentUser.role === 'rd_manager') {
         setInitiatives(allInitiatives)
       } else if (currentUser.role === 'manager') {
-        setProjects(allProjects.filter(p => 
-          p.managerId === currentUser.id ||
-          p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-        ))
         setInitiatives(allInitiatives.filter(i => 
           i.createdBy === currentUser.id || i.assignedTo === currentUser.id
         ))
@@ -133,12 +240,15 @@ export function ManagerDashboard() {
     setProjectForm({
       title: '',
       description: '',
+      projectDetails: '',
       timeline: '',
       priority: 'medium',
       estimatedHours: '',
       budget: '',
       currency: 'USD',
-      tags: []
+      tags: [],
+      requiredSkills: [],
+      category: 'standard'
     })
   }
 
@@ -166,34 +276,72 @@ export function ManagerDashboard() {
     }
 
     try {
-      // Prepare budget information if provided
-      let budget: BudgetInfo | undefined
-      if (projectForm.budget && parseFloat(projectForm.budget) > 0) {
-        budget = {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('Authentication token not found')
+        return
+      }
+
+      // Prepare project data for backend API
+      const projectData = {
+        title: projectForm.title,
+        description: projectForm.description,
+        timeline: projectForm.timeline,
+        priority: projectForm.priority,
+        estimatedHours: projectForm.estimatedHours ? parseInt(projectForm.estimatedHours) : undefined,
+        budgetAmount: projectForm.budget ? parseFloat(projectForm.budget) : undefined,
+        budgetCurrency: projectForm.currency,
+        tags: projectForm.tags
+      }
+
+      // Create project via backend API
+      const response = await fetch('http://192.168.10.205:3001/api/projects', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'create',
+          data: projectData
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to create project')
+      }
+
+      // Also add to centralizedDb for local consistency
+      const newProject = centralizedDb.addProject({
+        title: projectForm.title,
+        description: projectForm.description,
+        projectDetails: projectForm.projectDetails,
+        managerId: currentUser.id,
+        timeline: projectForm.timeline,
+        status: 'pending',
+        priority: projectForm.priority,
+        category: projectForm.category || 'standard',
+        assignedEmployees: [],
+        milestones: [],
+        tags: projectForm.tags,
+        requiredSkills: projectForm.requiredSkills,
+        estimatedHours: projectForm.estimatedHours ? parseInt(projectForm.estimatedHours) : undefined,
+        budget: projectForm.budget && parseFloat(projectForm.budget) > 0 ? {
           amount: parseFloat(projectForm.budget),
           currency: projectForm.currency,
           allocatedAt: new Date().toISOString(),
           allocatedBy: currentUser.id,
           notes: 'Initial budget allocation'
-        }
-      }
-
-      const newProject = centralizedDb.addProject({
-        title: projectForm.title,
-        description: projectForm.description,
-        managerId: currentUser.id,
-        timeline: projectForm.timeline,
-        status: 'pending',
-        priority: projectForm.priority,
-        assignedEmployees: [],
-        milestones: [],
-        tags: projectForm.tags,
-        estimatedHours: projectForm.estimatedHours ? parseInt(projectForm.estimatedHours) : undefined,
-        budget
+        } : undefined
       }, currentUser.id)
 
       setProjects([...projects, newProject])
-      toast.success(`Project "${newProject.title}" created successfully!`)
+      toast.success(`Project "${projectForm.title}" created successfully!`)
       
       resetProjectForm()
       setShowCreateProject(false)
@@ -260,6 +408,15 @@ export function ManagerDashboard() {
   const canCreateProjects = currentUser && centralizedDb.canCreateProjects(currentUser.id)
   const canCreateInitiatives = currentUser && centralizedDb.canCreateInitiatives(currentUser.id)
 
+  // Debug logging
+  console.log('ManagerDashboard Debug:', {
+    currentUser,
+    userRole: currentUser?.role,
+    canCreateProjects,
+    canCreateInitiatives,
+    allUsers: centralizedDb.getUsers().map(u => ({ id: u.id, name: u.name, role: u.role }))
+  })
+
   const uniqueTeamMembers = Array.from(
     new Set(projects.flatMap(p => p.assignedEmployees.map(e => e.employeeId)))
   ).length
@@ -322,9 +479,10 @@ export function ManagerDashboard() {
       />
 
       <Tabs defaultValue="projects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
           <TabsTrigger value="initiatives">Over & Beyond ({initiatives.length})</TabsTrigger>
+          <TabsTrigger value="employees">Team Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="space-y-6">
@@ -442,20 +600,87 @@ export function ManagerDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lightbulb className="h-5 w-5" />
-                Over & Beyond Initiatives
+                Over & Beyond Section
               </CardTitle>
               <CardDescription>
-                Manage innovation projects and additional initiatives (20% workload cap enforced)
+                Manage innovation projects and initiatives (20% workload cap enforced)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InitiativesList
-                initiatives={initiatives}
-                canCreateInitiatives={!!canCreateInitiatives}
-                onCreateInitiative={() => setShowCreateInitiative(true)}
-              />
+              <Tabs defaultValue="initiatives" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="initiatives">Initiatives</TabsTrigger>
+                  <TabsTrigger value="projects">Projects</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="initiatives" className="space-y-4">
+                  <InitiativesList
+                    initiatives={initiatives}
+                    canCreateInitiatives={!!canCreateInitiatives}
+                    onCreateInitiative={() => setShowCreateInitiative(true)}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="projects" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold">Over & Beyond Projects</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Innovation and improvement projects that go above and beyond regular work
+                      </p>
+                    </div>
+                    {!!canCreateProjects && (
+                      <Button onClick={() => {
+                        setProjectForm({
+                          title: '',
+                          description: '',
+                          projectDetails: '',
+                          timeline: '',
+                          priority: 'medium',
+                          estimatedHours: '',
+                          budget: '',
+                          currency: 'USD',
+                          tags: [],
+                          requiredSkills: [],
+                          category: 'over_beyond'
+                        })
+                        setShowCreateProject(true)
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Over & Beyond Project
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {projects
+                      .filter(project => project.category === 'over_beyond')
+                      .map(project => (
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          onViewDetails={(id) => setSelectedProjectId(id)}
+                        />
+                      ))}
+                      
+                    {projects.filter(project => project.category === 'over_beyond').length === 0 && (
+                      <div className="text-center py-12">
+                        <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3>No Over & Beyond Projects</h3>
+                        <p className="text-muted-foreground">
+                          Create innovation projects that go beyond regular work scope.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="employees" className="space-y-6">
+          <EmployeeManagement />
         </TabsContent>
       </Tabs>
 

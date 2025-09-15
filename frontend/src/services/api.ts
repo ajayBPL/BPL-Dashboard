@@ -1,5 +1,5 @@
 // API Service for connecting to the backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.10.205:3001/api';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -112,20 +112,31 @@ class ApiService {
   async createProject(projectData: any) {
     return this.request('/projects', {
       method: 'POST',
-      body: JSON.stringify(projectData),
+      body: JSON.stringify({
+        action: 'create',
+        data: projectData
+      }),
     });
   }
 
   async updateProject(id: string, projectData: any) {
-    return this.request(`/projects/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(projectData),
+    return this.request('/projects', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'update',
+        id: id,
+        data: projectData
+      }),
     });
   }
 
   async deleteProject(id: string) {
-    return this.request(`/projects/${id}`, {
-      method: 'DELETE',
+    return this.request('/projects', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'delete',
+        id: id
+      }),
     });
   }
 
@@ -149,7 +160,7 @@ class ApiService {
   // Health check
   async healthCheck() {
     try {
-      const response = await fetch('http://localhost:3001/health');
+      const response = await fetch('http://192.168.10.205:3001/health');
       const data = await response.json();
       console.log('🏥 Backend Health Check:', data);
       return data;

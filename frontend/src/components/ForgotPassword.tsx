@@ -53,6 +53,31 @@ export function ForgotPassword({ isOpen, onClose }: ForgotPasswordProps) {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
 
+  const validatePassword = (password: string) => {
+    const errors: string[] = []
+    
+    if (password.length < 6) {
+      errors.push('Password must be at least 6 characters long')
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Password must contain at least one capital letter')
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      errors.push('Password must contain at least one number')
+    }
+    
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('Password must contain at least one special character')
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) {
@@ -151,8 +176,10 @@ export function ForgotPassword({ isOpen, onClose }: ForgotPasswordProps) {
       return
     }
 
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long')
+    // Validate password requirements
+    const passwordValidation = validatePassword(newPassword)
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.errors[0])
       return
     }
 
@@ -410,7 +437,25 @@ export function ForgotPassword({ isOpen, onClose }: ForgotPasswordProps) {
                   <Alert>
                     <Shield className="h-4 w-4" />
                     <AlertDescription>
-                      Your password should be at least 6 characters long and contain a mix of letters and numbers.
+                      <strong>Password Requirements:</strong>
+                      <ul className="mt-2 space-y-1 text-sm">
+                        <li className={`flex items-center gap-2 ${newPassword.length >= 6 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {newPassword.length >= 6 ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                          At least 6 characters long
+                        </li>
+                        <li className={`flex items-center gap-2 ${/[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {/[A-Z]/.test(newPassword) ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                          One capital letter (A-Z)
+                        </li>
+                        <li className={`flex items-center gap-2 ${/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {/[0-9]/.test(newPassword) ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                          One number (0-9)
+                        </li>
+                        <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword) ? 'text-green-600' : 'text-muted-foreground'}`}>
+                          {/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword) ? <CheckCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                          One special character (!@#$%^&*)
+                        </li>
+                      </ul>
                     </AlertDescription>
                   </Alert>
 

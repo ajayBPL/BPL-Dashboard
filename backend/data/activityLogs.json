@@ -1,0 +1,49 @@
+[
+  {
+    "id": "activity-1757932070085",
+    "userId": "user-1757932070077",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1757932070077",
+    "details": "User registered: Inderjot Singh (inderjot.singh@bpl.in)",
+    "timestamp": "2025-09-15T10:27:50.085Z"
+  },
+  {
+    "id": "activity-1757932094750",
+    "userId": "user-1757932094744",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1757932094744",
+    "details": "User registered: Rohith V (rohith.v@bpl.in)",
+    "timestamp": "2025-09-15T10:28:14.750Z"
+  },
+  {
+    "id": "activity-1757932856406",
+    "userId": "user-1757932856400",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1757932856400",
+    "details": "User registered: Ajay Jabaji Khatake (ajay.k@bpl.in)",
+    "timestamp": "2025-09-15T10:40:56.406Z"
+  },
+  {
+    "id": "activity-1757937356658",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Created project: Dynatrac Ultra",
+    "timestamp": "2025-09-15T11:55:56.658Z"
+  },
+  {
+    "id": "activity-1757938579125",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757938579123",
+    "projectId": "project-1757938579123",
+    "details": "Created project: Relife 1000 PC App",
+    "timestamp": "2025-09-15T12:16:19.125Z"
+  }
+]

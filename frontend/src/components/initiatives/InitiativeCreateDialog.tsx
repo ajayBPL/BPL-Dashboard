@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { centralizedDb } from '../../utils/centralizedDb'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
@@ -38,8 +38,74 @@ export function InitiativeCreateDialog({
   setFormData,
   loading = false
 }: InitiativeCreateDialogProps) {
-  const users = centralizedDb.getUsers()
-  const employees = users.filter(u => u.role === 'employee' || u.role === 'manager')
+  const [employees, setEmployees] = useState<CentralizedUser[]>([])
+
+  // Fetch employees from backend API
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        console.error('No authentication token found')
+        return
+      }
+
+      const response = await fetch('http://192.168.10.205:3001/api/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      if (data.success && data.data) {
+        // Convert API response to match the expected format
+        const usersData = data.data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          designation: user.designation,
+          managerId: user.managerId,
+          department: user.department,
+          skills: user.skills || [],
+          workloadCap: user.workloadCap,
+          overBeyondCap: user.overBeyondCap,
+          phoneNumber: user.phoneNumber,
+          timezone: user.timezone,
+          preferredCurrency: user.preferredCurrency,
+          notificationSettings: user.notificationSettings,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          lastLoginAt: user.lastLoginAt
+        }))
+        
+        // Filter to only employees and managers
+        const employeeList = usersData.filter((user: CentralizedUser) => 
+          user.role === 'employee' || user.role === 'manager'
+        )
+        setEmployees(employeeList)
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error)
+      // Fallback to centralizedDb if API fails
+      const fallbackEmployees = centralizedDb.getUsers().filter(user => 
+        user.role === 'employee' || user.role === 'manager'
+      )
+      setEmployees(fallbackEmployees)
+    }
+  }
+
+  // Fetch employees when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchEmployees()
+    }
+  }, [isOpen])
 
   const updateField = (field: keyof InitiativeForm, value: string | number) => {
     setFormData({ ...formData, [field]: value })

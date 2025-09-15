@@ -20,6 +20,7 @@ import exportRoutes from './routes/export';
 import settingsRoutes from './routes/settings';
 import searchRoutes from './routes/search';
 import activityRoutes from './routes/activity';
+import mockUserRoutes from './routes/mock-users';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -31,7 +32,7 @@ dotenv.config();
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // Initialize Prisma client
 export const prisma = new PrismaClient({
@@ -57,7 +58,14 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000',
+    'http://192.168.29.213:3000',
+    'http://192.168.10.205:3000',
+    'http://192.168.29.213:5173',
+    'http://192.168.10.205:5173',
+    process.env.CORS_ORIGIN || 'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -110,6 +118,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/mock-users', mockUserRoutes);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);
@@ -129,10 +138,11 @@ process.on('SIGTERM', async () => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
 });
 
 // Handle unhandled promise rejections

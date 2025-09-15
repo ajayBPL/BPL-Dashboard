@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { centralizedDb, CentralizedProject } from '../utils/centralizedDb'
 import { useAuth } from '../contexts/AuthContext'
 import { ProgressEditor } from './ProgressEditor'
+import { ProjectEditDialog } from './project/ProjectEditDialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -28,7 +29,9 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  Paperclip,
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -46,20 +49,170 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
   const [editingAssignment, setEditingAssignment] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [showProgressEditor, setShowProgressEditor] = useState(false)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   // Assignment form state
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [involvementPercentage, setInvolvementPercentage] = useState(20)
   const [employeeRole, setEmployeeRole] = useState('')
+  const [allEmployees, setAllEmployees] = useState<CentralizedUser[]>([])
+  const [allProjects, setAllProjects] = useState<any[]>([])
 
-  // Get available employees for assignment
-  const availableEmployees = centralizedDb.getUsers().filter(user => 
-    user.role === 'employee' || user.role === 'manager'
-  )
+  // Fetch employees and projects from backend API
+  const fetchEmployeesAndProjects = async () => {
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        console.error('No authentication token found')
+        return
+      }
+
+      // Fetch employees
+      const usersResponse = await fetch('http://192.168.10.205:3001/api/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json()
+        if (usersData.success && usersData.data) {
+          // Convert API response to match the expected format
+          const usersDataFormatted = usersData.data.map((user: any) => ({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            designation: user.designation,
+            managerId: user.managerId,
+            department: user.department,
+            skills: user.skills || [],
+            workloadCap: user.workloadCap,
+            overBeyondCap: user.overBeyondCap,
+            phoneNumber: user.phoneNumber,
+            timezone: user.timezone,
+            preferredCurrency: user.preferredCurrency,
+            notificationSettings: user.notificationSettings,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            lastLoginAt: user.lastLoginAt
+          }))
+          
+          // Filter to only employees and managers
+          const employees = usersDataFormatted.filter((user: CentralizedUser) => 
+            user.role === 'employee' || user.role === 'manager'
+          )
+          setAllEmployees(employees)
+        }
+      }
+
+      // Fetch projects
+      const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json()
+        if (projectsData.success && projectsData.data) {
+          setAllProjects(projectsData.data)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching employees and projects:', error)
+      // Fallback to centralizedDb if API fails
+      const fallbackEmployees = centralizedDb.getUsers().filter(user => 
+        user.role === 'employee' || user.role === 'manager'
+      )
+      setAllEmployees(fallbackEmployees)
+      setAllProjects(centralizedDb.getProjects())
+    }
+  }
+
+  const availableEmployees = React.useMemo(() => {
+    if (!project?.requiredSkills || project.requiredSkills.length === 0) {
+      return allEmployees
+    }
+
+    // Separate employees with matching skills from those without
+    const employeesWithMatchingSkills: typeof allEmployees = []
+    const employeesWithoutMatchingSkills: typeof allEmployees = []
+
+    allEmployees.forEach(employee => {
+      const matchingSkills = employee.skills.filter(skill => 
+        project.requiredSkills.includes(skill)
+      )
+      
+      if (matchingSkills.length > 0) {
+        employeesWithMatchingSkills.push({
+          ...employee,
+          matchingSkillsCount: matchingSkills.length,
+          matchingSkills: matchingSkills
+        })
+      } else {
+        employeesWithoutMatchingSkills.push(employee)
+      }
+    })
+
+    // Sort employees with matching skills by number of matches (descending)
+    employeesWithMatchingSkills.sort((a, b) => 
+      (b.matchingSkillsCount || 0) - (a.matchingSkillsCount || 0)
+    )
+
+    // Return employees with matching skills first, then others
+    return [...employeesWithMatchingSkills, ...employeesWithoutMatchingSkills]
+  }, [allEmployees, project?.requiredSkills])
 
   const assignedEmployees = project ? project.assignedEmployees.map(assignment => {
-    const employee = centralizedDb.getUserById(assignment.employeeId)
-    const workload = centralizedDb.getEmployeeWorkload(assignment.employeeId)
+    // First try to get employee from allEmployees (backend data)
+    let employee = allEmployees.find(emp => emp.id === assignment.employeeId)
+    
+    // Fallback to centralizedDb if not found in allEmployees
+    if (!employee) {
+      employee = centralizedDb.getUserById(assignment.employeeId)
+    }
+    
+    // Calculate workload based on backend data
+    const calculateWorkloadFromBackend = (employeeId: string) => {
+      // Use backend projects data if available, otherwise fallback to centralizedDb
+      const projectsToUse = allProjects.length > 0 ? allProjects : centralizedDb.getProjects()
+      const allInitiatives = centralizedDb.getInitiatives()
+      
+      // Calculate project workload from all active projects
+      const projectWorkload = projectsToUse
+        .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active')
+        .reduce((total: number, project: any) => {
+          // Handle both backend format (assignments) and frontend format (assignedEmployees)
+          const assignments = project.assignments || project.assignedEmployees || []
+          const assignment = assignments.find((emp: any) => emp.employeeId === employeeId)
+          return total + (assignment?.involvementPercentage || 0)
+        }, 0)
+      
+      // Calculate over & beyond workload from initiatives
+      const overBeyondWorkload = allInitiatives
+        .filter(i => i.assignedTo === employeeId && i.status === 'active')
+        .reduce((total, initiative) => total + initiative.workloadPercentage, 0)
+      
+      const totalWorkload = projectWorkload + overBeyondWorkload
+      const workloadCap = employee?.workloadCap || 100
+      const overBeyondCap = employee?.overBeyondCap || 20
+      
+      return {
+        projectWorkload,
+        overBeyondWorkload,
+        totalWorkload,
+        availableCapacity: Math.max(0, workloadCap - projectWorkload),
+        overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
+      }
+    }
+    
+    const workload = calculateWorkloadFromBackend(assignment.employeeId)
     return {
       ...assignment,
       employee,
@@ -72,6 +225,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
   useEffect(() => {
     if (projectId && isOpen) {
       fetchProjectDetails()
+      fetchEmployeesAndProjects() // Fetch employees and projects when opening project details
     }
   }, [projectId, isOpen])
 
@@ -80,6 +234,60 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
     
     setLoading(true)
     try {
+      // First try to fetch from backend API
+      const token = localStorage.getItem('bpl-token')
+      if (token) {
+        try {
+          const response = await fetch(`http://192.168.10.205:3001/api/projects/${projectId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            const projectData = await response.json()
+            if (projectData.success && projectData.data) {
+              // Convert backend project to frontend format
+              const backendProject = {
+                id: projectData.data.id,
+                title: projectData.data.title,
+                description: projectData.data.description,
+                projectDetails: projectData.data.description || '',
+                managerId: projectData.data.managerId,
+                timeline: projectData.data.timeline,
+                status: projectData.data.status?.toLowerCase() || 'pending',
+                priority: projectData.data.priority?.toLowerCase() || 'medium',
+                category: 'standard',
+                assignedEmployees: projectData.data.assignments || [],
+                milestones: projectData.data.milestones || [],
+                tags: projectData.data.tags || [],
+                requiredSkills: [],
+                estimatedHours: projectData.data.estimatedHours,
+                budget: projectData.data.budgetAmount ? {
+                  amount: projectData.data.budgetAmount,
+                  currency: projectData.data.budgetCurrency || 'USD',
+                  allocatedAt: projectData.data.createdAt,
+                  allocatedBy: projectData.data.managerId,
+                  notes: 'Initial budget allocation'
+                } : undefined,
+                createdAt: projectData.data.createdAt,
+                updatedAt: projectData.data.updatedAt,
+                version: projectData.data.version || 1,
+                discussionCount: projectData.data.comments?.length || 0,
+                lastActivity: projectData.data.updatedAt
+              }
+              setProject(backendProject)
+              return
+            }
+          }
+        } catch (apiError) {
+          console.error('Error fetching project from API:', apiError)
+          // Fallback to centralizedDb
+        }
+      }
+      
+      // Fallback to centralizedDb if API fails
       const projectData = centralizedDb.getProjectById(projectId)
       setProject(projectData || null)
     } catch (error) {
@@ -176,18 +384,99 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
     }
   }
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files) {
+      const fileArray = Array.from(files)
+      const validFiles = fileArray.filter(file => {
+        const validTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/jpg', 
+          'image/png',
+          'image/gif',
+          'text/plain',
+          'text/javascript',
+          'text/css',
+          'text/html',
+          'application/json',
+          'text/xml'
+        ]
+        const isValidType = validTypes.includes(file.type) || 
+          file.name.match(/\.(py|js|jsx|ts|tsx|java|cpp|c|php|rb|go|rs|swift)$/)
+        
+        const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
+        
+        if (!isValidType) {
+          toast.error(`File ${file.name} is not a supported type`)
+          return false
+        }
+        if (!isValidSize) {
+          toast.error(`File ${file.name} is too large (max 10MB)`)
+          return false
+        }
+        return true
+      })
+      
+      setAttachedFiles(prev => [...prev, ...validFiles])
+      event.target.value = '' // Clear input
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const getFileIcon = (file: File) => {
+    if (file.type.includes('pdf')) return '📄'
+    if (file.type.includes('word') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) return '📝'
+    if (file.type.includes('image')) return '🖼️'
+    if (file.type.includes('text') || file.name.match(/\.(js|jsx|ts|tsx|py|java|cpp|c|php|rb|go|rs|swift|html|css|xml|json)$/)) return '💻'
+    return '📎'
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   const handleAddComment = async () => {
-    if (!project || !currentUser || !newComment.trim()) return
+    if ((!newComment.trim() && attachedFiles.length === 0) || !project || !currentUser) return
 
-    centralizedDb.addComment({
-      projectId: project.id,
-      userId: currentUser.id,
-      comment: newComment.trim()
-    })
+    try {
+      setUploading(true)
+      
+      // Simulate file uploads (in real app, upload to storage service)
+      const fileAttachments = attachedFiles.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: `#demo-file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        uploadedAt: new Date().toISOString()
+      }))
 
-    toast.success('Comment added successfully!')
-    setNewComment('')
-    fetchProjectDetails()
+      centralizedDb.addComment({
+        projectId: project.id,
+        userId: currentUser.id,
+        comment: newComment.trim() || (fileAttachments.length > 0 ? `Shared ${fileAttachments.length} file(s)` : ''),
+        attachments: fileAttachments
+      })
+
+      setNewComment('')
+      setAttachedFiles([])
+      toast.success(`Comment ${fileAttachments.length > 0 ? 'with attachments' : ''} added successfully!`)
+      fetchProjectDetails()
+    } catch (error) {
+      console.error('Error adding comment:', error)
+      toast.error('Failed to add comment')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -264,16 +553,30 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              {project.title}
-            </DialogTitle>
-            <DialogDescription className="flex items-center gap-2">
-              <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
-              <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
-              <span>•</span>
-              <span>{project.timeline}</span>
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  {project.title}
+                </DialogTitle>
+                <DialogDescription className="flex items-center gap-2">
+                  <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
+                  <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+                  <span>•</span>
+                  <span>{project.timeline}</span>
+                </DialogDescription>
+              </div>
+              {canManageProject && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEditDialog(true)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Project
+                </Button>
+              )}
+            </div>
           </DialogHeader>
 
           <Tabs defaultValue="overview" className="mt-4">
@@ -632,6 +935,41 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                               </span>
                             </div>
                             <p className="text-sm">{comment.comment}</p>
+                            
+                            {/* File Attachments */}
+                            {comment.attachments && comment.attachments.length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                <Label className="text-xs text-muted-foreground">Attachments:</Label>
+                                <div className="space-y-1">
+                                  {comment.attachments.map((attachment, index) => (
+                                    <div key={index} className="flex items-center space-x-2 p-2 bg-muted/50 rounded-md">
+                                      <span className="text-sm">
+                                        {attachment.type?.includes('pdf') ? '📄' :
+                                         attachment.type?.includes('word') || attachment.name?.endsWith('.docx') ? '📝' :
+                                         attachment.type?.includes('image') ? '🖼️' :
+                                         attachment.name?.match(/\.(js|jsx|ts|tsx|py|java|cpp|c|php|rb|go|rs|swift|html|css|xml|json)$/) ? '💻' :
+                                         '📎'}
+                                      </span>
+                                      <span className="text-sm font-medium">{attachment.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {attachment.size ? formatFileSize(attachment.size) : ''}
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs"
+                                        onClick={() => {
+                                          // In a real app, this would download the file
+                                          toast.info(`Would download: ${attachment.name}`)
+                                        }}
+                                      >
+                                        Download
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
@@ -656,14 +994,76 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                         onChange={(e) => setNewComment(e.target.value)}
                         rows={3}
                       />
-                      <div className="flex justify-end">
+                      
+                      {/* File Attachments */}
+                      {attachedFiles.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Attached Files:</Label>
+                          <div className="space-y-2">
+                            {attachedFiles.map((file, index) => (
+                              <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg">{getFileIcon(file)}</span>
+                                  <div>
+                                    <p className="text-sm font-medium">{file.name}</p>
+                                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="file"
+                            id="file-upload"
+                            multiple
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.php,.rb,.go,.rs,.swift,.html,.css,.xml,.json"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => document.getElementById('file-upload')?.click()}
+                          >
+                            <Paperclip className="h-4 w-4 mr-2" />
+                            Attach Files
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            PDF, Word, Images, Code files (max 10MB each)
+                          </span>
+                        </div>
+                        
                         <Button 
                           onClick={handleAddComment} 
-                          disabled={!newComment.trim()}
+                          disabled={(!newComment.trim() && attachedFiles.length === 0) || uploading}
                           size="sm"
                         >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Add Comment
+                          {uploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              {attachedFiles.length > 0 ? `Add Comment (${attachedFiles.length} files)` : 'Add Comment'}
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -686,6 +1086,19 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           </DialogHeader>
           
           <div className="space-y-4">
+            {project?.requiredSkills && project.requiredSkills.length > 0 && (
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-sm font-medium">Required Skills for this Project:</Label>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {project.requiredSkills.map((skill, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div>
               <Label htmlFor="employee-select">Employee</Label>
               <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
@@ -695,15 +1108,29 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                 <SelectContent>
                   {availableEmployees
                     .filter(emp => !project?.assignedEmployees.some(a => a.employeeId === emp.id))
-                    .map((employee) => {
+                    .map((employee: any) => {
                       const workload = centralizedDb.getEmployeeWorkload(employee.id)
+                      const hasMatchingSkills = employee.matchingSkills && employee.matchingSkills.length > 0
+                      
                       return (
                         <SelectItem key={employee.id} value={employee.id}>
-                          <div className="flex flex-col">
-                            <span>{employee.name}</span>
+                          <div className="flex flex-col w-full">
+                            <div className="flex items-center justify-between">
+                              <span className={hasMatchingSkills ? 'font-medium' : ''}>{employee.name}</span>
+                              {hasMatchingSkills && (
+                                <Badge variant="secondary" className="ml-2 text-xs">
+                                  ✓ {employee.matchingSkills.length} skill{employee.matchingSkills.length > 1 ? 's' : ''} match
+                                </Badge>
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground">
                               Available: {workload.availableCapacity.toFixed(1)}%
                             </span>
+                            {hasMatchingSkills && (
+                              <span className="text-xs text-green-600">
+                                Skills: {employee.matchingSkills.join(', ')}
+                              </span>
+                            )}
                           </div>
                         </SelectItem>
                       )
@@ -777,6 +1204,15 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           }}
         />
       )}
+
+      <ProjectEditDialog
+        project={project}
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        onProjectUpdated={() => {
+          fetchProjectDetails() // Refresh the project data
+        }}
+      />
     </>
   )
 }

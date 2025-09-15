@@ -30,10 +30,13 @@ import {
   Shield,
   Clock,
   Mail,
-  Phone
+  Phone,
+  Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CurrencySelector } from './CurrencySelector'
+import { TimezoneSelector } from './TimezoneSelector'
+import { apiService } from '../services/api'
 import { ApiTester } from './ApiTester'
 
 export function AdminDashboard() {
@@ -46,6 +49,10 @@ export function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showRoleManagement, setShowRoleManagement] = useState(false)
+  const [showDepartmentManagement, setShowDepartmentManagement] = useState(false)
+  const [newRole, setNewRole] = useState({ name: '', description: '', permissions: [] as string[] })
+  const [newDepartment, setNewDepartment] = useState({ name: '', description: '', headId: '' })
   const { user: currentUser } = useAuth()
 
   // Enhanced form state
@@ -89,7 +96,7 @@ export function AdminDashboard() {
         return
       }
 
-      const response = await fetch('http://localhost:3001/api/users', {
+      const response = await fetch('http://192.168.10.205:3001/api/users', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -166,6 +173,46 @@ export function AdminDashboard() {
     setFilteredUsers(filtered)
   }
 
+  const handleCreateRole = async () => {
+    if (!newRole.name.trim()) {
+      toast.error('Role name is required')
+      return
+    }
+
+    try {
+      // In a real application, this would be saved to the database
+      // For demo purposes, we'll add it to a local state
+      toast.success(`Role "${newRole.name}" created successfully!`)
+      toast.info('In production, this would be saved to the database')
+      
+      setNewRole({ name: '', description: '', permissions: [] })
+      setShowRoleManagement(false)
+    } catch (error) {
+      console.error('Error creating role:', error)
+      toast.error('Failed to create role')
+    }
+  }
+
+  const handleCreateDepartment = async () => {
+    if (!newDepartment.name.trim()) {
+      toast.error('Department name is required')
+      return
+    }
+
+    try {
+      // In a real application, this would be saved to the database
+      // For demo purposes, we'll show success message
+      toast.success(`Department "${newDepartment.name}" created successfully!`)
+      toast.info('In production, this would be saved to the database')
+      
+      setNewDepartment({ name: '', description: '', headId: '' })
+      setShowDepartmentManagement(false)
+    } catch (error) {
+      console.error('Error creating department:', error)
+      toast.error('Failed to create department')
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -189,6 +236,24 @@ export function AdminDashboard() {
         weeklyReports: false
       }
     })
+  }
+
+  const handleTestEmail = async (userId: string) => {
+    try {
+      const response = await apiService.request('/users/test-email', {
+        method: 'POST',
+        body: JSON.stringify({ userId })
+      })
+      
+      if (response.success) {
+        toast.success('Test email sent successfully!')
+      } else {
+        toast.error('Failed to send test email')
+      }
+    } catch (error) {
+      console.error('Error sending test email:', error)
+      toast.error('Failed to send test email')
+    }
   }
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -232,7 +297,7 @@ export function AdminDashboard() {
       console.log('🌐 Creating user via API:', userData)
 
       // Make API call to create user
-      const response = await fetch('http://localhost:3001/api/auth/register', {
+      const response = await fetch('http://192.168.10.205:3001/api/auth/register', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -300,7 +365,7 @@ export function AdminDashboard() {
       console.log(`🌐 ${action}ing user ${user.email}`)
 
       // Make API call to update user status using the action-based endpoint
-      const response = await fetch('http://localhost:3001/api/users', {
+      const response = await fetch('http://192.168.10.205:3001/api/users', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -486,9 +551,10 @@ export function AdminDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="users">User Management ({users.length})</TabsTrigger>
           <TabsTrigger value="roles">Role Management</TabsTrigger>
+          <TabsTrigger value="departments">Department Management</TabsTrigger>
           <TabsTrigger value="analytics">Analytics & Reports</TabsTrigger>
           <TabsTrigger value="activity">Activity Feed</TabsTrigger>
           <TabsTrigger value="api">API Tester</TabsTrigger>
@@ -662,6 +728,134 @@ export function AdminDashboard() {
           <RoleManagement />
         </TabsContent>
 
+        <TabsContent value="departments" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Department Management
+              </CardTitle>
+              <CardDescription>
+                Create and manage organizational departments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Current Departments */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Current Departments</h3>
+                  <div className="grid gap-4">
+                    {/* Demo departments - in real app, these would come from database */}
+                    {[
+                      { name: 'Engineering', description: 'Software development and technical teams', head: 'John Doe', userCount: 12 },
+                      { name: 'Product Management', description: 'Product strategy and management', head: 'Jane Smith', userCount: 8 },
+                      { name: 'Quality Assurance', description: 'Testing and quality control', head: 'Bob Johnson', userCount: 6 },
+                      { name: 'DevOps', description: 'Infrastructure and deployment', head: 'Alice Brown', userCount: 4 },
+                      { name: 'Research & Development', description: 'Innovation and new technology research', head: 'Charlie Wilson', userCount: 5 }
+                    ].map((dept, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{dept.name}</h4>
+                            <p className="text-sm text-muted-foreground">{dept.description}</p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <span className="text-sm">Head: {dept.head}</span>
+                              <Badge variant="outline">{dept.userCount} members</Badge>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleTestEmail(user.id)}
+                              title="Send test email"
+                            >
+                              <Mail className="h-3 w-3" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-destructive">
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Create New Department */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Create New Department</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="dept-name">Department Name *</Label>
+                          <Input
+                            id="dept-name"
+                            value={newDepartment.name}
+                            onChange={(e) => setNewDepartment(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="e.g., Engineering, Marketing"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dept-head">Department Head</Label>
+                          <Select
+                            value={newDepartment.headId}
+                            onValueChange={(value) => setNewDepartment(prev => ({ ...prev, headId: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select department head" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {users.filter(u => ['admin', 'program_manager', 'rd_manager', 'manager'].includes(u.role)).map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name} ({user.role.replace('_', ' ')})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="dept-description">Description</Label>
+                        <Textarea
+                          id="dept-description"
+                          value={newDepartment.description}
+                          onChange={(e) => setNewDepartment(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Brief description of the department's responsibilities"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setNewDepartment({ name: '', description: '', headId: '' })}
+                        >
+                          Reset
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleCreateDepartment}
+                          disabled={!newDepartment.name.trim()}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Department
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="analytics" className="space-y-6">
           <DashboardAnalytics />
         </TabsContent>
@@ -812,21 +1006,11 @@ export function AdminDashboard() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
-                  <Select value={formData.timezone} onValueChange={(value) => updateFormField('timezone', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                      <SelectItem value="Europe/London">London</SelectItem>
-                      <SelectItem value="Europe/Paris">Paris</SelectItem>
-                      <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TimezoneSelector
+                    value={formData.timezone}
+                    onValueChange={(value) => updateFormField('timezone', value)}
+                    placeholder="Select timezone"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="currency">Preferred Currency</Label>

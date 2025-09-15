@@ -1,0 +1,31 @@
+[
+  {
+    "id": "project-1757937356657",
+    "title": "Dynatrac Ultra",
+    "description": "Cardiac Stress Test System",
+    "managerId": "user-1757932070077",
+    "priority": "MEDIUM",
+    "budgetAmount": 2500000,
+    "budgetCurrency": "INR",
+    "timeline": "30",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-15T11:55:56.657Z",
+    "updatedAt": "2025-09-15T11:55:56.657Z"
+  },
+  {
+    "id": "project-1757938579123",
+    "title": "Relife 1000 PC App",
+    "description": "This document contains the software development plan of Relife 1000 PC Application software. This Software Development Plan (SDP) outlines the technical and managerial approach for the development of the Relife 1000 PC App, a desktop application designed to support data transfer of event and trend data from Relife 1000 defibrillator. The plan defines the scope, objectives and lifecycle processes to ensure successful execution and delivery of the software product.",
+    "managerId": "user-1757932070077",
+    "priority": "MEDIUM",
+    "estimatedHours": 500,
+    "budgetAmount": 2500000,
+    "budgetCurrency": "INR",
+    "timeline": "3mos",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-15T12:16:19.123Z",
+    "updatedAt": "2025-09-15T12:16:19.123Z"
+  }
+]

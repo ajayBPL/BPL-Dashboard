@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import { db } from '../services/database';
 import { User } from '../../../shared/types';
 
 // Extend Express Request type to include user
@@ -46,31 +46,8 @@ export const authenticateToken = async (
     // Verify token
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        designation: true,
-        managerId: true,
-        department: true,
-        skills: true,
-        workloadCap: true,
-        overBeyondCap: true,
-        avatar: true,
-        phoneNumber: true,
-        timezone: true,
-        preferredCurrency: true,
-        notificationSettings: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLoginAt: true
-      }
-    });
+    // Get user from database service (falls back to mock data)
+    const user = await db.findUserById(decoded.userId);
 
     if (!user || !user.isActive) {
       res.status(401).json({
@@ -90,9 +67,9 @@ export const authenticateToken = async (
       phoneNumber: user.phoneNumber || undefined,
       timezone: user.timezone || undefined,
       preferredCurrency: user.preferredCurrency || undefined,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      lastLoginAt: user.lastLoginAt?.toISOString(),
+      createdAt: user.createdAt as string,
+      updatedAt: user.updatedAt as string,
+      lastLoginAt: user.lastLoginAt as string | undefined,
       notificationSettings: user.notificationSettings as any
     };
 
@@ -214,9 +191,7 @@ export const optionalAuth = async (
 
     if (token && process.env.JWT_SECRET) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId }
-      });
+      const user = await db.findUserById(decoded.userId);
 
       if (user && user.isActive) {
         req.user = {
@@ -228,9 +203,9 @@ export const optionalAuth = async (
           phoneNumber: user.phoneNumber || undefined,
           timezone: user.timezone || undefined,
           preferredCurrency: user.preferredCurrency || undefined,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-          lastLoginAt: user.lastLoginAt?.toISOString(),
+          createdAt: user.createdAt as string,
+          updatedAt: user.updatedAt as string,
+          lastLoginAt: user.lastLoginAt as string | undefined,
           notificationSettings: user.notificationSettings as any
         };
       }

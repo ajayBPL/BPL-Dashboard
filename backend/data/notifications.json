@@ -1,0 +1,32 @@
+[
+  {
+    "id": "notification-1757932070086",
+    "userId": "user-1757932070077",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-15T10:27:50.086Z"
+  },
+  {
+    "id": "notification-1757932094751",
+    "userId": "user-1757932094744",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-15T10:28:14.751Z"
+  },
+  {
+    "id": "notification-1757932856407",
+    "userId": "user-1757932856400",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-15T10:40:56.407Z"
+  }
+]

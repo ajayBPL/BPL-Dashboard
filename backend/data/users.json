@@ -24,8 +24,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-09-15T13:20:30.029Z",
-    "lastLoginAt": "2025-09-15T13:20:30.028Z"
+    "updatedAt": "2025-09-16T17:01:37.071Z",
+    "lastLoginAt": "2025-09-16T17:01:37.070Z"
   },
   {
     "id": "pm-001",
@@ -50,9 +50,9 @@
       "deadlineReminders": true,
       "weeklyReports": true
     },
-    "isActive": true,
+    "isActive": false,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-09-15T10:34:55.776Z",
+    "updatedAt": "2025-09-16T15:54:11.830Z",
     "lastLoginAt": "2025-09-15T10:34:55.775Z"
   },
   {
@@ -76,8 +76,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-09-15T13:19:46.860Z",
-    "lastLoginAt": "2025-09-15T13:19:46.859Z"
+    "updatedAt": "2025-09-16T15:26:26.019Z",
+    "lastLoginAt": "2025-09-16T15:26:26.018Z"
   },
   {
     "id": "user-1757932094744",
@@ -101,8 +101,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:28:14.744Z",
-    "updatedAt": "2025-09-15T10:42:56.679Z",
-    "lastLoginAt": "2025-09-15T10:42:56.678Z"
+    "updatedAt": "2025-09-16T12:51:58.969Z",
+    "lastLoginAt": "2025-09-16T12:51:58.969Z"
   },
   {
     "id": "user-1757932856400",
@@ -126,7 +126,268 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:40:56.400Z",
-    "updatedAt": "2025-09-15T10:41:26.033Z",
-    "lastLoginAt": "2025-09-15T10:41:26.032Z"
+    "updatedAt": "2025-09-16T15:42:28.894Z",
+    "lastLoginAt": "2025-09-16T15:42:28.893Z"
+  },
+  {
+    "id": "user-1758002704818",
+    "email": "manisha.m@bpl.in",
+    "name": "Manisha Manjunath",
+    "password": "$2b$12$QadXNKXEzbsk4oGgMqDl9OwliMrzkg8dphapuKoQq/K4ztEYHVLZC",
+    "role": "PROGRAM_MANAGER",
+    "designation": "Lead program integrator",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:05:04.818Z",
+    "updatedAt": "2025-09-16T06:05:04.818Z"
+  },
+  {
+    "id": "user-1758002829012",
+    "email": "vaisakh.k@bpl.in",
+    "name": "Vaisakh",
+    "password": "$2b$12$Aq6ouKHmtHMcvnnQ.eY9A.QtRX0DI0rMactDL7OsFu22rK258RZza",
+    "role": "EMPLOYEE",
+    "designation": "senior engineer",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:07:09.012Z",
+    "updatedAt": "2025-09-16T12:44:27.921Z",
+    "lastLoginAt": "2025-09-16T12:44:27.921Z"
+  },
+  {
+    "id": "user-1758002921806",
+    "email": "ardra.intern@bpl.in",
+    "name": "ardra l",
+    "password": "$2b$12$K1EwLpapCVhdDpI2tDvhzOEEiEJ/uz9PtiptslocBoLe1AcoszMya",
+    "role": "EMPLOYEE",
+    "designation": "intern",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:08:41.806Z",
+    "updatedAt": "2025-09-16T06:08:41.806Z"
+  },
+  {
+    "id": "user-1758004336591",
+    "email": "amulya.intern@bpl.in",
+    "name": "Amulya S",
+    "password": "$2b$12$QXU6iwd0KX0HKajDCf3Gm.UGZM2PXEcgGu2d5E2HxiyRHl2KRiTh.",
+    "role": "EMPLOYEE",
+    "designation": "Intern",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:32:16.591Z",
+    "updatedAt": "2025-09-16T06:32:16.591Z"
+  },
+  {
+    "id": "user-1758004408911",
+    "email": "nitin.chavan@bpl.in",
+    "name": "Nitin Chavan",
+    "password": "$2b$12$aNMF6ddA5o8cDsQQ3k5m8u0O7ToBBBc1v3JMrpALyKYGx7BK1QU3K",
+    "role": "RD_MANAGER",
+    "designation": "AGM - R & D",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:33:28.911Z",
+    "updatedAt": "2025-09-16T06:33:28.911Z"
+  },
+  {
+    "id": "user-1758004492492",
+    "email": "murali.menon@bpl.in",
+    "name": "Muralikrishna Menon",
+    "password": "$2b$12$vtnle6RP9HTJrwoz0/J0JOObjxUnbdS4I7afO.dg43knxKxmjVAru",
+    "role": "RD_MANAGER",
+    "designation": "VP R&D",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:34:52.492Z",
+    "updatedAt": "2025-09-16T06:47:47.799Z",
+    "lastLoginAt": "2025-09-16T06:47:47.798Z"
+  },
+  {
+    "id": "user-1758004591405",
+    "email": "samiksha.shetty@bpl.in",
+    "name": "samiksha shetty",
+    "password": "$2b$12$Ntdn6yVCRYS2U3/e.gNuuuyWElqXiyiE1ZpUd/fU4J276M6Kp.tv6",
+    "role": "EMPLOYEE",
+    "designation": "Graduate Engineer Trainee",
+    "managerId": "user-1758004408911",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:36:31.405Z",
+    "updatedAt": "2025-09-16T06:36:31.405Z"
+  },
+  {
+    "id": "user-1758004842376",
+    "email": "rajiv.sharma@bpl.in",
+    "name": "Rajiv Sharma",
+    "password": "$2b$12$dxNwy2pW/v.dZOE4KxPGUO0/1fKa8Vjb7BNY0NaD.iG.mjbMvOV6K",
+    "role": "MANAGER",
+    "designation": "AGM- R&D (Verification Validation & IB Engineering ) • V&V",
+    "managerId": "user-1758004492492",
+    "department": "V&V",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:40:42.376Z",
+    "updatedAt": "2025-09-16T06:45:22.745Z",
+    "lastLoginAt": "2025-09-16T06:45:22.744Z"
+  },
+  {
+    "id": "user-1758005004239",
+    "email": "ankar.das@bpl.in",
+    "name": "Ankar Das",
+    "password": "$2b$12$AmOdzyMQloQT36tqxMkMBOVsQzUdPaK/lkmJIVzNKR5lCh7VyvWMO",
+    "role": "EMPLOYEE",
+    "designation": "Sr. Graphic Designer",
+    "managerId": "user-1757932070077",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:43:24.239Z",
+    "updatedAt": "2025-09-16T06:43:24.239Z"
+  },
+  {
+    "id": "user-1758005074568",
+    "email": "m.shivanagu@bpl.in",
+    "name": "Shivanagu M",
+    "password": "$2b$12$r/HYV1VmiHkhaUf5TfizLezCoKjIgincJk35YRPsl1aWAaFK5m7Ti",
+    "role": "MANAGER",
+    "designation": "Senior Manager-R&D",
+    "managerId": "user-1758004842376",
+    "department": "V&V",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T06:44:34.568Z",
+    "updatedAt": "2025-09-16T06:44:34.568Z"
+  },
+  {
+    "id": "user-1758012657126",
+    "email": "sai.krishna@bpl.in",
+    "name": "P Saikrishna",
+    "password": "$2b$12$/yAKhDoOs5r4JgHp0GCl9uA2mNRyz0E0qU4v5p/xlTlWdBx0eRTi.",
+    "role": "EMPLOYEE",
+    "designation": "Sr. Engineer - R&D",
+    "managerId": "user-1758004408911",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-16T08:50:57.126Z",
+    "updatedAt": "2025-09-16T08:50:57.126Z"
   }
 ]

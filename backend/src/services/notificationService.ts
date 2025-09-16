@@ -76,7 +76,7 @@ class NotificationService {
           await this.createAndSendNotification({
             type: 'deadline',
             title: 'Overdue Milestone',
-            message: `Milestone "${milestone.title}" in project "${project.title}" is overdue. Due date was ${milestone.dueDate.toLocaleDateString()}.`,
+            message: `Milestone "${milestone.title}" in project "${project.title}" is overdue. Due date was ${new Date(milestone.dueDate).toLocaleDateString()}.`,
             entityType: 'milestone',
             entityId: milestone.id,
             priority: 'high',

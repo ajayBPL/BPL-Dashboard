@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { centralizedDb, CentralizedProject } from '../utils/centralizedDb'
 import { useAuth } from '../contexts/AuthContext'
+import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { ProgressEditor } from './ProgressEditor'
 import { ProjectEditDialog } from './project/ProjectEditDialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
@@ -70,11 +71,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       }
 
       // Fetch employees
-      const usersResponse = await fetch('http://192.168.10.205:3001/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const usersResponse = await fetch(API_ENDPOINTS.USERS, {
+        headers: getDefaultHeaders(token)
       })
 
       if (usersResponse.ok) {
@@ -111,11 +109,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       }
 
       // Fetch projects
-      const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const projectsResponse = await fetch(API_ENDPOINTS.PROJECTS, {
+        headers: getDefaultHeaders(token)
       })
 
       if (projectsResponse.ok) {
@@ -238,11 +233,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       const token = localStorage.getItem('bpl-token')
       if (token) {
         try {
-          const response = await fetch(`http://192.168.10.205:3001/api/projects/${projectId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+          const response = await fetch(API_ENDPOINTS.PROJECT_BY_ID(projectId), {
+            headers: getDefaultHeaders(token)
           })
 
           if (response.ok) {
@@ -314,27 +306,41 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       return
     }
 
-    // Check employee workload capacity
-    const employeeWorkload = centralizedDb.getEmployeeWorkload(selectedEmployeeId)
-    if (employeeWorkload.availableCapacity < involvementPercentage) {
-      toast.error(`Employee only has ${employeeWorkload.availableCapacity.toFixed(1)}% available capacity`)
-      return
-    }
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
+        return
+      }
 
-    const success = centralizedDb.assignEmployeeToProject(project.id, {
-      employeeId: selectedEmployeeId,
-      involvementPercentage,
-      role: employeeRole
-    })
+      const response = await fetch(API_ENDPOINTS.PROJECTS, {
+        method: 'POST',
+        headers: getDefaultHeaders(token),
+        body: JSON.stringify({
+          action: 'assign',
+          id: project.id,
+          data: {
+            employeeId: selectedEmployeeId,
+            involvementPercentage,
+            role: employeeRole
+          }
+        })
+      })
 
-    if (success) {
-      toast.success('Employee assigned successfully!')
-      fetchProjectDetails()
-      setShowAssignEmployee(false)
-      setSelectedEmployeeId('')
-      setInvolvementPercentage(20)
-      setEmployeeRole('')
-    } else {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Employee assigned successfully!')
+        fetchProjectDetails()
+        setShowAssignEmployee(false)
+        setSelectedEmployeeId('')
+        setInvolvementPercentage(20)
+        setEmployeeRole('')
+      } else {
+        toast.error(data.error || 'Failed to assign employee')
+      }
+    } catch (error) {
+      console.error('Error assigning employee:', error)
       toast.error('Failed to assign employee')
     }
   }
@@ -342,11 +348,35 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
   const handleRemoveEmployee = async (employeeId: string) => {
     if (!project) return
 
-    const success = centralizedDb.removeEmployeeFromProject(project.id, employeeId)
-    if (success) {
-      toast.success('Employee removed from project')
-      fetchProjectDetails()
-    } else {
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
+        return
+      }
+
+      const response = await fetch(API_ENDPOINTS.PROJECTS, {
+        method: 'POST',
+        headers: getDefaultHeaders(token),
+        body: JSON.stringify({
+          action: 'unassign',
+          id: project.id,
+          data: {
+            employeeId: employeeId
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Employee removed from project')
+        fetchProjectDetails()
+      } else {
+        toast.error(data.error || 'Failed to remove employee')
+      }
+    } catch (error) {
+      console.error('Error removing employee:', error)
       toast.error('Failed to remove employee')
     }
   }
@@ -357,29 +387,38 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
     const assignment = project.assignedEmployees.find(a => a.employeeId === employeeId)
     if (!assignment) return
 
-    // Check workload if updating percentage
-    if (updates.involvementPercentage && updates.involvementPercentage !== assignment.involvementPercentage) {
-      const employeeWorkload = centralizedDb.getEmployeeWorkload(employeeId)
-      const currentProjectWorkload = assignment.involvementPercentage
-      const availableCapacity = employeeWorkload.availableCapacity + currentProjectWorkload
-      
-      if (updates.involvementPercentage > availableCapacity) {
-        toast.error(`Cannot increase involvement. Available capacity: ${availableCapacity.toFixed(1)}%`)
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('No authentication token found')
         return
       }
-    }
 
-    const success = centralizedDb.assignEmployeeToProject(project.id, {
-      employeeId,
-      involvementPercentage: updates.involvementPercentage || assignment.involvementPercentage,
-      role: updates.role || assignment.role
-    })
+      const response = await fetch(API_ENDPOINTS.PROJECTS, {
+        method: 'POST',
+        headers: getDefaultHeaders(token),
+        body: JSON.stringify({
+          action: 'assign',
+          id: project.id,
+          data: {
+            employeeId,
+            involvementPercentage: updates.involvementPercentage || assignment.involvementPercentage,
+            role: updates.role || assignment.role
+          }
+        })
+      })
 
-    if (success) {
-      toast.success('Assignment updated successfully!')
-      fetchProjectDetails()
-      setEditingAssignment(null)
-    } else {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Assignment updated successfully!')
+        fetchProjectDetails()
+        setEditingAssignment(null)
+      } else {
+        toast.error(data.error || 'Failed to update assignment')
+      }
+    } catch (error) {
+      console.error('Error updating assignment:', error)
       toast.error('Failed to update assignment')
     }
   }

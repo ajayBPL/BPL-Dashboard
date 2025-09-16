@@ -1,0 +1,20 @@
+[
+  {
+    "id": "role-1758047373654",
+    "name": "tester",
+    "description": "tester",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-09-16T18:29:33.654Z",
+    "updatedAt": "2025-09-16T18:29:33.654Z"
+  },
+  {
+    "id": "role-1758047423390",
+    "name": "Tester",
+    "description": "",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-09-16T18:30:23.390Z",
+    "updatedAt": "2025-09-16T18:30:23.390Z"
+  }
+]

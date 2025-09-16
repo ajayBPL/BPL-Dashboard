@@ -11,7 +11,47 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-15T11:55:56.657Z"
+    "updatedAt": "2025-09-16T13:23:10.142Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758028965338",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 35,
+        "role": "developer",
+        "assignedAt": "2025-09-16T13:22:45.338Z",
+        "updatedAt": "2025-09-16T13:22:45.338Z"
+      },
+      {
+        "id": "assignment-1758028990141",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 80,
+        "role": "programmer",
+        "assignedAt": "2025-09-16T13:23:10.141Z",
+        "updatedAt": "2025-09-16T13:23:10.141Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758028965338",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 35,
+        "role": "developer",
+        "assignedAt": "2025-09-16T13:22:45.338Z",
+        "updatedAt": "2025-09-16T13:22:45.338Z"
+      },
+      {
+        "id": "assignment-1758028990141",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 80,
+        "role": "programmer",
+        "assignedAt": "2025-09-16T13:23:10.141Z",
+        "updatedAt": "2025-09-16T13:23:10.141Z"
+      }
+    ]
   },
   {
     "id": "project-1757938579123",
@@ -26,6 +66,101 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-15T12:16:19.123Z",
-    "updatedAt": "2025-09-15T12:16:19.123Z"
+    "updatedAt": "2025-09-16T15:29:59.614Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758012721442",
+        "projectId": "project-1757938579123",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 50,
+        "role": "developer",
+        "assignedAt": "2025-09-16T08:52:01.442Z",
+        "updatedAt": "2025-09-16T08:52:01.442Z"
+      },
+      {
+        "id": "assignment-1758036599613",
+        "projectId": "project-1757938579123",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 10,
+        "role": "programmer",
+        "assignedAt": "2025-09-16T15:29:59.613Z",
+        "updatedAt": "2025-09-16T15:29:59.613Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758036599613",
+        "projectId": "project-1757938579123",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 10,
+        "role": "programmer",
+        "assignedAt": "2025-09-16T15:29:59.613Z",
+        "updatedAt": "2025-09-16T15:29:59.613Z"
+      }
+    ]
+  },
+  {
+    "id": "project-1758003200079",
+    "title": "Relife 1000",
+    "description": "Defibrillator model Relife 1000.",
+    "managerId": "user-1757932070077",
+    "priority": "CRITICAL",
+    "budgetCurrency": "USD",
+    "timeline": "1 month ",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-16T06:13:20.079Z",
+    "updatedAt": "2025-09-16T09:10:39.205Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758006498444",
+        "projectId": "project-1758003200079",
+        "employeeId": "user-1758002829012",
+        "involvementPercentage": 100,
+        "role": "LPI",
+        "assignedAt": "2025-09-16T07:08:18.444Z",
+        "updatedAt": "2025-09-16T07:08:18.444Z",
+        "employee": {
+          "id": "user-1758002829012",
+          "name": "Vaisakh",
+          "email": "vaisakh.k@bpl.in",
+          "role": "EMPLOYEE",
+          "designation": "senior engineer"
+        }
+      },
+      {
+        "id": "assignment-1758013839204",
+        "projectId": "project-1758003200079",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 30,
+        "role": "developer",
+        "assignedAt": "2025-09-16T09:10:39.204Z",
+        "updatedAt": "2025-09-16T09:10:39.204Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758013839204",
+        "projectId": "project-1758003200079",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 30,
+        "role": "developer",
+        "assignedAt": "2025-09-16T09:10:39.204Z",
+        "updatedAt": "2025-09-16T09:10:39.204Z"
+      }
+    ]
+  },
+  {
+    "id": "project-1758037305940",
+    "title": "demo",
+    "description": "Zzvxcbnvmb,xzxvbcnm,xvcbn,mxgcvnm,",
+    "managerId": "user-1757932070077",
+    "priority": "MEDIUM",
+    "budgetCurrency": "USD",
+    "timeline": "2",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-16T15:41:45.940Z",
+    "updatedAt": "2025-09-16T15:41:45.940Z"
   }
 ]

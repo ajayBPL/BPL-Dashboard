@@ -21,6 +21,9 @@ import settingsRoutes from './routes/settings';
 import searchRoutes from './routes/search';
 import activityRoutes from './routes/activity';
 import mockUserRoutes from './routes/mock-users';
+import syncRoutes from './routes/sync';
+import roleRoutes from './routes/roles';
+import departmentRoutes from './routes/departments';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -119,6 +122,9 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/mock-users', mockUserRoutes);
+app.use('/api/sync', syncRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);
@@ -142,7 +148,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
+  console.log(`🌐 Network access: http://192.168.29.213:${PORT}/health`);
 });
 
 // Handle unhandled promise rejections

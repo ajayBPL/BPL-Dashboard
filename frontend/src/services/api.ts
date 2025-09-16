@@ -1,5 +1,5 @@
 // API Service for connecting to the backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.10.205:3001/api';
+import { API_BASE_URL, API_HEALTH_URL, API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -160,7 +160,7 @@ class ApiService {
   // Health check
   async healthCheck() {
     try {
-      const response = await fetch('http://192.168.10.205:3001/health');
+      const response = await fetch(API_HEALTH_URL);
       const data = await response.json();
       console.log('🏥 Backend Health Check:', data);
       return data;

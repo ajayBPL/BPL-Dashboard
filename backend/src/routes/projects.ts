@@ -291,153 +291,51 @@ async function handleUpdateProject(req: Request, res: Response, projectId: strin
 }
 
 async function handleAssignEmployee(req: Request, res: Response, projectId: string, assignmentData: AssignEmployeeRequest): Promise<void> {
-  // Check if project exists
-  const project = await prisma.project.findUnique({
-    where: { id: projectId }
-  });
+  try {
+    // Use database service for assignment
+    const assignment = await db.assignEmployeeToProject(projectId, assignmentData, req.user!.id);
 
-  if (!project) {
-    throw new NotFoundError('Project not found');
-  }
-
-  // Check if employee exists
-  const employee = await prisma.user.findUnique({
-    where: { id: assignmentData.employeeId }
-  });
-
-  if (!employee) {
-    throw new NotFoundError('Employee not found');
-  }
-
-  // Check if already assigned
-  const existingAssignment = await prisma.projectAssignment.findUnique({
-    where: {
-      projectId_employeeId: {
-        projectId: projectId,
-        employeeId: assignmentData.employeeId
+    res.json({
+      success: true,
+      data: assignment,
+      message: 'Employee assigned successfully',
+      meta: {
+        timestamp: new Date().toISOString()
       }
+    });
+  } catch (error) {
+    console.error('Error assigning employee:', error);
+    
+    // Provide more specific error messages
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('already assigned')) {
+      throw new ValidationError('Employee is already assigned to this project. Use update to modify assignment.');
+    } else if (errorMessage.includes('workload capacity')) {
+      throw new ValidationError(errorMessage);
+    } else if (errorMessage.includes('not found')) {
+      throw new NotFoundError(errorMessage);
+    } else {
+      throw new Error(`Failed to assign employee: ${errorMessage}`);
     }
-  });
-
-  if (existingAssignment) {
-    throw new ValidationError('Employee is already assigned to this project');
   }
-
-  // Check workload capacity
-  const currentAssignments = await prisma.projectAssignment.findMany({
-    where: { employeeId: assignmentData.employeeId },
-    include: {
-      project: {
-        select: { status: true }
-      }
-    }
-  });
-
-  const currentWorkload = currentAssignments
-    .filter(a => a.project.status === 'ACTIVE')
-    .reduce((sum, a) => sum + a.involvementPercentage, 0);
-
-  if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
-    throw new ValidationError(`Assignment would exceed employee's workload capacity (${employee.workloadCap}%)`);
-  }
-
-  // Create assignment
-  const assignment = await prisma.projectAssignment.create({
-    data: {
-      projectId: projectId,
-      employeeId: assignmentData.employeeId,
-      involvementPercentage: assignmentData.involvementPercentage,
-      role: assignmentData.role
-    },
-    include: {
-      employee: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          designation: true
-        }
-      }
-    }
-  });
-
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'USER_ASSIGNED',
-      entityType: 'PROJECT',
-      entityId: projectId,
-      projectId: projectId,
-      details: `Assigned ${employee.name} to project with ${assignmentData.involvementPercentage}% involvement`
-    }
-  });
-
-  // Send notification for assigned employee
-  await notificationService.sendProjectAssignmentNotification(projectId, assignmentData.employeeId, req.user!.id);
-
-  res.json({
-    success: true,
-    data: {
-      ...assignment,
-      assignedAt: assignment.assignedAt.toISOString(),
-      updatedAt: assignment.updatedAt.toISOString()
-    },
-    message: 'Employee assigned successfully',
-    meta: {
-      timestamp: new Date().toISOString()
-    }
-  });
 }
 
 async function handleUnassignEmployee(req: Request, res: Response, projectId: string, data: { employeeId: string }): Promise<void> {
-  const assignment = await prisma.projectAssignment.findUnique({
-    where: {
-      projectId_employeeId: {
-        projectId: projectId,
-        employeeId: data.employeeId
-      }
-    },
-    include: {
-      employee: {
-        select: { name: true }
-      }
-    }
-  });
+  try {
+    // Use database service for unassignment
+    await db.unassignEmployeeFromProject(projectId, data.employeeId, req.user!.id);
 
-  if (!assignment) {
-    throw new NotFoundError('Assignment not found');
+    res.json({
+      success: true,
+      message: 'Employee unassigned successfully',
+      meta: {
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error unassigning employee:', error);
+    throw error;
   }
-
-  await prisma.projectAssignment.delete({
-    where: {
-      projectId_employeeId: {
-        projectId: projectId,
-        employeeId: data.employeeId
-      }
-    }
-  });
-
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'USER_UNASSIGNED',
-      entityType: 'PROJECT',
-      entityId: projectId,
-      projectId: projectId,
-      details: `Unassigned ${assignment.employee.name} from project`
-    }
-  });
-
-  res.json({
-    success: true,
-    message: 'Employee unassigned successfully',
-    meta: {
-      timestamp: new Date().toISOString()
-    }
-  });
 }
 
 async function handleMilestoneAction(req: Request, res: Response, projectId: string, milestoneData: any): Promise<void> {

@@ -17,17 +17,33 @@ class DatabaseService {
   async testConnection(): Promise<boolean> {
     try {
       await this.prisma.$connect();
-      await this.prisma.$disconnect();
+      // Test with a simple query
+      await this.prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection successful');
       return true;
     } catch (error) {
-      console.log('Database connection failed, falling back to mock data');
+      console.log('❌ Database connection failed, falling back to mock data');
+      console.log('Error:', error instanceof Error ? error.message : String(error));
       this.useMock = true;
       return false;
     }
   }
 
+  // Check if we should use mock data
+  private async checkConnection(): Promise<void> {
+    if (!this.useMock) {
+      try {
+        await this.prisma.$queryRaw`SELECT 1`;
+      } catch (error) {
+        console.log('Database connection lost, switching to mock data');
+        this.useMock = true;
+      }
+    }
+  }
+
   // User operations
   async findUserByEmail(email: string) {
+    await this.checkConnection();
     if (this.useMock) {
       return await fileBasedMockDb.findUserByEmail(email);
     }
@@ -406,6 +422,151 @@ class DatabaseService {
         createdAt: version.createdAt.toISOString()
       }))
     };
+  }
+
+  async assignEmployeeToProject(projectId: string, assignmentData: any, managerId: string) {
+    await this.checkConnection();
+    if (this.useMock) {
+      return await fileBasedMockDb.assignEmployeeToProject(projectId, assignmentData, managerId);
+    }
+
+    // Check if project exists
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId }
+    });
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    // Check if employee exists
+    const employee = await this.prisma.user.findUnique({
+      where: { id: assignmentData.employeeId }
+    });
+
+    if (!employee) {
+      throw new Error('Employee not found');
+    }
+
+    // Check if already assigned
+    const existingAssignment = await this.prisma.projectAssignment.findUnique({
+      where: {
+        projectId_employeeId: {
+          projectId: projectId,
+          employeeId: assignmentData.employeeId
+        }
+      }
+    });
+
+    if (existingAssignment) {
+      throw new Error('Employee is already assigned to this project');
+    }
+
+    // Check workload capacity
+    const currentAssignments = await this.prisma.projectAssignment.findMany({
+      where: { employeeId: assignmentData.employeeId },
+      include: {
+        project: {
+          select: { status: true }
+        }
+      }
+    });
+
+    const currentWorkload = currentAssignments
+      .filter(a => a.project.status === 'ACTIVE')
+      .reduce((sum, a) => sum + a.involvementPercentage, 0);
+
+    if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
+      throw new Error(`Assignment would exceed employee's workload capacity (${employee.workloadCap}%)`);
+    }
+
+    // Create assignment
+    const assignment = await this.prisma.projectAssignment.create({
+      data: {
+        projectId: projectId,
+        employeeId: assignmentData.employeeId,
+        involvementPercentage: assignmentData.involvementPercentage,
+        role: assignmentData.role
+      },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            designation: true
+          }
+        }
+      }
+    });
+
+    // Log activity
+    await this.prisma.activityLog.create({
+      data: {
+        userId: managerId,
+        action: 'USER_ASSIGNED',
+        entityType: 'PROJECT',
+        entityId: projectId,
+        projectId: projectId,
+        details: `Assigned ${employee.name} to project with ${assignmentData.involvementPercentage}% involvement`
+      }
+    });
+
+    return {
+      ...assignment,
+      assignedAt: assignment.assignedAt.toISOString(),
+      updatedAt: assignment.updatedAt.toISOString()
+    };
+  }
+
+  async unassignEmployeeFromProject(projectId: string, employeeId: string, managerId: string) {
+    if (this.useMock) {
+      return await fileBasedMockDb.unassignEmployeeFromProject(projectId, employeeId, managerId);
+    }
+
+    // Check if assignment exists
+    const assignment = await this.prisma.projectAssignment.findUnique({
+      where: {
+        projectId_employeeId: {
+          projectId: projectId,
+          employeeId: employeeId
+        }
+      },
+      include: {
+        employee: {
+          select: { name: true }
+        }
+      }
+    });
+
+    if (!assignment) {
+      throw new Error('Assignment not found');
+    }
+
+    // Delete assignment
+    await this.prisma.projectAssignment.delete({
+      where: {
+        projectId_employeeId: {
+          projectId: projectId,
+          employeeId: employeeId
+        }
+      }
+    });
+
+    // Log activity
+    await this.prisma.activityLog.create({
+      data: {
+        userId: managerId,
+        action: 'USER_UNASSIGNED',
+        entityType: 'PROJECT',
+        entityId: projectId,
+        projectId: projectId,
+        details: `Unassigned ${assignment.employee.name} from project`
+      }
+    });
+
+    return { success: true };
   }
 
   // Notification operations

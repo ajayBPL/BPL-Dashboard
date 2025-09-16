@@ -28,5 +28,115 @@
     "priority": "MEDIUM",
     "actionUrl": "/profile",
     "createdAt": "2025-09-15T10:40:56.407Z"
+  },
+  {
+    "id": "notification-1758002704900",
+    "userId": "user-1758002704818",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:05:04.900Z"
+  },
+  {
+    "id": "notification-1758002829028",
+    "userId": "user-1758002829012",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:07:09.028Z"
+  },
+  {
+    "id": "notification-1758002921822",
+    "userId": "user-1758002921806",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:08:41.822Z"
+  },
+  {
+    "id": "notification-1758004336605",
+    "userId": "user-1758004336591",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:32:16.605Z"
+  },
+  {
+    "id": "notification-1758004408927",
+    "userId": "user-1758004408911",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:33:28.927Z"
+  },
+  {
+    "id": "notification-1758004492506",
+    "userId": "user-1758004492492",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:34:52.506Z"
+  },
+  {
+    "id": "notification-1758004591422",
+    "userId": "user-1758004591405",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:36:31.422Z"
+  },
+  {
+    "id": "notification-1758004842395",
+    "userId": "user-1758004842376",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:40:42.395Z"
+  },
+  {
+    "id": "notification-1758005004255",
+    "userId": "user-1758005004239",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:43:24.255Z"
+  },
+  {
+    "id": "notification-1758005074585",
+    "userId": "user-1758005074568",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T06:44:34.585Z"
+  },
+  {
+    "id": "notification-1758012657129",
+    "userId": "user-1758012657126",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-16T08:50:57.129Z"
   }
 ]

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { centralizedDb, CentralizedUser } from '../utils/centralizedDb'
 import { useAuth } from '../contexts/AuthContext'
+import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -85,11 +86,8 @@ export function EmployeeManagement() {
         return
       }
 
-      const usersResponse = await fetch('http://192.168.10.205:3001/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const usersResponse = await fetch(API_ENDPOINTS.USERS, {
+        headers: getDefaultHeaders(token)
       })
 
       if (!usersResponse.ok) {
@@ -124,11 +122,8 @@ export function EmployeeManagement() {
       }))
 
       // Fetch projects from backend API
-      const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const projectsResponse = await fetch(API_ENDPOINTS.PROJECTS, {
+        headers: getDefaultHeaders(token)
       })
 
       let backendProjects: any[] = []

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { centralizedDb, CentralizedProject, CentralizedInitiative, BudgetInfo } from '../utils/centralizedDb'
+import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { ExportSystem } from './ExportSystem'
 import { ProjectDetails } from './ProjectDetails'
 import { ProjectCard } from './project/ProjectCard'
@@ -9,6 +10,7 @@ import { DashboardStats } from './project/DashboardStats'
 import { InitiativeCreateDialog } from './initiatives/InitiativeCreateDialog'
 import { InitiativesList } from './initiatives/InitiativesList'
 import { EmployeeManagement } from './EmployeeManagement'
+import { Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Dialog, DialogTrigger } from './ui/dialog'
@@ -16,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Badge } from './ui/badge'
+import { Label } from './ui/label'
 import { Plus, Download, Target, Lightbulb, Search, Filter, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -34,6 +37,11 @@ export function ManagerDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  
+  // Team hierarchy states
+  const [users, setUsers] = useState<any[]>([])
+  const [subordinateEmployees, setSubordinateEmployees] = useState<any[]>([])
+  const [selectedManager, setSelectedManager] = useState<string>('all')
   
   // Form states with improved structure
   const [projectForm, setProjectForm] = useState({
@@ -69,6 +77,13 @@ export function ManagerDashboard() {
     filterProjects()
   }, [projects, searchQuery, statusFilter, priorityFilter])
 
+  useEffect(() => {
+    if (users.length > 0 && currentUser) {
+      const subordinateEmployees = getAllSubordinateEmployees()
+      setSubordinateEmployees(subordinateEmployees)
+    }
+  }, [users, currentUser])
+
   const fetchData = async () => {
     if (!currentUser) return
     
@@ -79,11 +94,8 @@ export function ManagerDashboard() {
       const token = localStorage.getItem('bpl-token')
       if (token) {
         try {
-          const projectsResponse = await fetch('http://192.168.10.205:3001/api/projects', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+          const projectsResponse = await fetch(API_ENDPOINTS.PROJECTS, {
+            headers: getDefaultHeaders(token)
           })
 
           if (projectsResponse.ok) {
@@ -142,6 +154,8 @@ export function ManagerDashboard() {
           // Fallback to centralizedDb
           const allProjects = centralizedDb.getProjects()
           const allInitiatives = centralizedDb.getInitiatives()
+          const allUsers = centralizedDb.getUsers()
+          setUsers(allUsers)
           
           if (currentUser.role === 'admin') {
             setProjects(allProjects)
@@ -169,6 +183,8 @@ export function ManagerDashboard() {
         // No token, use centralizedDb
         const allProjects = centralizedDb.getProjects()
         const allInitiatives = centralizedDb.getInitiatives()
+        const allUsers = centralizedDb.getUsers()
+        setUsers(allUsers)
         
         if (currentUser.role === 'admin') {
           setProjects(allProjects)
@@ -207,6 +223,68 @@ export function ManagerDashboard() {
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Get subordinate managers (managers who report to current user)
+  const getSubordinateManagers = () => {
+    if (!currentUser) return []
+    
+    // For admins, program managers, and R&D managers, get all managers who report to them
+    if (currentUser.role === 'admin' || currentUser.role === 'program_manager' || currentUser.role === 'rd_manager' || 
+        currentUser.role === 'PROGRAM_MANAGER' || currentUser.role === 'RD_MANAGER') {
+      return users.filter(user => 
+        user.managerId === currentUser.id && 
+        (user.role === 'manager' || user.role === 'rd_manager' || user.role === 'MANAGER' || user.role === 'RD_MANAGER')
+      )
+    }
+    return []
+  }
+
+  // Get employees under a specific manager
+  const getEmployeesUnderManager = (managerId: string) => {
+    return users.filter(user => 
+      user.managerId === managerId && 
+      (user.role === 'employee' || user.role === 'EMPLOYEE')
+    )
+  }
+
+  // Get all employees under subordinate managers
+  const getAllSubordinateEmployees = () => {
+    const subordinateManagers = getSubordinateManagers()
+    const allEmployees: any[] = []
+    
+    subordinateManagers.forEach(manager => {
+      const employees = getEmployeesUnderManager(manager.id)
+      employees.forEach(employee => {
+        allEmployees.push({
+          ...employee,
+          managerName: manager.name,
+          managerRole: manager.role
+        })
+      })
+    })
+    
+    return allEmployees
+  }
+
+  // Get role display name
+  const getRoleDisplay = (role: string) => {
+    switch (role) {
+      case 'program_manager':
+      case 'PROGRAM_MANAGER':
+        return 'Program Manager'
+      case 'rd_manager':
+      case 'RD_MANAGER':
+        return 'R&D Manager'
+      case 'EMPLOYEE':
+        return 'Employee'
+      case 'MANAGER':
+        return 'Manager'
+      case 'admin':
+        return 'Admin'
+      default:
+        return role.charAt(0).toUpperCase() + role.slice(1)
     }
   }
 
@@ -295,12 +373,9 @@ export function ManagerDashboard() {
       }
 
       // Create project via backend API
-      const response = await fetch('http://192.168.10.205:3001/api/projects', {
+      const response = await fetch(API_ENDPOINTS.PROJECTS, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getDefaultHeaders(token),
         body: JSON.stringify({
           action: 'create',
           data: projectData
@@ -680,7 +755,132 @@ export function ManagerDashboard() {
         </TabsContent>
 
         <TabsContent value="employees" className="space-y-6">
-          <EmployeeManagement />
+          {/* Show hierarchical view for R&D Managers and Program Managers */}
+          {(currentUser?.role === 'PROGRAM_MANAGER' || currentUser?.role === 'RD_MANAGER' || 
+            currentUser?.role === 'program_manager' || currentUser?.role === 'rd_manager') ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Team Hierarchy View
+                  </CardTitle>
+                  <CardDescription>
+                    View all employees under managers who report to you
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Manager Filter */}
+                  <div className="mb-6">
+                    <Label htmlFor="managerFilter" className="text-sm font-medium mb-2 block">
+                      Filter by Manager
+                    </Label>
+                    <Select value={selectedManager} onValueChange={setSelectedManager}>
+                      <SelectTrigger className="w-64">
+                        <SelectValue placeholder="All managers" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Managers</SelectItem>
+                        {getSubordinateManagers().map((manager) => (
+                          <SelectItem key={manager.id} value={manager.id}>
+                            {manager.name} ({getRoleDisplay(manager.role)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Subordinate Managers Overview */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4">Subordinate Managers</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {getSubordinateManagers().map((manager) => {
+                        const employees = getEmployeesUnderManager(manager.id)
+                        return (
+                          <Card key={manager.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium">{manager.name}</h4>
+                                <p className="text-sm text-muted-foreground">{getRoleDisplay(manager.role)}</p>
+                                <p className="text-sm text-muted-foreground">{employees.length} employees</p>
+                              </div>
+                              <Badge variant="secondary">
+                                {employees.length} employees
+                              </Badge>
+                            </div>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Employees List */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Employees Under Subordinate Managers</h3>
+                    {subordinateEmployees.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No employees found under subordinate managers</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(selectedManager && selectedManager !== 'all'
+                          ? subordinateEmployees.filter(emp => emp.managerId === selectedManager)
+                          : subordinateEmployees
+                        ).map((employee) => {
+                          const workload = employee.workloadCap || 0
+                          return (
+                            <Card key={employee.id} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-300 font-medium">
+                                      {employee.name.charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium">{employee.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{employee.email}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Reports to: {employee.managerName} ({getRoleDisplay(employee.managerRole)})
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                  <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Workload</p>
+                                    <p className={`font-medium ${
+                                      workload > 100 ? 'text-red-600' :
+                                      workload > 80 ? 'text-yellow-600' : 'text-green-600'
+                                    }`}>
+                                      {workload}%
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Department</p>
+                                    <p className="font-medium">{employee.department || 'Not assigned'}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Designation</p>
+                                    <p className="font-medium">{employee.designation || 'Not assigned'}</p>
+                                  </div>
+                                  <Badge variant="outline">
+                                    {getRoleDisplay(employee.role)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <EmployeeManagement />
+          )}
         </TabsContent>
       </Tabs>
 

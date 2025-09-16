@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { centralizedDb } from '../utils/centralizedDb'
+import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 
 interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee'
+  role: 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee' | 'PROGRAM_MANAGER' | 'RD_MANAGER' | 'MANAGER' | 'EMPLOYEE'
   designation: string
   managerId?: string
   password?: string
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabaseUrl: 'https://bplcommander-demo.supabase.co'
   })
 
-  useEffect(() => {
+  useEffect(() => { 
     // Check for existing session in localStorage
     const storedUser = localStorage.getItem('bpl-user')
     const storedToken = localStorage.getItem('bpl-token')
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           centralizedDb.addUser({
             email: userData.email,
             name: userData.name,
-            role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee',
+            role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee' | 'PROGRAM_MANAGER' | 'RD_MANAGER' | 'MANAGER' | 'EMPLOYEE',
             designation: userData.designation,
             managerId: userData.managerId,
             lastLoginAt: new Date().toISOString(),
@@ -86,11 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // Call the real API
-      const response = await fetch('http://192.168.10.205:3001/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getDefaultHeaders(),
         body: JSON.stringify({ email, password }),
       });
 
@@ -119,10 +118,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (!existingUser) {
         console.log('AuthContext Debug - Adding new user to centralizedDb');
-        const addedUser =         centralizedDb.addUser({
+        const addedUser = centralizedDb.addUser({
           email: userData.email,
           name: userData.name,
-          role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee',
+          role: userData.role as 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee' | 'PROGRAM_MANAGER' | 'RD_MANAGER' | 'MANAGER' | 'EMPLOYEE',
           designation: userData.designation,
           managerId: userData.managerId,
           lastLoginAt: new Date().toISOString(),

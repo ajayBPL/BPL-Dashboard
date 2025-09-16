@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiUrl, getDefaultHeaders } from '../utils/apiConfig';
 
 export function ApiTester() {
   const [results, setResults] = useState<any[]>([]);
@@ -39,14 +40,11 @@ export function ApiTester() {
   };
 
   const makeAuthenticatedRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
-    const url = endpoint.startsWith('/') ? `http://192.168.10.205:3001${endpoint}` : endpoint;
+    const url = getApiUrl(endpoint);
     
     const config: RequestInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-      },
+      headers: getDefaultHeaders(accessToken),
     };
 
     if (body && method !== 'GET') {
@@ -112,7 +110,7 @@ export function ApiTester() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             🧪 API Tester
-            <Badge variant="outline">Backend: 192.168.10.205:3001</Badge>
+            <Badge variant="outline">Backend: localhost:3001</Badge>
           </CardTitle>
           <CardDescription>
             Test API endpoints and monitor network requests in DevTools → Network tab
@@ -222,7 +220,7 @@ export function ApiTester() {
         <CardContent className="text-sm space-y-2">
           <div><strong>1. Open DevTools:</strong> Press F12 or right-click → Inspect</div>
           <div><strong>2. Go to Network tab:</strong> Click on "Network" in DevTools</div>
-          <div><strong>3. Filter requests:</strong> Type "192.168.10.205:3001" in the filter box</div>
+          <div><strong>3. Filter requests:</strong> Type "localhost:3001" in the filter box</div>
           <div><strong>4. Test API calls:</strong> Click the buttons above</div>
           <div><strong>5. View details:</strong> Click on any request to see headers, payload, and response</div>
           <div className="mt-3 p-2 bg-blue-100 rounded">

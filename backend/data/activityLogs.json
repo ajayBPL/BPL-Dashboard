@@ -45,5 +45,184 @@
     "projectId": "project-1757938579123",
     "details": "Created project: Relife 1000 PC App",
     "timestamp": "2025-09-15T12:16:19.125Z"
+  },
+  {
+    "id": "activity-1758002704892",
+    "userId": "user-1758002704818",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758002704818",
+    "details": "User registered: Manisha Manjunath (manisha.m@bpl.in)",
+    "timestamp": "2025-09-16T06:05:04.892Z"
+  },
+  {
+    "id": "activity-1758002829027",
+    "userId": "user-1758002829012",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758002829012",
+    "details": "User registered: Vaisakh (vaisakh.k@bpl.in)",
+    "timestamp": "2025-09-16T06:07:09.027Z"
+  },
+  {
+    "id": "activity-1758002921820",
+    "userId": "user-1758002921806",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758002921806",
+    "details": "User registered: ardra l (ardra.intern@bpl.in)",
+    "timestamp": "2025-09-16T06:08:41.820Z"
+  },
+  {
+    "id": "activity-1758003200082",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758003200079",
+    "projectId": "project-1758003200079",
+    "details": "Created project: Relife 1000",
+    "timestamp": "2025-09-16T06:13:20.082Z"
+  },
+  {
+    "id": "activity-1758004336603",
+    "userId": "user-1758004336591",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758004336591",
+    "details": "User registered: Amulya S (amulya.intern@bpl.in)",
+    "timestamp": "2025-09-16T06:32:16.603Z"
+  },
+  {
+    "id": "activity-1758004408924",
+    "userId": "user-1758004408911",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758004408911",
+    "details": "User registered: Nitin Chavan (nitin.chavan@bpl.in)",
+    "timestamp": "2025-09-16T06:33:28.924Z"
+  },
+  {
+    "id": "activity-1758004492504",
+    "userId": "user-1758004492492",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758004492492",
+    "details": "User registered: Muralikrishna Menon (murali.menon@bpl.in)",
+    "timestamp": "2025-09-16T06:34:52.504Z"
+  },
+  {
+    "id": "activity-1758004591420",
+    "userId": "user-1758004591405",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758004591405",
+    "details": "User registered: samiksha shetty (samiksha.shetty@bpl.in)",
+    "timestamp": "2025-09-16T06:36:31.420Z"
+  },
+  {
+    "id": "activity-1758004842393",
+    "userId": "user-1758004842376",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758004842376",
+    "details": "User registered: Rajiv Sharma (rajiv.sharma@bpl.in)",
+    "timestamp": "2025-09-16T06:40:42.393Z"
+  },
+  {
+    "id": "activity-1758005004251",
+    "userId": "user-1758005004239",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758005004239",
+    "details": "User registered: Ankar Das (ankar.das@bpl.in)",
+    "timestamp": "2025-09-16T06:43:24.251Z"
+  },
+  {
+    "id": "activity-1758005074582",
+    "userId": "user-1758005074568",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758005074568",
+    "details": "User registered: Shivanagu M (m.shivanagu@bpl.in)",
+    "timestamp": "2025-09-16T06:44:34.583Z"
+  },
+  {
+    "id": "activity-1758006498507",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758003200079",
+    "projectId": "project-1758003200079",
+    "details": "Assigned Vaisakh to project with 100% involvement",
+    "timestamp": "2025-09-16T07:08:18.507Z"
+  },
+  {
+    "id": "activity-1758012657129",
+    "userId": "user-1758012657126",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758012657126",
+    "details": "User registered: P Saikrishna (sai.krishna@bpl.in)",
+    "timestamp": "2025-09-16T08:50:57.129Z"
+  },
+  {
+    "id": "activity-1758012721444",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757938579123",
+    "projectId": "project-1757938579123",
+    "details": "Assigned Ajay Jabaji Khatake to project with 50% involvement",
+    "timestamp": "2025-09-16T08:52:01.444Z"
+  },
+  {
+    "id": "activity-1758013839209",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758003200079",
+    "projectId": "project-1758003200079",
+    "details": "Assigned Rohith V to project with 30% involvement",
+    "timestamp": "2025-09-16T09:10:39.209Z"
+  },
+  {
+    "id": "activity-1758028965342",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Ajay Jabaji Khatake to project with 35% involvement",
+    "timestamp": "2025-09-16T13:22:45.342Z"
+  },
+  {
+    "id": "activity-1758028990144",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Rohith V to project with 80% involvement",
+    "timestamp": "2025-09-16T13:23:10.144Z"
+  },
+  {
+    "id": "activity-1758036599618",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757938579123",
+    "projectId": "project-1757938579123",
+    "details": "Assigned Rohith V to project with 10% involvement",
+    "timestamp": "2025-09-16T15:29:59.618Z"
+  },
+  {
+    "id": "activity-1758037305941",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758037305940",
+    "projectId": "project-1758037305940",
+    "details": "Created project: demo",
+    "timestamp": "2025-09-16T15:41:45.941Z"
   }
 ]

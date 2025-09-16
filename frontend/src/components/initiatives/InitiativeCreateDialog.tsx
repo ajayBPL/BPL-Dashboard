@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { centralizedDb } from '../../utils/centralizedDb'
+import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -49,11 +50,8 @@ export function InitiativeCreateDialog({
         return
       }
 
-      const response = await fetch('http://192.168.10.205:3001/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await fetch(API_ENDPOINTS.USERS, {
+        headers: getDefaultHeaders(token)
       })
 
       if (!response.ok) {

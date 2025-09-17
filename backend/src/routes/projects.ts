@@ -172,6 +172,7 @@ async function handleCreateProject(req: Request, res: Response, projectData: Cre
     budgetAmount: projectData.budgetAmount,
     budgetCurrency: projectData.budgetCurrency || 'USD',
     timeline: projectData.timeline,
+    timelineDate: projectData.timelineDate,
     tags: projectData.tags || [],
     status: 'PENDING'
   });

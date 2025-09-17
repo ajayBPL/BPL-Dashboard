@@ -34,7 +34,9 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
+        "date-fns": "^4.1.0",
         "embla-carousel-react": "^8.6.0",
+        "file-saver": "^2.0.5",
         "hono": "^4.6.3",
         "input-otp": "^1.4.2",
         "lucide-react": "^0.487.0",
@@ -46,7 +48,8 @@
         "sonner": "^2.0.3",
         "tailwind-merge": "^2.5.4",
         "vaul": "^1.1.2",
-        "vite": "^5.4.19"
+        "vite": "^5.4.19",
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {
         "@types/node": "^20.19.14",

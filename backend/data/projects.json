@@ -11,17 +11,8 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-16T13:23:10.142Z",
+    "updatedAt": "2025-09-17T18:15:39.115Z",
     "assignedEmployees": [
-      {
-        "id": "assignment-1758028965338",
-        "projectId": "project-1757937356657",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 35,
-        "role": "developer",
-        "assignedAt": "2025-09-16T13:22:45.338Z",
-        "updatedAt": "2025-09-16T13:22:45.338Z"
-      },
       {
         "id": "assignment-1758028990141",
         "projectId": "project-1757937356657",
@@ -30,19 +21,21 @@
         "role": "programmer",
         "assignedAt": "2025-09-16T13:23:10.141Z",
         "updatedAt": "2025-09-16T13:23:10.141Z"
+      },
+      {
+        "id": "assignment-1758132939114",
+        "projectId": "project-1757937356657",
+        "employeeId": "employee-001",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-11-25T18:30:00.000Z",
+        "assignedAt": "2025-09-17T18:15:39.114Z",
+        "updatedAt": "2025-09-17T18:15:39.114Z"
       }
     ],
     "assignments": [
       {
-        "id": "assignment-1758028965338",
-        "projectId": "project-1757937356657",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 35,
-        "role": "developer",
-        "assignedAt": "2025-09-16T13:22:45.338Z",
-        "updatedAt": "2025-09-16T13:22:45.338Z"
-      },
-      {
         "id": "assignment-1758028990141",
         "projectId": "project-1757937356657",
         "employeeId": "user-1757932094744",
@@ -50,6 +43,17 @@
         "role": "programmer",
         "assignedAt": "2025-09-16T13:23:10.141Z",
         "updatedAt": "2025-09-16T13:23:10.141Z"
+      },
+      {
+        "id": "assignment-1758132939114",
+        "projectId": "project-1757937356657",
+        "employeeId": "employee-001",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-11-25T18:30:00.000Z",
+        "assignedAt": "2025-09-17T18:15:39.114Z",
+        "updatedAt": "2025-09-17T18:15:39.114Z"
       }
     ]
   },
@@ -161,6 +165,180 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-16T15:41:45.940Z",
-    "updatedAt": "2025-09-16T15:41:45.940Z"
+    "updatedAt": "2025-09-17T18:01:10.562Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758132070562",
+        "projectId": "project-1758037305940",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 5,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:01:10.562Z",
+        "updatedAt": "2025-09-17T18:01:10.562Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758132070562",
+        "projectId": "project-1758037305940",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 5,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:01:10.562Z",
+        "updatedAt": "2025-09-17T18:01:10.562Z"
+      }
+    ]
+  },
+  {
+    "id": "project-1758130145699",
+    "title": "Test Project",
+    "description": "Test project with date picker",
+    "managerId": "admin-001",
+    "priority": "MEDIUM",
+    "budgetCurrency": "USD",
+    "timelineDate": "2025-12-31T00:00:00.000Z",
+    "tags": [
+      "test"
+    ],
+    "status": "PENDING",
+    "createdAt": "2025-09-17T17:29:05.699Z",
+    "updatedAt": "2025-09-17T18:30:30.126Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758132034402",
+        "projectId": "project-1758130145699",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:00:34.402Z",
+        "updatedAt": "2025-09-17T18:00:34.402Z"
+      },
+      {
+        "id": "assignment-1758133830126",
+        "projectId": "project-1758130145699",
+        "employeeId": "manager-001",
+        "involvementPercentage": 40,
+        "role": "Team lead",
+        "startDate": "2025-09-18T18:30:00.000Z",
+        "endDate": "2025-09-29T18:30:00.000Z",
+        "assignedAt": "2025-09-17T18:30:30.126Z",
+        "updatedAt": "2025-09-17T18:30:30.126Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758132034402",
+        "projectId": "project-1758130145699",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:00:34.402Z",
+        "updatedAt": "2025-09-17T18:00:34.402Z"
+      },
+      {
+        "id": "assignment-1758133830126",
+        "projectId": "project-1758130145699",
+        "employeeId": "manager-001",
+        "involvementPercentage": 40,
+        "role": "Team lead",
+        "startDate": "2025-09-18T18:30:00.000Z",
+        "endDate": "2025-09-29T18:30:00.000Z",
+        "assignedAt": "2025-09-17T18:30:30.126Z",
+        "updatedAt": "2025-09-17T18:30:30.126Z"
+      }
+    ]
+  },
+  {
+    "id": "project-1758130709872",
+    "title": "BPL Medical",
+    "description": "Medical equipment's Medical equipment's Medical equipment'sMedical equipment'sMedical equipment's",
+    "managerId": "user-1757932070077",
+    "priority": "MEDIUM",
+    "budgetCurrency": "USD",
+    "timelineDate": "2025-12-30T18:30:00.000Z",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-17T17:38:29.872Z",
+    "updatedAt": "2025-09-17T18:11:01.329Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758131276588",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 40,
+        "role": "developer",
+        "assignedAt": "2025-09-17T17:47:56.588Z",
+        "updatedAt": "2025-09-17T17:47:56.588Z"
+      },
+      {
+        "id": "assignment-1758131450457",
+        "projectId": "project-1758130709872",
+        "employeeId": "employee-001",
+        "involvementPercentage": 50,
+        "role": "developer",
+        "assignedAt": "2025-09-17T17:50:50.457Z",
+        "updatedAt": "2025-09-17T17:50:50.457Z"
+      },
+      {
+        "id": "assignment-1758132001460",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:00:01.460Z",
+        "updatedAt": "2025-09-17T18:00:01.460Z"
+      },
+      {
+        "id": "assignment-1758132661328",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932070077",
+        "involvementPercentage": 30,
+        "role": "Developer",
+        "startDate": "2025-01-01T00:00:00.000Z",
+        "endDate": "2025-03-31T23:59:59.999Z",
+        "assignedAt": "2025-09-17T18:11:01.328Z",
+        "updatedAt": "2025-09-17T18:11:01.328Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758131276588",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932094744",
+        "involvementPercentage": 40,
+        "role": "developer",
+        "assignedAt": "2025-09-17T17:47:56.588Z",
+        "updatedAt": "2025-09-17T17:47:56.588Z"
+      },
+      {
+        "id": "assignment-1758131450457",
+        "projectId": "project-1758130709872",
+        "employeeId": "employee-001",
+        "involvementPercentage": 50,
+        "role": "developer",
+        "assignedAt": "2025-09-17T17:50:50.457Z",
+        "updatedAt": "2025-09-17T17:50:50.457Z"
+      },
+      {
+        "id": "assignment-1758132001460",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932856400",
+        "involvementPercentage": 20,
+        "role": "developer",
+        "assignedAt": "2025-09-17T18:00:01.460Z",
+        "updatedAt": "2025-09-17T18:00:01.460Z"
+      },
+      {
+        "id": "assignment-1758132661328",
+        "projectId": "project-1758130709872",
+        "employeeId": "user-1757932070077",
+        "involvementPercentage": 30,
+        "role": "Developer",
+        "startDate": "2025-01-01T00:00:00.000Z",
+        "endDate": "2025-03-31T23:59:59.999Z",
+        "assignedAt": "2025-09-17T18:11:01.328Z",
+        "updatedAt": "2025-09-17T18:11:01.328Z"
+      }
+    ]
   }
 ]

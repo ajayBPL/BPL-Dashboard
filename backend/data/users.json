@@ -1,9 +1,9 @@
 [
   {
     "id": "admin-001",
-    "email": "admin@bpl.com",
-    "name": "System Administrator",
-    "password": "$2b$12$hPdsJXm4EVdJ3.goh6m14uR6zII8kGBhh8FPCYHftfcR00zz6PjiW",
+    "email": "admin@bplcommander.com",
+    "name": "System Admin",
+    "password": "admin123",
     "role": "admin",
     "designation": "System Administrator",
     "department": "IT",
@@ -24,8 +24,120 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-09-16T17:01:37.071Z",
-    "lastLoginAt": "2025-09-16T17:01:37.070Z"
+    "updatedAt": "2025-09-17T18:11:01.314Z",
+    "lastLoginAt": "2025-09-17T18:11:01.314Z"
+  },
+  {
+    "id": "program-manager-001",
+    "email": "program.manager@bplcommander.com",
+    "name": "Program Manager",
+    "password": "program123",
+    "role": "program_manager",
+    "designation": "Senior Program Manager",
+    "department": "Operations",
+    "skills": [
+      "Project Management",
+      "Strategic Planning"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "lastLoginAt": null
+  },
+  {
+    "id": "rd-manager-001",
+    "email": "rd.manager@bplcommander.com",
+    "name": "R&D Manager",
+    "password": "rd123",
+    "role": "rd_manager",
+    "designation": "Research & Development Manager",
+    "department": "R&D",
+    "skills": [
+      "Research",
+      "Innovation",
+      "Product Development"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "lastLoginAt": null
+  },
+  {
+    "id": "manager-001",
+    "email": "manager@bplcommander.com",
+    "name": "Team Manager",
+    "password": "manager123",
+    "role": "manager",
+    "designation": "Team Lead",
+    "managerId": "program-manager-001",
+    "department": "Development",
+    "skills": [
+      "Team Management",
+      "Project Coordination"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "lastLoginAt": null
+  },
+  {
+    "id": "employee-001",
+    "email": "employee@bplcommander.com",
+    "name": "Test Employee",
+    "password": "employee123",
+    "role": "employee",
+    "designation": "Software Developer",
+    "managerId": "manager-001",
+    "department": "Development",
+    "skills": [
+      "React",
+      "TypeScript",
+      "Node.js"
+    ],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": false,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "lastLoginAt": null
   },
   {
     "id": "pm-001",
@@ -50,7 +162,7 @@
       "deadlineReminders": true,
       "weeklyReports": true
     },
-    "isActive": false,
+    "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
     "updatedAt": "2025-09-16T15:54:11.830Z",
     "lastLoginAt": "2025-09-15T10:34:55.775Z"
@@ -59,7 +171,7 @@
     "id": "user-1757932070077",
     "email": "inderjot.singh@bpl.in",
     "name": "Inderjot Singh",
-    "password": "$2b$12$tNRYWYehRUXd4QenUstjTO2xQhDdXOyGZvwZSxZL2SCBcP9Tr6wQu",
+    "password": "inderjot123",
     "role": "PROGRAM_MANAGER",
     "designation": "PM",
     "department": "R&D",
@@ -76,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-09-16T15:26:26.019Z",
-    "lastLoginAt": "2025-09-16T15:26:26.018Z"
+    "updatedAt": "2025-09-17T17:12:27.744Z",
+    "lastLoginAt": "2025-09-17T17:12:27.739Z"
   },
   {
     "id": "user-1757932094744",

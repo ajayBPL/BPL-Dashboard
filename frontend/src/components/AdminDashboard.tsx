@@ -33,8 +33,6 @@ import {
   Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { CurrencySelector } from './CurrencySelector'
-import { TimezoneSelector } from './TimezoneSelector'
 import { ApiTester } from './ApiTester'
 
 export function AdminDashboard() {
@@ -153,14 +151,13 @@ export function AdminDashboard() {
     email: '',
     password: 'defaultpass123',
     name: '',
+    employeeId: '',
     role: '',
     designation: '',
     managerId: '',
     department: '',
     skills: '',
     phoneNumber: '',
-    timezone: 'UTC',
-    preferredCurrency: 'USD',
     workloadCap: 100,
     overBeyondCap: 20,
     notificationSettings: {
@@ -358,14 +355,13 @@ export function AdminDashboard() {
       email: '',
       password: 'defaultpass123',
       name: '',
+      employeeId: '',
       role: '',
       designation: '',
       managerId: '',
       department: '',
       skills: '',
       phoneNumber: '',
-      timezone: 'UTC',
-      preferredCurrency: 'USD',
       workloadCap: 100,
       overBeyondCap: 20,
       notificationSettings: {
@@ -392,6 +388,13 @@ export function AdminDashboard() {
         return
       }
 
+      // Check if employee ID already exists
+      const existingEmployeeId = users.find(u => u.employeeId === formData.employeeId)
+      if (existingEmployeeId) {
+        toast.error('An employee with this ID already exists. Please use a different Employee ID.')
+        return
+      }
+
       // Get the access token
       const token = localStorage.getItem('bpl-token')
       if (!token) {
@@ -403,6 +406,7 @@ export function AdminDashboard() {
       const userData = {
         email: formData.email,
         name: formData.name,
+        employeeId: formData.employeeId,
         password: formData.password || 'password123',
         role: formData.role.toLowerCase(), // API expects lowercase roles
         designation: formData.designation,
@@ -412,8 +416,6 @@ export function AdminDashboard() {
         workloadCap: formData.workloadCap,
         overBeyondCap: formData.overBeyondCap,
         phoneNumber: formData.phoneNumber || undefined,
-        timezone: formData.timezone,
-        preferredCurrency: formData.preferredCurrency,
         notificationSettings: formData.notificationSettings
       }
 
@@ -439,6 +441,7 @@ export function AdminDashboard() {
           id: data.data.user.id,
           email: data.data.user.email,
           name: data.data.user.name,
+          employeeId: formData.employeeId,
           role: data.data.user.role,
           designation: data.data.user.designation,
           managerId: data.data.user.managerId,
@@ -447,8 +450,6 @@ export function AdminDashboard() {
           workloadCap: userData.workloadCap,
           overBeyondCap: userData.overBeyondCap,
           phoneNumber: userData.phoneNumber,
-          timezone: userData.timezone,
-          preferredCurrency: userData.preferredCurrency,
           notificationSettings: userData.notificationSettings,
           isActive: true,
           password: formData.password, // Add password for type compatibility
@@ -1225,6 +1226,20 @@ export function AdminDashboard() {
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="employeeId">Employee ID *</Label>
+                <Input
+                  id="employeeId"
+                  value={formData.employeeId}
+                  onChange={(e) => updateFormField('employeeId', e.target.value)}
+                  placeholder="e.g., EMP001, BPL2024001"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Unique employee identifier (cannot be repeated)
+                </p>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
                   <Input
@@ -1367,10 +1382,10 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            {/* Contact & Preferences */}
+            {/* Contact Information */}
             <div className="space-y-4">
-              <h3 className="font-medium">Contact & Preferences</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <h3 className="font-medium">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
@@ -1378,21 +1393,6 @@ export function AdminDashboard() {
                     value={formData.phoneNumber}
                     onChange={(e) => updateFormField('phoneNumber', e.target.value)}
                     placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <TimezoneSelector
-                    value={formData.timezone}
-                    onValueChange={(value) => updateFormField('timezone', value)}
-                    placeholder="Select timezone"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Preferred Currency</Label>
-                  <CurrencySelector
-                    value={formData.preferredCurrency}
-                    onValueChange={(value) => updateFormField('preferredCurrency', value)}
                   />
                 </div>
               </div>

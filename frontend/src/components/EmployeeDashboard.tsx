@@ -93,14 +93,14 @@ export function EmployeeDashboard() {
             .reduce((total, initiative) => total + initiative.workloadPercentage, 0)
 
           const totalWorkload = projectWorkload + overBeyondWorkload
-          const workloadCap = currentUser.workloadCap || 100
-          const overBeyondCap = currentUser.overBeyondCap || 20
+          const workloadCap = (currentUser as any).workloadCap || 100
+          const overBeyondCap = (currentUser as any).overBeyondCap || 20
 
           setWorkload({
             projectWorkload,
             overBeyondWorkload,
             totalWorkload,
-            availableCapacity: Math.max(0, workloadCap - projectWorkload),
+            availableCapacity: Math.max(0, workloadCap - totalWorkload),
             overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
           })
         }

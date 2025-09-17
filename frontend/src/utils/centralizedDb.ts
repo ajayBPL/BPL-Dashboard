@@ -146,6 +146,7 @@ export interface CentralizedUser {
   id: string
   email: string
   name: string
+  employeeId?: string
   role: 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee' | 'PROGRAM_MANAGER' | 'RD_MANAGER' | 'MANAGER' | 'EMPLOYEE'
   designation: string
   managerId?: string

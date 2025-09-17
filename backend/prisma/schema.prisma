@@ -12,6 +12,7 @@ model User {
   id                   String              @id @default(cuid())
   email                String              @unique
   name                 String
+  employeeId           String?             @unique @map("employee_id")
   password             String
   role                 Role
   designation          String

@@ -13,6 +13,7 @@ router.post('/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('name').isLength({ min: 2 }),
+  body('employeeId').isLength({ min: 1 }).withMessage('Employee ID is required'),
   body('role').isIn(['admin', 'program_manager', 'rd_manager', 'manager', 'employee']),
   body('designation').isLength({ min: 2 })
 ], asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -27,15 +28,26 @@ router.post('/register', [
     return;
   }
 
-  const { email, password, name, role, designation, managerId, department } = req.body;
+  const { email, password, name, employeeId, role, designation, managerId, department } = req.body;
 
-  // Check if user already exists
+  // Check if user already exists by email
   const existingUser = await db.findUserByEmail(email);
 
   if (existingUser) {
     res.status(409).json({
       success: false,
       error: 'User with this email already exists'
+    });
+    return;
+  }
+
+  // Check if employee ID already exists
+  const existingEmployeeId = await db.findUserByEmployeeId(employeeId);
+
+  if (existingEmployeeId) {
+    res.status(409).json({
+      success: false,
+      error: 'Employee ID already exists. Please use a different Employee ID.'
     });
     return;
   }
@@ -62,6 +74,7 @@ router.post('/register', [
     email,
     password: hashedPassword,
     name,
+    employeeId,
     role: role.toUpperCase(),
     designation,
     managerId,
@@ -165,7 +178,17 @@ router.post('/login', [
   }
 
   // Verify password
-  const isPasswordValid = await bcrypt.compare(password, (user as any).password);
+  // For mock data, compare plain text passwords directly
+  // For real database, use bcrypt comparison
+  let isPasswordValid = false;
+  if (process.env.NODE_ENV === 'development' || !process.env.DATABASE_URL) {
+    // Mock data - plain text comparison
+    isPasswordValid = password === (user as any).password;
+  } else {
+    // Real database - bcrypt comparison
+    isPasswordValid = await bcrypt.compare(password, (user as any).password);
+  }
+  
   if (!isPasswordValid) {
     res.status(401).json({
       success: false,

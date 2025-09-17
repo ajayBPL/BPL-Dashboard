@@ -224,5 +224,155 @@
     "projectId": "project-1758037305940",
     "details": "Created project: demo",
     "timestamp": "2025-09-16T15:41:45.941Z"
+  },
+  {
+    "id": "activity-1758129277435",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-17T17:14:37.435Z"
+  },
+  {
+    "id": "activity-1758130145700",
+    "userId": "admin-001",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130145699",
+    "projectId": "project-1758130145699",
+    "details": "Created project: Test Project",
+    "timestamp": "2025-09-17T17:29:05.700Z"
+  },
+  {
+    "id": "activity-1758130709873",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Created project: BPL Medical",
+    "timestamp": "2025-09-17T17:38:29.873Z"
+  },
+  {
+    "id": "activity-1758131226551",
+    "userId": "admin-001",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Ajay Jabaji Khatake to project with 20% involvement",
+    "timestamp": "2025-09-17T17:47:06.551Z"
+  },
+  {
+    "id": "activity-1758131276590",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Rohith V to project with 40% involvement",
+    "timestamp": "2025-09-17T17:47:56.590Z"
+  },
+  {
+    "id": "activity-1758131450459",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Test Employee to project with 50% involvement",
+    "timestamp": "2025-09-17T17:50:50.459Z"
+  },
+  {
+    "id": "activity-1758131753275",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-17T17:55:53.275Z"
+  },
+  {
+    "id": "activity-1758131792832",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Ajay Jabaji Khatake to project with 20% involvement",
+    "timestamp": "2025-09-17T17:56:32.832Z"
+  },
+  {
+    "id": "activity-1758131805522",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-17T17:56:45.522Z"
+  },
+  {
+    "id": "activity-1758132001462",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Ajay Jabaji Khatake to project with 20% involvement",
+    "timestamp": "2025-09-17T18:00:01.462Z"
+  },
+  {
+    "id": "activity-1758132034404",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130145699",
+    "projectId": "project-1758130145699",
+    "details": "Assigned Ajay Jabaji Khatake to project with 20% involvement",
+    "timestamp": "2025-09-17T18:00:34.404Z"
+  },
+  {
+    "id": "activity-1758132070564",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758037305940",
+    "projectId": "project-1758037305940",
+    "details": "Assigned Ajay Jabaji Khatake to project with 5% involvement",
+    "timestamp": "2025-09-17T18:01:10.564Z"
+  },
+  {
+    "id": "activity-1758132661330",
+    "userId": "admin-001",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Assigned Inderjot Singh to project with 30% involvement",
+    "timestamp": "2025-09-17T18:11:01.330Z"
+  },
+  {
+    "id": "activity-1758132939116",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Test Employee to project with 20% involvement",
+    "timestamp": "2025-09-17T18:15:39.116Z"
+  },
+  {
+    "id": "activity-1758133830127",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130145699",
+    "projectId": "project-1758130145699",
+    "details": "Assigned Team Manager to project with 40% involvement",
+    "timestamp": "2025-09-17T18:30:30.127Z"
   }
 ]

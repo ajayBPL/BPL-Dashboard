@@ -146,9 +146,9 @@ export function EmployeeManagement() {
             // Use backend projects data if available, otherwise fallback to centralizedDb
             const projectsToUse = backendProjects.length > 0 ? backendProjects : fallbackProjects
             
-            // Calculate project workload from all active projects
+            // Calculate project workload from all projects (including pending, active, etc.)
             const projectWorkload = projectsToUse
-              .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active')
+              .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
               .reduce((total: number, project: any) => {
                 // Handle both backend format (assignments) and frontend format (assignedEmployees)
                 const assignments = project.assignments || project.assignedEmployees || []
@@ -169,7 +169,7 @@ export function EmployeeManagement() {
               projectWorkload,
               overBeyondWorkload,
               totalWorkload,
-              availableCapacity: Math.max(0, workloadCap - projectWorkload),
+              availableCapacity: Math.max(0, workloadCap - totalWorkload),
               overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
             }
           }

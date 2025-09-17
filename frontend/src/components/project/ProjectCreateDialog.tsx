@@ -5,20 +5,20 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { CurrencySelector, useCurrency } from '../CurrencySelector'
 import { Badge } from '../ui/badge'
-import { CalendarIcon, DollarSignIcon, ClockIcon, AlertTriangleIcon } from 'lucide-react'
+import { CalendarIcon, AlertTriangleIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '../ui/alert'
+import { Calendar } from '../ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { cn } from '../ui/utils'
+import { format } from 'date-fns'
 
 interface ProjectForm {
   title: string
   description: string
   projectDetails: string
-  timeline: string
+  timelineDate: string
   priority: 'low' | 'medium' | 'high' | 'critical'
-  estimatedHours: string
-  budget: string
-  currency: string
   tags: string[]
   requiredSkills: string[]
   category?: 'standard' | 'over_beyond'
@@ -43,7 +43,6 @@ export function ProjectCreateDialog({
 }: ProjectCreateDialogProps) {
   const [newTag, setNewTag] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const { formatCurrency } = useCurrency()
 
   const updateField = (field: keyof ProjectForm, value: string | string[]) => {
     setFormData({ ...formData, [field]: value })
@@ -74,17 +73,7 @@ export function ProjectCreateDialog({
       newErrors.projectDetails = 'Please provide comprehensive project details (minimum 50 characters)'
     }
 
-    if (!formData.timeline.trim()) {
-      newErrors.timeline = 'Timeline is required'
-    }
 
-    if (formData.estimatedHours && (parseInt(formData.estimatedHours) < 1 || parseInt(formData.estimatedHours) > 10000)) {
-      newErrors.estimatedHours = 'Estimated hours must be between 1 and 10,000'
-    }
-
-    if (formData.budget && (parseFloat(formData.budget) < 0 || parseFloat(formData.budget) > 10000000)) {
-      newErrors.budget = 'Budget must be between 0 and 10,000,000'
-    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -136,8 +125,6 @@ export function ProjectCreateDialog({
     }
   }
 
-  const estimatedBudget = formData.budget ? parseFloat(formData.budget) : 0
-  const estimatedHours = formData.estimatedHours ? parseInt(formData.estimatedHours) : 0
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -177,19 +164,40 @@ export function ProjectCreateDialog({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="project-timeline" className="flex items-center gap-1">
-                  Timeline *
+                <Label htmlFor="project-timeline-date" className="flex items-center gap-1">
+                  <CalendarIcon className="h-4 w-4" />
+                  Project Deadline
                 </Label>
-                <Input
-                  id="project-timeline"
-                  value={formData.timeline}
-                  onChange={(e) => updateField('timeline', e.target.value)}
-                  placeholder="e.g., 3 months, 6 weeks, Q1 2024"
-                  className={errors.timeline ? 'border-destructive' : ''}
-                />
-                {errors.timeline && (
-                  <p className="text-sm text-destructive">{errors.timeline}</p>
-                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.timelineDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.timelineDate ? format(new Date(formData.timelineDate), "PPP") : "Select deadline"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.timelineDate ? new Date(formData.timelineDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          updateField('timelineDate', date.toISOString())
+                        }
+                      }}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Select the project deadline date
+                </p>
               </div>
             </div>
             
@@ -278,71 +286,10 @@ export function ProjectCreateDialog({
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="estimated-hours" className="flex items-center gap-1">
-                  <ClockIcon className="h-4 w-4" />
-                  Estimated Hours
-                </Label>
-                <Input
-                  id="estimated-hours"
-                  type="number"
-                  value={formData.estimatedHours}
-                  onChange={(e) => updateField('estimatedHours', e.target.value)}
-                  placeholder="e.g., 480"
-                  min="1"
-                  max="10000"
-                  className={errors.estimatedHours ? 'border-destructive' : ''}
-                />
-                {errors.estimatedHours && (
-                  <p className="text-sm text-destructive">{errors.estimatedHours}</p>
-                )}
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="project-budget" className="flex items-center gap-1">
-                  <DollarSignIcon className="h-4 w-4" />
-                  Budget Amount
-                </Label>
-                <Input
-                  id="project-budget"
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => updateField('budget', e.target.value)}
-                  placeholder="e.g., 50000"
-                  min="0"
-                  max="10000000"
-                  step="1000"
-                  className={errors.budget ? 'border-destructive' : ''}
-                />
-                {errors.budget && (
-                  <p className="text-sm text-destructive">{errors.budget}</p>
-                )}
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="project-currency">Currency</Label>
-                <CurrencySelector
-                  value={formData.currency}
-                  onValueChange={(value) => updateField('currency', value)}
-                  placeholder="Select currency"
-                />
-              </div>
             </div>
 
-            {/* Budget Preview */}
-            {estimatedBudget > 0 && (
-              <Alert>
-                <DollarSignIcon className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Budget Preview:</strong> {formatCurrency(estimatedBudget, formData.currency)}
-                  {estimatedHours > 0 && (
-                    <span className="ml-2 text-muted-foreground">
-                      (≈ {formatCurrency(estimatedBudget / estimatedHours, formData.currency)} per hour)
-                    </span>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
 
           {/* Tags Section */}

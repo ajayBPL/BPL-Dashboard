@@ -129,6 +129,12 @@ class FileBasedMockDatabase {
     return Promise.resolve(user || null);
   }
 
+  async findUserByEmployeeId(employeeId: string): Promise<User | null> {
+    const users = this.readFromFile(this.usersFile);
+    const user = users.find(u => u.employeeId === employeeId);
+    return Promise.resolve(user || null);
+  }
+
   async createUser(userData: Partial<User>): Promise<User> {
     const users = this.readFromFile(this.usersFile);
     const newUser: User = {
@@ -280,6 +286,8 @@ class FileBasedMockDatabase {
         ...project.assignedEmployees[existingAssignmentIndex],
         involvementPercentage: assignmentData.involvementPercentage,
         role: assignmentData.role,
+        startDate: assignmentData.startDate,
+        endDate: assignmentData.endDate,
         updatedAt: new Date().toISOString()
       };
       project.assignedEmployees[existingAssignmentIndex] = assignment;
@@ -291,6 +299,8 @@ class FileBasedMockDatabase {
         employeeId: assignmentData.employeeId,
         involvementPercentage: assignmentData.involvementPercentage,
         role: assignmentData.role,
+        startDate: assignmentData.startDate,
+        endDate: assignmentData.endDate,
         assignedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

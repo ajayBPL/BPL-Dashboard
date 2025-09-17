@@ -11,6 +11,8 @@ import { Progress } from './ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Download, FileText, Table, Users, Calendar, TrendingUp, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 interface ExportSystemProps {
   isOpen: boolean
@@ -128,16 +130,22 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
         p.assignedEmployees.some(emp => emp.employeeId === user.id)
       )
       const assignedInitiatives = centralizedDb.getInitiatives().filter(i => i.assignedTo === user.id)
+      
+      // Find manager information
+      const manager = user.managerId ? users.find(u => u.id === user.managerId) : null
 
       return {
-        employeeId: user.id,
+        employeeId: user.employeeId || 'Not Assigned',
         name: user.name,
         email: user.email,
         role: user.role,
         designation: user.designation,
-        department: user.department,
-        skills: user.skills,
-        isActive: user.isActive,
+        department: user.department || 'Not Specified',
+        managerId: user.managerId || 'Not Assigned',
+        managerName: manager?.name || 'Not Assigned',
+        managerEmail: manager?.email || 'Not Assigned',
+        skills: user.skills?.join(', ') || 'None',
+        isActive: user.isActive ? 'Active' : 'Inactive',
         workloadCap: user.workloadCap,
         overBeyondCap: user.overBeyondCap,
         currentProjectWorkload: workload.projectWorkload,
@@ -159,7 +167,9 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
         })),
         totalProjects: assignedProjects.length,
         totalInitiatives: assignedInitiatives.length,
-        utilizationRate: (workload.totalWorkload / user.workloadCap) * 100
+        utilizationRate: (workload.totalWorkload / user.workloadCap) * 100,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt
       }
     })
   }
@@ -168,64 +178,15 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
     const exportData: any = {
       exportInfo: {
         generatedAt: new Date().toISOString(),
-        format: exportOptions.format,
-        dateRange: exportOptions.dateRange,
-        filters: {
-          projectStatus: exportOptions.projectStatus,
-          employeeRoles: exportOptions.employeeRoles
-        }
-      }
-    }
-
-    if (exportOptions.includeProjects) {
-      exportData.projects = generateProjectReport()
-    }
-
-    if (exportOptions.includeEmployees) {
-      exportData.employees = generateEmployeeReport()
-    }
-
-    if (exportOptions.includeInitiatives) {
-      exportData.initiatives = centralizedDb.getInitiatives().map(initiative => {
-        const creator = centralizedDb.getUserById(initiative.createdBy)
-        const assignee = initiative.assignedTo ? centralizedDb.getUserById(initiative.assignedTo) : null
-        
-        return {
-          ...initiative,
-          creatorName: creator?.name || 'Unknown',
-          assigneeName: assignee?.name || 'Unassigned',
-          completionRate: initiative.actualHours && initiative.estimatedHours ? 
-            (initiative.actualHours / initiative.estimatedHours) * 100 : 0
-        }
-      })
-    }
-
-    if (exportOptions.includeMetrics) {
-      exportData.metrics = centralizedDb.getMetrics()
-      exportData.summary = {
-        totalActiveProjects: centralizedDb.getProjects().filter(p => p.status === 'active').length,
-        totalCompletedProjects: centralizedDb.getProjects().filter(p => p.status === 'completed').length,
-        totalActiveEmployees: centralizedDb.getUsers().filter(u => u.isActive).length,
-        averageProjectProgress: exportData.projects ? 
-          exportData.projects.reduce((sum: number, p: any) => sum + p.progressPercentage, 0) / exportData.projects.length : 0,
-        overloadedEmployees: exportData.employees ? 
-          exportData.employees.filter((emp: any) => emp.totalWorkload > 100).length : 0
-      }
+        format: exportOptions.format
+      },
+      employees: generateEmployeeReport(),
+      projects: [],
+      initiatives: [],
+      summary: null
     }
 
     return exportData
-  }
-
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
   }
 
   const convertToCSV = (data: any): string => {
@@ -233,6 +194,15 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
     
     let csv = ''
     
+    // Add employees CSV with all required fields
+    if (data.employees && data.employees.length > 0) {
+      csv += 'Employee ID,Name,Email,Role,Designation,Department,Manager Name,Manager Email,Skills,Status,Workload Cap %,Current Workload %,Available Capacity %,Total Projects,Total Initiatives,Utilization Rate %,Created At,Last Login\n'
+      data.employees.forEach((employee: any) => {
+        csv += `"${employee.employeeId || 'Not Assigned'}","${employee.name}","${employee.email}","${employee.role}","${employee.designation}","${employee.department}","${employee.managerName}","${employee.managerEmail}","${employee.skills}","${employee.isActive}",${employee.workloadCap},${employee.totalWorkload.toFixed(2)},${employee.availableCapacity.toFixed(2)},${employee.totalProjects},${employee.totalInitiatives},${employee.utilizationRate.toFixed(2)},"${employee.createdAt}","${employee.lastLoginAt || 'Never'}"\n`
+      })
+      csv += '\n'
+    }
+
     // Add projects CSV
     if (data.projects && data.projects.length > 0) {
       csv += 'PROJECTS\n'
@@ -243,79 +213,101 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       csv += '\n'
     }
 
-    // Add employees CSV
-    if (data.employees && data.employees.length > 0) {
-      csv += 'EMPLOYEES\n'
-      csv += 'ID,Name,Email,Role,Department,Current Workload %,Available Capacity %,Total Projects,Total Initiatives\n'
-      data.employees.forEach((employee: any) => {
-        csv += `${employee.employeeId},"${employee.name}","${employee.email}",${employee.role},"${employee.department}",${employee.totalWorkload.toFixed(2)},${employee.availableCapacity.toFixed(2)},${employee.totalProjects},${employee.totalInitiatives}\n`
-      })
-    }
-
     return csv
   }
 
-  const convertToExcel = (data: any): string => {
-    // For now, create a structured Excel-like format as text
-    // In production, you would use a library like xlsx or exceljs
-    let excel = ''
-    excel += `BPL Commander Export Report\n`
-    excel += `Generated: ${new Date().toLocaleString()}\n\n`
+  const convertToExcel = (data: any): Blob => {
+    const workbook = XLSX.utils.book_new()
     
+    // Create Employees sheet
+    if (data.employees && data.employees.length > 0) {
+      const employeeData = data.employees.map((employee: any) => ({
+        'Employee ID': employee.employeeId || 'Not Assigned',
+        'Name': employee.name,
+        'Email': employee.email,
+        'Role': employee.role,
+        'Designation': employee.designation,
+        'Department': employee.department,
+        'Manager Name': employee.managerName,
+        'Manager Email': employee.managerEmail,
+        'Skills': employee.skills,
+        'Status': employee.isActive,
+        'Workload Cap %': employee.workloadCap,
+        'Current Workload %': employee.totalWorkload.toFixed(2),
+        'Available Capacity %': employee.availableCapacity.toFixed(2),
+        'Total Projects': employee.totalProjects,
+        'Total Initiatives': employee.totalInitiatives,
+        'Utilization Rate %': employee.utilizationRate.toFixed(2),
+        'Created At': employee.createdAt,
+        'Last Login': employee.lastLoginAt || 'Never'
+      }))
+      
+      const employeeSheet = XLSX.utils.json_to_sheet(employeeData)
+      XLSX.utils.book_append_sheet(workbook, employeeSheet, 'Employees')
+    }
+    
+    // Create Projects sheet
     if (data.projects && data.projects.length > 0) {
-      excel += `=== PROJECTS REPORT ===\n`
-      excel += `Total Projects: ${data.projects.length}\n\n`
-      data.projects.forEach((project: any) => {
-        excel += `Project: ${project.title}\n`
-        excel += `  Status: ${project.status}\n`
-        excel += `  Priority: ${project.priority}\n`
-        excel += `  Manager: ${project.manager}\n`
-        excel += `  Progress: ${project.progressPercentage.toFixed(2)}%\n`
-        excel += `  Budget: ${project.budget || 'Not set'}\n`
-        excel += `  Timeline: ${project.timeline || 'Not specified'}\n`
-        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
-          excel += `  Team Members:\n`
-          project.assignedEmployees.forEach((emp: any) => {
-            excel += `    - ${emp.name} (${emp.role}): ${emp.involvement}%\n`
-          })
-        }
-        excel += `\n`
-      })
+      const projectData = data.projects.map((project: any) => ({
+        'Project ID': project.projectId,
+        'Title': project.title,
+        'Status': project.status,
+        'Priority': project.priority,
+        'Manager': project.manager,
+        'Total Employees': project.totalEmployees,
+        'Progress %': project.progressPercentage.toFixed(2),
+        'Budget': project.budget || 0,
+        'Estimated Hours': project.estimatedHours || 0,
+        'Actual Hours': project.actualHours || 0,
+        'Created At': project.createdAt,
+        'Updated At': project.updatedAt
+      }))
+      
+      const projectSheet = XLSX.utils.json_to_sheet(projectData)
+      XLSX.utils.book_append_sheet(workbook, projectSheet, 'Projects')
     }
-
+    
+    // Create Summary sheet
     if (data.summary) {
-      excel += `=== SUMMARY METRICS ===\n`
-      excel += `Active Projects: ${data.summary.totalActiveProjects}\n`
-      excel += `Completed Projects: ${data.summary.totalCompletedProjects}\n`
-      excel += `Active Employees: ${data.summary.totalActiveEmployees}\n`
-      excel += `Average Progress: ${data.summary.averageProjectProgress.toFixed(2)}%\n`
-      excel += `Overloaded Employees: ${data.summary.overloadedEmployees}\n`
+      const summaryData = [
+        { 'Metric': 'Active Projects', 'Value': data.summary.totalActiveProjects },
+        { 'Metric': 'Completed Projects', 'Value': data.summary.totalCompletedProjects },
+        { 'Metric': 'Active Employees', 'Value': data.summary.totalActiveEmployees },
+        { 'Metric': 'Average Progress %', 'Value': data.summary.averageProjectProgress.toFixed(2) },
+        { 'Metric': 'Overloaded Employees', 'Value': data.summary.overloadedEmployees }
+      ]
+      
+      const summarySheet = XLSX.utils.json_to_sheet(summaryData)
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary')
     }
-
-    return excel
+    
+    return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
   }
 
   const convertToPDF = (data: any): string => {
-    // For now, create a structured PDF-like format as text
-    // In production, you would use a library like jsPDF or PDFKit
     let pdf = ''
-    pdf += `BPL COMMANDER - PROJECT EXPORT REPORT\n`
+    pdf += `BPL COMMANDER - EMPLOYEE EXPORT REPORT\n`
     pdf += `${'='.repeat(50)}\n`
     pdf += `Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n\n`
     
-    if (data.projects && data.projects.length > 0) {
-      pdf += `PROJECTS OVERVIEW\n`
+    if (data.employees && data.employees.length > 0) {
+      pdf += `EMPLOYEE DIRECTORY\n`
       pdf += `${'-'.repeat(30)}\n`
-      data.projects.forEach((project: any, index: number) => {
-        pdf += `${index + 1}. ${project.title.toUpperCase()}\n`
-        pdf += `   Status: ${project.status} | Priority: ${project.priority}\n`
-        pdf += `   Manager: ${project.manager}\n`
-        pdf += `   Progress: ${project.progressPercentage.toFixed(1)}% Complete\n`
-        if (project.budget) pdf += `   Budget: ${project.budget}\n`
-        if (project.estimatedHours) pdf += `   Estimated Hours: ${project.estimatedHours}h\n`
-        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
-          pdf += `   Team: ${project.assignedEmployees.map((emp: any) => emp.name).join(', ')}\n`
-        }
+      data.employees.forEach((employee: any, index: number) => {
+        pdf += `${index + 1}. ${employee.name.toUpperCase()}\n`
+        pdf += `   Employee ID: ${employee.employeeId || 'Not Assigned'}\n`
+        pdf += `   Email: ${employee.email}\n`
+        pdf += `   Role: ${employee.role}\n`
+        pdf += `   Designation: ${employee.designation}\n`
+        pdf += `   Department: ${employee.department}\n`
+        pdf += `   Manager: ${employee.managerName} (${employee.managerEmail})\n`
+        pdf += `   Skills: ${employee.skills}\n`
+        pdf += `   Status: ${employee.isActive}\n`
+        pdf += `   Workload: ${employee.totalWorkload.toFixed(1)}% / ${employee.workloadCap}%\n`
+        pdf += `   Projects: ${employee.totalProjects} | Initiatives: ${employee.totalInitiatives}\n`
+        pdf += `   Utilization Rate: ${employee.utilizationRate.toFixed(1)}%\n`
+        pdf += `   Created: ${employee.createdAt}\n`
+        pdf += `   Last Login: ${employee.lastLoginAt || 'Never'}\n`
         pdf += `\n`
       })
     }
@@ -327,57 +319,51 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       pdf += `• Total Completed Projects: ${data.summary.totalCompletedProjects}\n`
       pdf += `• Active Team Members: ${data.summary.totalActiveEmployees}\n`
       pdf += `• Average Project Progress: ${data.summary.averageProjectProgress.toFixed(1)}%\n`
-      pdf += `• Resource Utilization: ${100 - (data.summary.overloadedEmployees || 0)}% Optimal\n`
+      pdf += `• Overloaded Employees: ${data.summary.overloadedEmployees}\n`
     }
 
     return pdf
   }
 
   const convertToWord = (data: any): string => {
-    // For now, create a structured Word-like format as text
-    // In production, you would use a library like docx or officegen
     let word = ''
-    word += `BPL COMMANDER\nPROJECT MANAGEMENT REPORT\n\n`
+    word += `BPL COMMANDER\nEMPLOYEE DIRECTORY REPORT\n\n`
     word += `Report Generated: ${new Date().toLocaleDateString()}\n`
     word += `Export Format: Microsoft Word Document\n\n`
     
     word += `EXECUTIVE SUMMARY\n`
     word += `================\n\n`
     if (data.summary) {
-      word += `This report provides a comprehensive overview of all projects and resources managed through the BPL Commander system.\n\n`
+      word += `This report provides a comprehensive overview of all employees and their organizational structure in the BPL Commander system.\n\n`
       word += `Key Metrics:\n`
       word += `• Active Projects: ${data.summary.totalActiveProjects}\n`
       word += `• Completed Projects: ${data.summary.totalCompletedProjects}\n`
-      word += `• Team Members: ${data.summary.totalActiveEmployees}\n`
-      word += `• Average Progress: ${data.summary.averageProjectProgress.toFixed(1)}%\n\n`
+      word += `• Active Employees: ${data.summary.totalActiveEmployees}\n`
+      word += `• Average Progress: ${data.summary.averageProjectProgress.toFixed(1)}%\n`
+      word += `• Overloaded Employees: ${data.summary.overloadedEmployees}\n\n`
     }
 
-    if (data.projects && data.projects.length > 0) {
-      word += `PROJECT DETAILS\n`
-      word += `===============\n\n`
-      data.projects.forEach((project: any, index: number) => {
-        word += `${index + 1}. ${project.title}\n`
-        word += `   Project Status: ${project.status.charAt(0).toUpperCase() + project.status.slice(1)}\n`
-        word += `   Priority Level: ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}\n`
-        word += `   Project Manager: ${project.manager}\n`
-        word += `   Completion: ${project.progressPercentage.toFixed(1)}%\n`
-        
-        if (project.description) {
-          word += `   Description: ${project.description}\n`
-        }
-        
-        if (project.assignedEmployees && project.assignedEmployees.length > 0) {
-          word += `   Team Members:\n`
-          project.assignedEmployees.forEach((emp: any) => {
-            word += `     • ${emp.name} - ${emp.role} (${emp.involvement}% involvement)\n`
-          })
-        }
-        
-        if (project.milestones && project.milestones.length > 0) {
-          const completedMilestones = project.milestones.filter((m: any) => m.completed).length
-          word += `   Milestones: ${completedMilestones}/${project.milestones.length} completed\n`
-        }
-        
+    if (data.employees && data.employees.length > 0) {
+      word += `EMPLOYEE DIRECTORY\n`
+      word += `==================\n\n`
+      data.employees.forEach((employee: any, index: number) => {
+        word += `${index + 1}. ${employee.name}\n`
+        word += `   Employee ID: ${employee.employeeId || 'Not Assigned'}\n`
+        word += `   Email Address: ${employee.email}\n`
+        word += `   Role: ${employee.role.charAt(0).toUpperCase() + employee.role.slice(1)}\n`
+        word += `   Designation: ${employee.designation}\n`
+        word += `   Department: ${employee.department}\n`
+        word += `   Manager: ${employee.managerName} (${employee.managerEmail})\n`
+        word += `   Skills: ${employee.skills}\n`
+        word += `   Status: ${employee.isActive}\n`
+        word += `   Workload Capacity: ${employee.workloadCap}%\n`
+        word += `   Current Workload: ${employee.totalWorkload.toFixed(1)}%\n`
+        word += `   Available Capacity: ${employee.availableCapacity.toFixed(1)}%\n`
+        word += `   Total Projects: ${employee.totalProjects}\n`
+        word += `   Total Initiatives: ${employee.totalInitiatives}\n`
+        word += `   Utilization Rate: ${employee.utilizationRate.toFixed(1)}%\n`
+        word += `   Date Created: ${employee.createdAt}\n`
+        word += `   Last Login: ${employee.lastLoginAt || 'Never'}\n`
         word += `\n`
       })
     }
@@ -401,35 +387,37 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       const exportData = generateExportData()
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
       
-      let content: string
       let filename: string
-      let mimeType: string
 
       switch (exportOptions.format) {
         case 'json':
-          content = JSON.stringify(exportData, null, 2)
-          filename = `bpl-commander-export-${timestamp}.json`
-          mimeType = 'application/json'
+          const jsonContent = JSON.stringify(exportData, null, 2)
+          filename = `bpl-commander-employees-${timestamp}.json`
+          const jsonBlob = new Blob([jsonContent], { type: 'application/json' })
+          saveAs(jsonBlob, filename)
           break
         case 'csv':
-          content = convertToCSV(exportData)
-          filename = `bpl-commander-export-${timestamp}.csv`
-          mimeType = 'text/csv'
+          const csvContent = convertToCSV(exportData)
+          filename = `bpl-commander-employees-${timestamp}.csv`
+          const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+          saveAs(csvBlob, filename)
           break
         case 'excel':
-          content = convertToExcel(exportData)
-          filename = `bpl-commander-export-${timestamp}.xlsx`
-          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          const excelBlob = convertToExcel(exportData)
+          filename = `bpl-commander-employees-${timestamp}.xlsx`
+          saveAs(excelBlob, filename)
           break
         case 'pdf':
-          content = convertToPDF(exportData)
-          filename = `bpl-commander-export-${timestamp}.pdf`
-          mimeType = 'application/pdf'
+          const pdfContent = convertToPDF(exportData)
+          filename = `bpl-commander-employees-${timestamp}.pdf`
+          const pdfBlob = new Blob([pdfContent], { type: 'text/plain' })
+          saveAs(pdfBlob, filename)
           break
         case 'word':
-          content = convertToWord(exportData)
-          filename = `bpl-commander-export-${timestamp}.docx`
-          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          const wordContent = convertToWord(exportData)
+          filename = `bpl-commander-employees-${timestamp}.docx`
+          const wordBlob = new Blob([wordContent], { type: 'text/plain' })
+          saveAs(wordBlob, filename)
           break
         default:
           throw new Error('Unsupported export format')
@@ -439,7 +427,6 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
       setExportProgress(100)
 
       setTimeout(() => {
-        downloadFile(content, filename, mimeType)
         toast.success(`Export completed successfully! Downloaded: ${filename}`)
         setIsExporting(false)
         setExportProgress(0)
@@ -454,7 +441,6 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
     }
   }
 
-  const previewData = generateExportData()
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -462,18 +448,16 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Export Project Data
+            Export Employee Data
           </DialogTitle>
           <DialogDescription>
-            Export comprehensive project information including employee involvement and progress metrics
+            Export comprehensive employee directory with role, designation, department, and manager information
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="options" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="options">Export Options</TabsTrigger>
-            <TabsTrigger value="preview">Data Preview</TabsTrigger>
-            <TabsTrigger value="metrics">Summary Metrics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="options" className="space-y-6">
@@ -526,135 +510,9 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Select Projects</CardTitle>
-                  <CardDescription>Choose specific projects to export</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="max-h-40 overflow-y-auto space-y-2">
-                    {centralizedDb.getProjects().map((project) => (
-                      <div key={project.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`project-${project.id}`}
-                          checked={exportOptions.selectedProjects.includes(project.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setExportOptions(prev => ({
-                                ...prev,
-                                selectedProjects: [...prev.selectedProjects, project.id]
-                              }))
-                            } else {
-                              setExportOptions(prev => ({
-                                ...prev,
-                                selectedProjects: prev.selectedProjects.filter(id => id !== project.id)
-                              }))
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`project-${project.id}`} className="text-sm cursor-pointer">
-                          {project.title}
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            {project.status}
-                          </Badge>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setExportOptions(prev => ({
-                        ...prev,
-                        selectedProjects: centralizedDb.getProjects().map(p => p.id)
-                      }))}
-                    >
-                      Select All
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setExportOptions(prev => ({
-                        ...prev,
-                        selectedProjects: []
-                      }))}
-                    >
-                      Clear All
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Date Range</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label htmlFor="start-date">Start Date</Label>
-                    <input
-                      id="start-date"
-                      type="date"
-                      value={exportOptions.dateRange.start}
-                      onChange={(e) => setExportOptions(prev => ({
-                        ...prev,
-                        dateRange: { ...prev.dateRange, start: e.target.value }
-                      }))}
-                      className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end-date">End Date</Label>
-                    <input
-                      id="end-date"
-                      type="date"
-                      value={exportOptions.dateRange.end}
-                      onChange={(e) => setExportOptions(prev => ({
-                        ...prev,
-                        dateRange: { ...prev.dateRange, end: e.target.value }
-                      }))}
-                      className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Data Sections</CardTitle>
-                <CardDescription>Select what information to include in the export</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {[
-                    { key: 'includeProjects', label: 'Projects', icon: FileText },
-                    { key: 'includeEmployees', label: 'Employees', icon: Users },
-                    { key: 'includeInitiatives', label: 'Over & Beyond', icon: TrendingUp },
-                    { key: 'includeProgress', label: 'Progress Metrics', icon: CheckCircle },
-                    { key: 'includeComments', label: 'Comments', icon: FileText },
-                    { key: 'includeMetrics', label: 'System Metrics', icon: TrendingUp }
-                  ].map((option) => (
-                    <div key={option.key} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={option.key}
-                        checked={exportOptions[option.key as keyof ExportOptions] as boolean}
-                        onCheckedChange={(checked) => 
-                          setExportOptions(prev => ({ ...prev, [option.key]: checked }))
-                        }
-                      />
-                      <Label htmlFor={option.key} className="flex items-center gap-2">
-                        <option.icon className="h-4 w-4" />
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
             <div className="flex justify-end space-x-3">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -683,144 +541,6 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <h3>Projects</h3>
-                    <p className="text-2xl font-bold text-primary">
-                      {previewData.projects?.length || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <h3>Employees</h3>
-                    <p className="text-2xl font-bold text-primary">
-                      {previewData.employees?.length || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <h3>Initiatives</h3>
-                    <p className="text-2xl font-bold text-primary">
-                      {previewData.initiatives?.length || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {previewData.projects && previewData.projects.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Sample Project Data</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {previewData.projects.slice(0, 3).map((project: any) => (
-                      <div key={project.projectId} className="border rounded-lg p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-medium">{project.title}</h4>
-                          <Badge variant="outline">{project.status}</Badge>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                          <div>Employees: {project.totalEmployees}</div>
-                          <div>Progress: {project.progressPercentage.toFixed(1)}%</div>
-                          <div>Manager: {project.manager}</div>
-                          <div>Priority: {project.priority}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="metrics" className="space-y-4">
-            {previewData.summary && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Active Projects</p>
-                        <p className="text-2xl font-bold">{previewData.summary.totalActiveProjects}</p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Completed Projects</p>
-                        <p className="text-2xl font-bold">{previewData.summary.totalCompletedProjects}</p>
-                      </div>
-                      <CheckCircle className="h-8 w-8 text-blue-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Active Employees</p>
-                        <p className="text-2xl font-bold">{previewData.summary.totalActiveEmployees}</p>
-                      </div>
-                      <Users className="h-8 w-8 text-purple-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Avg Project Progress</p>
-                        <p className="text-2xl font-bold">{previewData.summary.averageProjectProgress.toFixed(1)}%</p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-indigo-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Overloaded Employees</p>
-                        <p className="text-2xl font-bold text-red-600">{previewData.summary.overloadedEmployees}</p>
-                      </div>
-                      <Users className="h-8 w-8 text-red-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Database Size</p>
-                        <p className="text-2xl font-bold">{(previewData.metrics?.dataSize / 1024).toFixed(1)} KB</p>
-                      </div>
-                      <FileText className="h-8 w-8 text-gray-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>

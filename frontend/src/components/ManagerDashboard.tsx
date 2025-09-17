@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { centralizedDb, CentralizedProject, CentralizedInitiative, BudgetInfo } from '../utils/centralizedDb'
+import { CentralizedProject, CentralizedInitiative, BudgetInfo } from '../utils/centralizedDb'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { ExportSystem } from './ExportSystem'
 import { ProjectDetails } from './ProjectDetails'
@@ -10,6 +10,7 @@ import { DashboardStats } from './project/DashboardStats'
 import { InitiativeCreateDialog } from './initiatives/InitiativeCreateDialog'
 import { InitiativesList } from './initiatives/InitiativesList'
 import { EmployeeManagement } from './EmployeeManagement'
+import { EmployeeOverview } from './EmployeeOverview'
 import { Users } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
@@ -48,11 +49,8 @@ export function ManagerDashboard() {
     title: '',
     description: '',
     projectDetails: '',
-    timeline: '',
+    timelineDate: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
-    estimatedHours: '',
-    budget: '',
-    currency: 'USD',
     tags: [] as string[],
     requiredSkills: [] as string[],
     category: 'standard' as 'standard' | 'over_beyond'
@@ -151,10 +149,10 @@ export function ManagerDashboard() {
           }
         } catch (apiError) {
           console.error('Error fetching projects from API:', apiError)
-          // Fallback to centralizedDb
-          const allProjects = centralizedDb.getProjects()
-          const allInitiatives = centralizedDb.getInitiatives()
-          const allUsers = centralizedDb.getUsers()
+          // Fallback to empty arrays if API fails
+          const allProjects: any[] = []
+          const allInitiatives: any[] = []
+          const allUsers: any[] = []
           setUsers(allUsers)
           
           if (currentUser.role === 'admin') {
@@ -180,10 +178,10 @@ export function ManagerDashboard() {
           }
         }
       } else {
-        // No token, use centralizedDb
-        const allProjects = centralizedDb.getProjects()
-        const allInitiatives = centralizedDb.getInitiatives()
-        const allUsers = centralizedDb.getUsers()
+        // No token, use empty arrays
+        const allProjects: any[] = []
+        const allInitiatives: any[] = []
+        const allUsers: any[] = []
         setUsers(allUsers)
         
         if (currentUser.role === 'admin') {
@@ -209,8 +207,8 @@ export function ManagerDashboard() {
         }
       }
 
-      // Always fetch initiatives from centralizedDb for now
-      const allInitiatives = centralizedDb.getInitiatives()
+      // Always fetch initiatives from backend API
+      const allInitiatives: any[] = []
       if (currentUser.role === 'admin' || currentUser.role === 'program_manager' || currentUser.role === 'rd_manager') {
         setInitiatives(allInitiatives)
       } else if (currentUser.role === 'manager') {
@@ -319,11 +317,8 @@ export function ManagerDashboard() {
       title: '',
       description: '',
       projectDetails: '',
-      timeline: '',
+      timelineDate: '',
       priority: 'medium',
-      estimatedHours: '',
-      budget: '',
-      currency: 'USD',
       tags: [],
       requiredSkills: [],
       category: 'standard'
@@ -347,8 +342,8 @@ export function ManagerDashboard() {
     e.preventDefault()
     if (!currentUser) return
 
-    const canCreateProjects = centralizedDb.canCreateProjects(currentUser.id)
-    if (!canCreateProjects) {
+    // Check if user has permission to create projects
+    if (!['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())) {
       toast.error('You do not have permission to create projects')
       return
     }
@@ -364,11 +359,8 @@ export function ManagerDashboard() {
       const projectData = {
         title: projectForm.title,
         description: projectForm.description,
-        timeline: projectForm.timeline,
+        timelineDate: projectForm.timelineDate,
         priority: projectForm.priority,
-        estimatedHours: projectForm.estimatedHours ? parseInt(projectForm.estimatedHours) : undefined,
-        budgetAmount: projectForm.budget ? parseFloat(projectForm.budget) : undefined,
-        budgetCurrency: projectForm.currency,
         tags: projectForm.tags
       }
 
@@ -391,31 +383,9 @@ export function ManagerDashboard() {
         throw new Error(result.message || 'Failed to create project')
       }
 
-      // Also add to centralizedDb for local consistency
-      const newProject = centralizedDb.addProject({
-        title: projectForm.title,
-        description: projectForm.description,
-        projectDetails: projectForm.projectDetails,
-        managerId: currentUser.id,
-        timeline: projectForm.timeline,
-        status: 'pending',
-        priority: projectForm.priority,
-        category: projectForm.category || 'standard',
-        assignedEmployees: [],
-        milestones: [],
-        tags: projectForm.tags,
-        requiredSkills: projectForm.requiredSkills,
-        estimatedHours: projectForm.estimatedHours ? parseInt(projectForm.estimatedHours) : undefined,
-        budget: projectForm.budget && parseFloat(projectForm.budget) > 0 ? {
-          amount: parseFloat(projectForm.budget),
-          currency: projectForm.currency,
-          allocatedAt: new Date().toISOString(),
-          allocatedBy: currentUser.id,
-          notes: 'Initial budget allocation'
-        } : undefined
-      }, currentUser.id)
-
-      setProjects([...projects, newProject])
+      // Refresh projects list from backend to get the correct project ID
+      await fetchData()
+      
       toast.success(`Project "${projectForm.title}" created successfully!`)
       
       resetProjectForm()
@@ -430,44 +400,57 @@ export function ManagerDashboard() {
     e.preventDefault()
     if (!currentUser) return
 
-    const canCreateInitiatives = centralizedDb.canCreateInitiatives(currentUser.id)
-    if (!canCreateInitiatives) {
+    // Check if user has permission to create initiatives
+    if (!['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())) {
       toast.error('You do not have permission to create Over & Beyond initiatives')
       return
     }
 
     try {
-      if (initiativeForm.assignedTo) {
-        const employeeWorkload = centralizedDb.getEmployeeWorkload(initiativeForm.assignedTo)
-        const user = centralizedDb.getUserById(initiativeForm.assignedTo)
-        const overBeyondCap = user?.overBeyondCap || 20
-        
-        if ((employeeWorkload.overBeyondWorkload + initiativeForm.workloadPercentage) > overBeyondCap) {
-          toast.error(`Assignment would exceed ${overBeyondCap}% Over & Beyond limit. Current: ${employeeWorkload.overBeyondWorkload.toFixed(1)}%`)
-          return
-        }
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('Authentication token not found')
+        return
       }
 
-      const newInitiative = centralizedDb.addInitiative({
+      // Prepare initiative data for backend API
+      const initiativeData = {
         title: initiativeForm.title,
         description: initiativeForm.description,
         category: initiativeForm.category,
-        createdBy: currentUser.id,
-        assignedTo: initiativeForm.assignedTo || undefined,
-        status: 'pending',
         priority: initiativeForm.priority,
         estimatedHours: initiativeForm.estimatedHours,
         workloadPercentage: initiativeForm.workloadPercentage,
+        assignedTo: initiativeForm.assignedTo || undefined,
         dueDate: initiativeForm.dueDate || undefined
-      }, currentUser.id)
-
-      if (newInitiative) {
-        setInitiatives([...initiatives, newInitiative])
-        toast.success(`Initiative "${newInitiative.title}" created successfully!`)
-        
-        resetInitiativeForm()
-        setShowCreateInitiative(false)
       }
+
+      // Create initiative via backend API
+      const response = await fetch(API_ENDPOINTS.INITIATIVES, {
+        method: 'POST',
+        headers: getDefaultHeaders(token),
+        body: JSON.stringify({
+          action: 'create',
+          data: initiativeData
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to create initiative')
+      }
+
+      // Refresh initiatives list from backend
+      await fetchData()
+      
+      toast.success(`Initiative "${initiativeForm.title}" created successfully!`)
+      
+      resetInitiativeForm()
+      setShowCreateInitiative(false)
     } catch (error) {
       console.error('Error creating initiative:', error)
       toast.error('Failed to create initiative')
@@ -480,8 +463,9 @@ export function ManagerDashboard() {
     setPriorityFilter('all')
   }
 
-  const canCreateProjects = currentUser && centralizedDb.canCreateProjects(currentUser.id)
-  const canCreateInitiatives = currentUser && centralizedDb.canCreateInitiatives(currentUser.id)
+  const canCreateProjects = currentUser && ['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())
+  const canCreateInitiatives = currentUser && ['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())
+  const canViewEmployeeOverview = currentUser && (currentUser.role === 'program_manager' || currentUser.role === 'PROGRAM_MANAGER')
 
   // Debug logging
   console.log('ManagerDashboard Debug:', {
@@ -489,7 +473,8 @@ export function ManagerDashboard() {
     userRole: currentUser?.role,
     canCreateProjects,
     canCreateInitiatives,
-    allUsers: centralizedDb.getUsers().map(u => ({ id: u.id, name: u.name, role: u.role }))
+    canViewEmployeeOverview,
+    allUsers: users.map(u => ({ id: u.id, name: u.name, role: u.role }))
   })
 
   const uniqueTeamMembers = Array.from(
@@ -554,10 +539,13 @@ export function ManagerDashboard() {
       />
 
       <Tabs defaultValue="projects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${canViewEmployeeOverview ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
           <TabsTrigger value="initiatives">Over & Beyond ({initiatives.length})</TabsTrigger>
           <TabsTrigger value="employees">Team Management</TabsTrigger>
+          {canViewEmployeeOverview && (
+            <TabsTrigger value="employee-overview">Employee Overview</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="projects" className="space-y-6">
@@ -882,6 +870,23 @@ export function ManagerDashboard() {
             <EmployeeManagement />
           )}
         </TabsContent>
+
+        {canViewEmployeeOverview && (
+          <TabsContent value="employee-overview" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Employee Overview
+                </CardTitle>
+                <CardDescription>View all employees and their project assignments with workload capacity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EmployeeOverview />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Dialogs */}

@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  employeeId?: string;
   password?: string; // Optional for frontend use, required for backend auth
   role: 'admin' | 'program_manager' | 'rd_manager' | 'manager' | 'employee';
   designation: string;
@@ -53,6 +54,8 @@ export interface ProjectAssignment {
   employeeId: string;
   involvementPercentage: number;
   role?: string;
+  startDate?: string;
+  endDate?: string;
   assignedAt: string;
   updatedAt: string;
   
@@ -213,6 +216,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name: string;
+  employeeId: string;
   role: User['role'];
   designation: string;
   managerId?: string;
@@ -223,6 +227,7 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   name: string;
+  employeeId: string;
   role: User['role'];
   designation: string;
   managerId?: string;
@@ -253,6 +258,7 @@ export interface CreateProjectRequest {
   title: string;
   description?: string;
   timeline?: string;
+  timelineDate?: string;
   priority?: Project['priority'];
   estimatedHours?: number;
   budgetAmount?: number;
@@ -270,6 +276,8 @@ export interface AssignEmployeeRequest {
   employeeId: string;
   involvementPercentage: number;
   role?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 // Initiative types

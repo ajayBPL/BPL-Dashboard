@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { centralizedDb, CentralizedProject } from '../utils/centralizedDb'
+import { CentralizedProject } from '../utils/centralizedDb'
 import { useAuth } from '../contexts/AuthContext'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { ProgressEditor } from './ProgressEditor'
@@ -16,6 +16,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Textarea } from './ui/textarea'
 import { Alert, AlertDescription } from './ui/alert'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Calendar as CalendarComponent } from './ui/calendar'
+import { cn } from './ui/utils'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
 import { 
   Users, 
   Plus, 
@@ -58,6 +63,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('')
   const [involvementPercentage, setInvolvementPercentage] = useState(20)
   const [employeeRole, setEmployeeRole] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [allEmployees, setAllEmployees] = useState<CentralizedUser[]>([])
   const [allProjects, setAllProjects] = useState<any[]>([])
 
@@ -121,12 +128,9 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       }
     } catch (error) {
       console.error('Error fetching employees and projects:', error)
-      // Fallback to centralizedDb if API fails
-      const fallbackEmployees = centralizedDb.getUsers().filter(user => 
-        user.role === 'employee' || user.role === 'manager'
-      )
-      setAllEmployees(fallbackEmployees)
-      setAllProjects(centralizedDb.getProjects())
+      // Fallback to empty arrays if API fails
+      setAllEmployees([])
+      setAllProjects([])
     }
   }
 
@@ -164,58 +168,62 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
     return [...employeesWithMatchingSkills, ...employeesWithoutMatchingSkills]
   }, [allEmployees, project?.requiredSkills])
 
-  const assignedEmployees = project ? project.assignedEmployees.map(assignment => {
-    // First try to get employee from allEmployees (backend data)
-    let employee = allEmployees.find(emp => emp.id === assignment.employeeId)
+  const assignedEmployees = React.useMemo(() => {
+    if (!project) return []
     
-    // Fallback to centralizedDb if not found in allEmployees
-    if (!employee) {
-      employee = centralizedDb.getUserById(assignment.employeeId)
-    }
-    
-    // Calculate workload based on backend data
-    const calculateWorkloadFromBackend = (employeeId: string) => {
-      // Use backend projects data if available, otherwise fallback to centralizedDb
-      const projectsToUse = allProjects.length > 0 ? allProjects : centralizedDb.getProjects()
-      const allInitiatives = centralizedDb.getInitiatives()
+    return project.assignedEmployees.map(assignment => {
+      // First try to get employee from allEmployees (backend data)
+      let employee = allEmployees.find(emp => emp.id === assignment.employeeId)
       
-      // Calculate project workload from all active projects
-      const projectWorkload = projectsToUse
-        .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active')
-        .reduce((total: number, project: any) => {
-          // Handle both backend format (assignments) and frontend format (assignedEmployees)
-          const assignments = project.assignments || project.assignedEmployees || []
-          const assignment = assignments.find((emp: any) => emp.employeeId === employeeId)
-          return total + (assignment?.involvementPercentage || 0)
-        }, 0)
-      
-      // Calculate over & beyond workload from initiatives
-      const overBeyondWorkload = allInitiatives
-        .filter(i => i.assignedTo === employeeId && i.status === 'active')
-        .reduce((total, initiative) => total + initiative.workloadPercentage, 0)
-      
-      const totalWorkload = projectWorkload + overBeyondWorkload
-      const workloadCap = employee?.workloadCap || 100
-      const overBeyondCap = employee?.overBeyondCap || 20
-      
-      return {
-        projectWorkload,
-        overBeyondWorkload,
-        totalWorkload,
-        availableCapacity: Math.max(0, workloadCap - projectWorkload),
-        overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
+      // Employee not found in backend data
+      if (!employee) {
+        employee = null
       }
-    }
-    
-    const workload = calculateWorkloadFromBackend(assignment.employeeId)
-    return {
-      ...assignment,
-      employee,
-      workload
-    }
-  }) : []
+      
+      // Calculate workload based on backend data
+      const calculateWorkloadFromBackend = (employeeId: string) => {
+        // Use backend projects data
+        const projectsToUse = allProjects
+        const allInitiatives: any[] = []
+        
+        // Calculate project workload from all projects (including pending, active, etc.)
+        const projectWorkload = projectsToUse
+          .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
+          .reduce((total: number, project: any) => {
+            // Handle both backend format (assignments) and frontend format (assignedEmployees)
+            const assignments = project.assignments || project.assignedEmployees || []
+            const assignment = assignments.find((emp: any) => emp.employeeId === employeeId)
+            return total + (assignment?.involvementPercentage || 0)
+          }, 0)
+        
+        // Calculate over & beyond workload from initiatives
+        const overBeyondWorkload = allInitiatives
+          .filter(i => i.assignedTo === employeeId && i.status === 'active')
+          .reduce((total, initiative) => total + initiative.workloadPercentage, 0)
+        
+        const totalWorkload = projectWorkload + overBeyondWorkload
+        const workloadCap = employee?.workloadCap || 100
+        const overBeyondCap = employee?.overBeyondCap || 20
+        
+        return {
+          projectWorkload,
+          overBeyondWorkload,
+          totalWorkload,
+          availableCapacity: Math.max(0, workloadCap - totalWorkload),
+          overBeyondAvailable: Math.max(0, overBeyondCap - overBeyondWorkload)
+        }
+      }
+      
+      const workload = calculateWorkloadFromBackend(assignment.employeeId)
+      return {
+        ...assignment,
+        employee,
+        workload
+      }
+    })
+  }, [project, allEmployees, allProjects])
 
-  const comments = project ? centralizedDb.getCommentsByProject(project.id) : []
+  const comments: any[] = []
 
   useEffect(() => {
     if (projectId && isOpen) {
@@ -275,13 +283,12 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           }
         } catch (apiError) {
           console.error('Error fetching project from API:', apiError)
-          // Fallback to centralizedDb
+          // API failed, set project to null
         }
       }
       
-      // Fallback to centralizedDb if API fails
-      const projectData = centralizedDb.getProjectById(projectId)
-      setProject(projectData || null)
+      // API failed, set project to null
+      setProject(null)
     } catch (error) {
       console.error('Error fetching project details:', error)
       toast.error('Failed to load project details')
@@ -306,6 +313,32 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       return
     }
 
+    // Check if employee has enough capacity for the new assignment
+    const employee = allEmployees.find(emp => emp.id === selectedEmployeeId)
+    if (employee) {
+      // Calculate current global workload for this employee
+      const currentWorkload = allProjects
+        .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
+        .reduce((total: number, project: any) => {
+          const assignments = project.assignments || project.assignedEmployees || []
+          const assignment = assignments.find((emp: any) => emp.employeeId === selectedEmployeeId)
+          return total + (assignment?.involvementPercentage || 0)
+        }, 0)
+
+      const workloadCap = employee.workloadCap || 100
+      const availableCapacity = workloadCap - currentWorkload
+
+      if (availableCapacity < involvementPercentage) {
+        toast.error(`Insufficient capacity! Employee has ${availableCapacity.toFixed(1)}% available capacity, but you're trying to assign ${involvementPercentage}%.`)
+        return
+      }
+
+      if (availableCapacity <= 0) {
+        toast.error('Employee is already at 100% capacity and cannot be assigned to new projects.')
+        return
+      }
+    }
+
     try {
       const token = localStorage.getItem('bpl-token')
       if (!token) {
@@ -322,7 +355,9 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           data: {
             employeeId: selectedEmployeeId,
             involvementPercentage,
-            role: employeeRole
+            role: employeeRole,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined
           }
         })
       })
@@ -332,10 +367,13 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       if (response.ok && data.success) {
         toast.success('Employee assigned successfully!')
         fetchProjectDetails()
+        fetchEmployeesAndProjects() // Refresh global projects data for workload calculation
         setShowAssignEmployee(false)
         setSelectedEmployeeId('')
         setInvolvementPercentage(20)
         setEmployeeRole('')
+        setStartDate('')
+        setEndDate('')
       } else {
         toast.error(data.error || 'Failed to assign employee')
       }
@@ -372,6 +410,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       if (response.ok && data.success) {
         toast.success('Employee removed from project')
         fetchProjectDetails()
+        fetchEmployeesAndProjects() // Refresh global projects data for workload calculation
       } else {
         toast.error(data.error || 'Failed to remove employee')
       }
@@ -413,6 +452,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       if (response.ok && data.success) {
         toast.success('Assignment updated successfully!')
         fetchProjectDetails()
+        fetchEmployeesAndProjects() // Refresh global projects data for workload calculation
         setEditingAssignment(null)
       } else {
         toast.error(data.error || 'Failed to update assignment')
@@ -499,12 +539,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
         uploadedAt: new Date().toISOString()
       }))
 
-      centralizedDb.addComment({
-        projectId: project.id,
-        userId: currentUser.id,
-        comment: newComment.trim() || (fileAttachments.length > 0 ? `Shared ${fileAttachments.length} file(s)` : ''),
-        attachments: fileAttachments
-      })
+      // Comment functionality disabled - using backend API only
 
       setNewComment('')
       setAttachedFiles([])
@@ -958,7 +993,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                 <CardContent className="space-y-4">
                   <div className="space-y-4">
                     {comments.map((comment) => {
-                      const commenter = centralizedDb.getUserById(comment.userId)
+                      const commenter = allEmployees.find(u => u.id === comment.userId)
                       return (
                         <div key={comment.id} className="flex space-x-3">
                           <Avatar className="h-8 w-8">
@@ -1148,11 +1183,29 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                   {availableEmployees
                     .filter(emp => !project?.assignedEmployees.some(a => a.employeeId === emp.id))
                     .map((employee: any) => {
-                      const workload = centralizedDb.getEmployeeWorkload(employee.id)
+                      // Calculate current global workload for this employee
+                      const currentWorkload = allProjects
+                        .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
+                        .reduce((total: number, project: any) => {
+                          const assignments = project.assignments || project.assignedEmployees || []
+                          const assignment = assignments.find((emp: any) => emp.employeeId === employee.id)
+                          return total + (assignment?.involvementPercentage || 0)
+                        }, 0)
+
+                      const workloadCap = employee.workloadCap || 100
+                      const availableCapacity = workloadCap - currentWorkload
+                      const totalWorkload = currentWorkload
+                      
                       const hasMatchingSkills = employee.matchingSkills && employee.matchingSkills.length > 0
+                      const isAtCapacity = availableCapacity <= 0
                       
                       return (
-                        <SelectItem key={employee.id} value={employee.id}>
+                        <SelectItem 
+                          key={employee.id} 
+                          value={employee.id}
+                          disabled={isAtCapacity}
+                          className={isAtCapacity ? "opacity-50" : ""}
+                        >
                           <div className="flex flex-col w-full">
                             <div className="flex items-center justify-between">
                               <span className={hasMatchingSkills ? 'font-medium' : ''}>{employee.name}</span>
@@ -1161,9 +1214,14 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                                   ✓ {employee.matchingSkills.length} skill{employee.matchingSkills.length > 1 ? 's' : ''} match
                                 </Badge>
                               )}
+                              {isAtCapacity && (
+                                <Badge variant="destructive" className="ml-2 text-xs">
+                                  ⚠️ At Capacity
+                                </Badge>
+                              )}
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              Available: {workload.availableCapacity.toFixed(1)}%
+                            <span className={`text-xs ${isAtCapacity ? 'text-red-600' : 'text-muted-foreground'}`}>
+                              Total: {totalWorkload.toFixed(1)}% | Available: {availableCapacity.toFixed(1)}%
                             </span>
                             {hasMatchingSkills && (
                               <span className="text-xs text-green-600">
@@ -1207,14 +1265,107 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
               </div>
             </div>
 
-            {selectedEmployeeId && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  This employee currently has {centralizedDb.getEmployeeWorkload(selectedEmployeeId).availableCapacity.toFixed(1)}% available capacity.
-                </AlertDescription>
-              </Alert>
-            )}
+            {selectedEmployeeId && (() => {
+              const employee = allEmployees.find(emp => emp.id === selectedEmployeeId)
+              if (!employee) return null
+              
+              // Calculate current global workload for this employee
+              const currentWorkload = allProjects
+                .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
+                .reduce((total: number, project: any) => {
+                  const assignments = project.assignments || project.assignedEmployees || []
+                  const assignment = assignments.find((emp: any) => emp.employeeId === selectedEmployeeId)
+                  return total + (assignment?.involvementPercentage || 0)
+                }, 0)
+
+              const workloadCap = employee.workloadCap || 100
+              const availableCapacity = workloadCap - currentWorkload
+              const totalWorkload = currentWorkload
+
+              return (
+                <Alert className={availableCapacity <= 0 ? "border-red-200 bg-red-50" : ""}>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <div>Total Workload: {totalWorkload.toFixed(1)}%</div>
+                      <div>Available Capacity: {availableCapacity.toFixed(1)}%</div>
+                      {availableCapacity <= 0 && (
+                        <div className="text-red-600 font-medium">⚠️ Employee is at maximum capacity!</div>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )
+            })()}
+
+            {/* Start and End Date Pickers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start-date">Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(new Date(startDate), "PPP") : "Select start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={startDate ? new Date(startDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setStartDate(date.toISOString())
+                        }
+                      }}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="end-date">End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(new Date(endDate), "PPP") : "Select end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={endDate ? new Date(endDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setEndDate(date.toISOString())
+                        }
+                      }}
+                      disabled={(date) => {
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        return date < today || (startDate && date < new Date(startDate))
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
 
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setShowAssignEmployee(false)}>
@@ -1222,7 +1373,26 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
               </Button>
               <Button 
                 onClick={handleAssignEmployee}
-                disabled={!selectedEmployeeId || !employeeRole}
+                disabled={(() => {
+                  if (!selectedEmployeeId || !employeeRole) return true
+                  
+                  const employee = allEmployees.find(emp => emp.id === selectedEmployeeId)
+                  if (!employee) return true
+                  
+                  // Calculate current global workload for this employee
+                  const currentWorkload = allProjects
+                    .filter((p: any) => p.status === 'ACTIVE' || p.status === 'active' || p.status === 'PENDING' || p.status === 'pending')
+                    .reduce((total: number, project: any) => {
+                      const assignments = project.assignments || project.assignedEmployees || []
+                      const assignment = assignments.find((emp: any) => emp.employeeId === selectedEmployeeId)
+                      return total + (assignment?.involvementPercentage || 0)
+                    }, 0)
+
+                  const workloadCap = employee.workloadCap || 100
+                  const availableCapacity = workloadCap - currentWorkload
+                  
+                  return availableCapacity < involvementPercentage
+                })()}
               >
                 Assign Employee
               </Button>

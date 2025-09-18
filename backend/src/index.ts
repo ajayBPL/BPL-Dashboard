@@ -61,14 +61,37 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://192.168.29.213:3000',
-    'http://192.168.10.205:3000',
-    'http://192.168.29.213:5173',
-    'http://192.168.10.205:5173',
-    process.env.CORS_ORIGIN || 'http://localhost:3000'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3002',
+      'http://192.168.29.213:3000',
+      'http://192.168.29.213:3002',
+      'http://192.168.10.205:3000',
+      'http://192.168.10.205:3002',
+      'http://192.168.10.11:3000',
+      'http://192.168.10.11:3002',
+      'http://192.168.29.213:5173',
+      'http://192.168.10.205:5173',
+      'http://192.168.10.11:5173',
+      process.env.CORS_ORIGIN || 'http://localhost:3000'
+    ];
+    
+    // Allow any localhost or 192.168.x.x origin for development
+    if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/)) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`CORS: Blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

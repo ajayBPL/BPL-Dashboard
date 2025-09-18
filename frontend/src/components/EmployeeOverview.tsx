@@ -103,7 +103,7 @@ export function EmployeeOverview() {
       }
 
       const [usersResponse, projectsResponse] = await Promise.all([
-        fetch(API_ENDPOINTS.USERS, {
+        fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
           headers: getDefaultHeaders(token)
         }),
         fetch(API_ENDPOINTS.PROJECTS, {
@@ -123,7 +123,10 @@ export function EmployeeOverview() {
 
       // Calculate employee workload and project assignments
       const employeeData: EmployeeWithProjects[] = users
-        .filter((user: any) => user.role === 'employee' || user.role === 'manager')
+        .filter((user: any) => {
+          const role = user.role?.toLowerCase()
+          return role === 'employee' || role === 'manager' || role === 'program_manager' || role === 'rd_manager'
+        })
         .map((user: any) => {
           // Find all projects assigned to this employee
           const employeeProjects: EmployeeProjectAssignment[] = projects
@@ -147,6 +150,7 @@ export function EmployeeOverview() {
               return null
             })
             .filter(Boolean)
+
 
           // Calculate total workload
           const totalWorkload = employeeProjects.reduce((total, project) => total + project.involvementPercentage, 0)
@@ -197,7 +201,7 @@ export function EmployeeOverview() {
 
     // Apply role filter
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(emp => emp.role === roleFilter)
+      filtered = filtered.filter(emp => emp.role?.toLowerCase() === roleFilter.toLowerCase())
     }
 
     // Apply department filter
@@ -360,76 +364,70 @@ export function EmployeeOverview() {
         </div>
       </div>
 
-      {/* Employee Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Employee Thumbnail Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredEmployees.map((employee) => (
-          <Card key={employee.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback>
-                      {employee.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{employee.name}</h3>
-                    <p className="text-sm text-muted-foreground">{employee.designation}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+          <Card 
+            key={employee.id} 
+            className="hover:shadow-lg transition-all duration-200"
+          >
+            <CardContent className="p-3">
+              <div className="space-y-2">
+                {/* Employee Name - Clickable */}
+                <h3 
+                  className="font-semibold text-sm hover:text-blue-600 transition-colors cursor-pointer text-center"
                   onClick={() => {
                     setSelectedEmployee(employee)
                     setShowDetails(true)
                   }}
                 >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Details
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Department:</span>
-                  <p className="font-medium">{employee.department}</p>
+                  {employee.name}
+                </h3>
+                
+                {/* Employee ID */}
+                <p className="text-xs text-muted-foreground text-center">
+                  ID: {employee.id}
+                </p>
+                
+                {/* Progress Bar - Increased Height */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Workload</span>
+                    <span className="font-medium">{employee.totalWorkload}% / {employee.workloadCap}%</span>
+                  </div>
+                  {/* Progress bar with increased height */}
+                  <div 
+                    style={{
+                      width: '100%',
+                      height: '12px',
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      border: '1px solid #d1d5db'
+                    }}
+                  >
+                    <div 
+                      style={{
+                        height: '100%',
+                        backgroundColor: '#ef4444',
+                        width: `${Math.min((employee.totalWorkload / employee.workloadCap) * 100, 100)}%`,
+                        transition: 'width 0.3s ease'
+                      }}
+                    />
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: `${Math.min((employee.totalWorkload / employee.workloadCap) * 100, 100)}%`,
+                        height: '100%',
+                        backgroundColor: '#22c55e',
+                        width: `${Math.max(100 - (employee.totalWorkload / employee.workloadCap) * 100, 0)}%`,
+                        transition: 'width 0.3s ease'
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Role:</span>
-                  <p className="font-medium">{employee.role}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Workload Capacity</span>
-                  <span className={getWorkloadColor(employee.totalWorkload, employee.workloadCap)}>
-                    {employee.totalWorkload.toFixed(1)}% / {employee.workloadCap}%
-                  </span>
-                </div>
-                <Progress 
-                  value={(employee.totalWorkload / employee.workloadCap) * 100} 
-                  className="h-2"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Available: {employee.availableCapacity.toFixed(1)}%</span>
-                  <span>{employee.projects.length} project{employee.projects.length !== 1 ? 's' : ''}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                <Badge variant={getWorkloadBadgeVariant(employee.totalWorkload, employee.workloadCap)}>
-                  {employee.totalWorkload > employee.workloadCap ? 'Over Capacity' : 
-                   employee.totalWorkload === employee.workloadCap ? 'At Capacity' :
-                   employee.totalWorkload > employee.workloadCap * 0.8 ? 'High Load' : 'Available'}
-                </Badge>
-                {employee.projects.length > 0 && (
-                  <Badge variant="outline">
-                    {employee.projects.length} Project{employee.projects.length !== 1 ? 's' : ''}
-                  </Badge>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -471,6 +469,10 @@ export function EmployeeOverview() {
                       <p className="font-medium">{selectedEmployee.name}</p>
                     </div>
                     <div>
+                      <span className="text-sm text-muted-foreground">Employee ID:</span>
+                      <p className="font-medium">{selectedEmployee.id}</p>
+                    </div>
+                    <div>
                       <span className="text-sm text-muted-foreground">Email:</span>
                       <p className="font-medium">{selectedEmployee.email}</p>
                     </div>
@@ -492,6 +494,30 @@ export function EmployeeOverview() {
                         {selectedEmployee.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Skills:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedEmployee.skills?.map((skill, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Workload Capacity:</span>
+                      <p className="font-medium">{selectedEmployee.workloadCap}%</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">Created:</span>
+                      <p className="font-medium">{new Date(selectedEmployee.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    {selectedEmployee.lastLoginAt && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Last Login:</span>
+                        <p className="font-medium">{new Date(selectedEmployee.lastLoginAt).toLocaleDateString()}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

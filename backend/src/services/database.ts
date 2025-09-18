@@ -478,6 +478,15 @@ class DatabaseService {
     }
     return await this.prisma.notification.create({ data });
   }
+
+  // Custom roles operations
+  async getCustomRoles() {
+    if (this.useMock) {
+      return await fileBasedMockDb.getCustomRoles();
+    }
+    // For real database, you would implement this
+    return [];
+  }
 }
 
 export const db = new DatabaseService();

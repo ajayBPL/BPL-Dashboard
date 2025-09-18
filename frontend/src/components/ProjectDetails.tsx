@@ -78,7 +78,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
       }
 
       // Fetch employees
-      const usersResponse = await fetch(API_ENDPOINTS.USERS, {
+      const usersResponse = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
         headers: getDefaultHeaders(token)
       })
 

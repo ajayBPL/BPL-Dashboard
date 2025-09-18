@@ -14,7 +14,17 @@ router.post('/register', [
   body('password').isLength({ min: 6 }),
   body('name').isLength({ min: 2 }),
   body('employeeId').isLength({ min: 1 }).withMessage('Employee ID is required'),
-  body('role').isIn(['admin', 'program_manager', 'rd_manager', 'manager', 'employee']),
+  body('role').custom(async (value) => {
+    const builtInRoles = ['admin', 'program_manager', 'rd_manager', 'manager', 'employee'];
+    const customRoles = await db.getCustomRoles();
+    const customRoleNames = customRoles.map((role: any) => role.name.toLowerCase());
+    const allValidRoles = [...builtInRoles, ...customRoleNames];
+    
+    if (!allValidRoles.includes(value.toLowerCase())) {
+      throw new Error('Invalid role. Must be one of: ' + allValidRoles.join(', '));
+    }
+    return true;
+  }),
   body('designation').isLength({ min: 2 })
 ], asyncHandler(async (req: Request, res: Response): Promise<void> => {
   // Check validation errors
@@ -178,15 +188,17 @@ router.post('/login', [
   }
 
   // Verify password
-  // For mock data, compare plain text passwords directly
-  // For real database, use bcrypt comparison
+  // Handle both plain text and bcrypt hashed passwords
   let isPasswordValid = false;
-  if (process.env.NODE_ENV === 'development' || !process.env.DATABASE_URL) {
-    // Mock data - plain text comparison
-    isPasswordValid = password === (user as any).password;
+  const storedPassword = (user as any).password;
+  
+  // Check if the stored password is bcrypt hashed (starts with $2b$)
+  if (storedPassword.startsWith('$2b$')) {
+    // Password is bcrypt hashed, use bcrypt comparison
+    isPasswordValid = await bcrypt.compare(password, storedPassword);
   } else {
-    // Real database - bcrypt comparison
-    isPasswordValid = await bcrypt.compare(password, (user as any).password);
+    // Password is plain text, compare directly
+    isPasswordValid = password === storedPassword;
   }
   
   if (!isPasswordValid) {
@@ -346,7 +358,18 @@ router.post('/change-password', [
   }
 
   // Verify current password
-  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, (user as any).password);
+  const storedPassword = (user as any).password;
+  let isCurrentPasswordValid = false;
+  
+  // Check if the stored password is bcrypt hashed (starts with $2b$)
+  if (storedPassword.startsWith('$2b$')) {
+    // Password is bcrypt hashed, use bcrypt comparison
+    isCurrentPasswordValid = await bcrypt.compare(currentPassword, storedPassword);
+  } else {
+    // Password is plain text, compare directly
+    isCurrentPasswordValid = currentPassword === storedPassword;
+  }
+  
   if (!isCurrentPasswordValid) {
     res.status(400).json({
       success: false,

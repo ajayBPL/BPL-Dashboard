@@ -374,5 +374,68 @@
     "projectId": "project-1758130145699",
     "details": "Assigned Team Manager to project with 40% involvement",
     "timestamp": "2025-09-17T18:30:30.127Z"
+  },
+  {
+    "id": "activity-1758169894699",
+    "userId": "user-1758169894695",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758169894695",
+    "details": "User registered: Putta Saikrishna (sai.krishna@bpl.com)",
+    "timestamp": "2025-09-18T04:31:34.699Z"
+  },
+  {
+    "id": "activity-1758170260174",
+    "userId": "user-1758170260172",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758170260172",
+    "details": "User registered: Test Intern (test.intern@bpl.in)",
+    "timestamp": "2025-09-18T04:37:40.174Z"
+  },
+  {
+    "id": "activity-1758170419325",
+    "userId": "user-1758170419319",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758170419319",
+    "details": "User registered: Saikrishna Putta (putta.saikrishna@bpl.com)",
+    "timestamp": "2025-09-18T04:40:19.325Z"
+  },
+  {
+    "id": "activity-1758170455428",
+    "userId": "user-1758170455425",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758170455425",
+    "details": "User registered: Siddhartha (siddhartha.intern@bpl.in)",
+    "timestamp": "2025-09-18T04:40:55.428Z"
+  },
+  {
+    "id": "activity-1758171689833",
+    "userId": "user-1758171689824",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758171689824",
+    "details": "User registered: Muralikrishna Menon (murali.menon@bpl.com)",
+    "timestamp": "2025-09-18T05:01:29.833Z"
+  },
+  {
+    "id": "activity-1758172742175",
+    "userId": "user-1758172742167",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758172742167",
+    "details": "User registered: Abhishek Kumar (abhishek.kumar@bpl.in)",
+    "timestamp": "2025-09-18T05:19:02.175Z"
+  },
+  {
+    "id": "activity-1758180458821",
+    "userId": "user-1758180458816",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758180458816",
+    "details": "User registered: Ananthu S (ananthu@bpl.in)",
+    "timestamp": "2025-09-18T07:27:38.821Z"
   }
 ]

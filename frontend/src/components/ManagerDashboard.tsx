@@ -88,16 +88,23 @@ export function ManagerDashboard() {
     try {
       setLoading(true)
       
-      // Fetch projects from backend API
+      // Fetch projects and users from backend API
       const token = localStorage.getItem('bpl-token')
       if (token) {
         try {
-          const projectsResponse = await fetch(API_ENDPOINTS.PROJECTS, {
-            headers: getDefaultHeaders(token)
-          })
+          const [projectsResponse, usersResponse] = await Promise.all([
+            fetch(API_ENDPOINTS.PROJECTS, {
+              headers: getDefaultHeaders(token)
+            }),
+            fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
+              headers: getDefaultHeaders(token)
+            })
+          ])
 
-          if (projectsResponse.ok) {
+          if (projectsResponse.ok && usersResponse.ok) {
             const projectsData = await projectsResponse.json()
+            const usersData = await usersResponse.json()
+            
             if (projectsData.success && projectsData.data) {
               // Convert backend projects to frontend format
               const backendProjects = projectsData.data.map((project: any) => ({
@@ -145,6 +152,11 @@ export function ManagerDashboard() {
                   p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
                 ))
               }
+            }
+            
+            // Set users data
+            if (usersData.success && usersData.data) {
+              setUsers(usersData.data)
             }
           }
         } catch (apiError) {
@@ -477,8 +489,10 @@ export function ManagerDashboard() {
     allUsers: users.map(u => ({ id: u.id, name: u.name, role: u.role }))
   })
 
-  const uniqueTeamMembers = Array.from(
-    new Set(projects.flatMap(p => p.assignedEmployees.map(e => e.employeeId)))
+  // Get total number of employees from users data
+  const totalEmployees = users.filter(user => 
+    user.role === 'employee' || user.role === 'EMPLOYEE' || 
+    user.role === 'manager' || user.role === 'MANAGER'
   ).length
 
   const hasActiveFilters = searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
@@ -535,7 +549,7 @@ export function ManagerDashboard() {
         totalProjects={projects.length}
         activeProjects={projects.filter(p => p.status === 'active').length}
         totalInitiatives={initiatives.length}
-        uniqueTeamMembers={uniqueTeamMembers}
+        uniqueTeamMembers={totalEmployees}
       />
 
       <Tabs defaultValue="projects" className="space-y-6">

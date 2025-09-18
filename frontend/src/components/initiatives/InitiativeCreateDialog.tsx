@@ -50,7 +50,7 @@ export function InitiativeCreateDialog({
         return
       }
 
-      const response = await fetch(API_ENDPOINTS.USERS, {
+      const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
         headers: getDefaultHeaders(token)
       })
 

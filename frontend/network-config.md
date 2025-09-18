@@ -2,7 +2,7 @@
 
 ## For Other Systems on Your Network
 
-### Your Current IP: `192.168.29.213`
+### Your Current IP: `192.168.10.11` (Primary) / `192.168.29.213` (Secondary)
 
 ### Option 1: Environment Variables (Recommended)
 
@@ -10,8 +10,8 @@ Create a `.env.local` file in the `frontend` directory with:
 
 ```bash
 # Network Access Configuration
-VITE_API_URL=http://192.168.29.213:3001/api
-VITE_API_HEALTH_URL=http://192.168.29.213:3001/health
+VITE_API_URL=http://192.168.10.11:3001/api
+VITE_API_HEALTH_URL=http://192.168.10.11:3001/health
 ```
 
 Then restart the frontend:
@@ -22,9 +22,11 @@ npm run dev --prefix frontend
 ### Option 2: Direct Access URLs
 
 **Frontend (React App):**
+- http://192.168.10.11:3000
 - http://192.168.29.213:3000
 
 **Backend API:**
+- http://192.168.10.11:3001
 - http://192.168.29.213:3001
 
 ### Option 3: Update API Config Directly
@@ -32,17 +34,17 @@ npm run dev --prefix frontend
 Modify `frontend/src/utils/apiConfig.ts`:
 
 ```typescript
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.29.213:3001/api';
-const API_HEALTH_URL = import.meta.env.VITE_API_HEALTH_URL || 'http://192.168.29.213:3001/health';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.10.11:3001/api';
+const API_HEALTH_URL = import.meta.env.VITE_API_HEALTH_URL || 'http://192.168.10.11:3001/health';
 ```
 
 ### Testing Network Access
 
 From another system on your network:
 
-1. **Test Frontend:** http://192.168.29.213:3000
-2. **Test Backend:** http://192.168.29.213:3001/health
-3. **Test Login:** http://192.168.29.213:3001/api/auth/login
+1. **Test Frontend:** http://192.168.10.11:3000
+2. **Test Backend:** http://192.168.10.11:3001/health
+3. **Test Login:** http://192.168.10.11:3001/api/auth/login
 
 ### Firewall Considerations
 

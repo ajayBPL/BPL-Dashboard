@@ -195,7 +195,7 @@ export function AdminDashboard() {
         return
       }
 
-      const response = await fetch(API_ENDPOINTS.USERS, {
+      const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
         headers: getDefaultHeaders(token)
       })
 
@@ -486,7 +486,7 @@ export function AdminDashboard() {
       console.log(`🌐 ${action}ing user ${user.email}`)
 
       // Make API call to update user status using the action-based endpoint
-      const response = await fetch(API_ENDPOINTS.USERS, {
+      const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
         method: 'POST',
         headers: getDefaultHeaders(token),
         body: JSON.stringify({

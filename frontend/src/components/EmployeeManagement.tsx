@@ -86,7 +86,7 @@ export function EmployeeManagement() {
         return
       }
 
-      const usersResponse = await fetch(API_ENDPOINTS.USERS, {
+      const usersResponse = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
         headers: getDefaultHeaders(token)
       })
 

@@ -45,7 +45,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
 
   // Apply pagination
   const page = pagination.page || 1;
-  const limit = pagination.limit || 10;
+  const limit = pagination.limit || 50;
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);

@@ -16,5 +16,23 @@
     "isActive": true,
     "createdAt": "2025-09-16T18:30:23.390Z",
     "updatedAt": "2025-09-16T18:30:23.390Z"
+  },
+  {
+    "id": "role-1758170114113",
+    "name": "Intern",
+    "description": "Internship",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-09-18T04:35:14.113Z",
+    "updatedAt": "2025-09-18T04:35:14.113Z"
+  },
+  {
+    "id": "role-1758172716193",
+    "name": "Lab In Charge",
+    "description": "",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-09-18T05:18:36.193Z",
+    "updatedAt": "2025-09-18T05:18:36.193Z"
   }
 ]

@@ -636,6 +636,11 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                 <DialogDescription className="flex items-center gap-2">
                   <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
                   <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+                  {project.category && (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                      {project.category}
+                    </Badge>
+                  )}
                   <span>•</span>
                   <span>{project.timeline}</span>
                 </DialogDescription>

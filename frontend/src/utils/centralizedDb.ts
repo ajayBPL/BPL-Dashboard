@@ -102,7 +102,7 @@ export interface CentralizedProject {
   timeline: string
   status: 'pending' | 'active' | 'completed' | 'on-hold' | 'cancelled'
   priority: 'low' | 'medium' | 'high' | 'critical'
-  category?: 'standard' | 'over_beyond'
+  category?: 'ECR' | 'ECN' | 'NPD' | 'SUST' | string
   createdAt: string
   updatedAt: string
   version: number

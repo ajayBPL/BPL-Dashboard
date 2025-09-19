@@ -30,6 +30,7 @@ export interface Project {
   managerId: string;
   status: 'pending' | 'active' | 'completed' | 'on-hold' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'critical';
+  category?: 'ECR' | 'ECN' | 'NPD' | 'SUST' | string;
   estimatedHours?: number;
   actualHours?: number;
   budgetAmount?: number;
@@ -260,6 +261,7 @@ export interface CreateProjectRequest {
   timeline?: string;
   timelineDate?: string;
   priority?: Project['priority'];
+  category?: Project['category'];
   estimatedHours?: number;
   budgetAmount?: number;
   budgetCurrency?: string;

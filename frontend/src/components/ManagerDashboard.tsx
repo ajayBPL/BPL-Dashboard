@@ -45,6 +45,10 @@ export function ManagerDashboard() {
   const [selectedManager, setSelectedManager] = useState<string>('all')
   
   // Form states with improved structure
+  // Available categories for rotation
+  const availableCategories: ('ECR' | 'ECN' | 'NPD' | 'SUST')[] = ['ECR', 'ECN', 'NPD', 'SUST']
+  const [categoryIndex, setCategoryIndex] = useState(0)
+
   const [projectForm, setProjectForm] = useState({
     title: '',
     description: '',
@@ -53,7 +57,7 @@ export function ManagerDashboard() {
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     tags: [] as string[],
     requiredSkills: [] as string[],
-    category: 'standard' as 'standard' | 'over_beyond'
+    category: availableCategories[0] as 'ECR' | 'ECN' | 'NPD' | 'SUST'
   })
 
   const [initiativeForm, setInitiativeForm] = useState({
@@ -116,7 +120,7 @@ export function ManagerDashboard() {
                 timeline: project.timeline,
                 status: project.status?.toLowerCase() || 'pending',
                 priority: project.priority?.toLowerCase() || 'medium',
-                category: 'standard',
+                category: project.category || 'standard',
                 assignedEmployees: project.assignments || [],
                 milestones: [],
                 tags: project.tags || [],
@@ -255,7 +259,7 @@ export function ManagerDashboard() {
   const getEmployeesUnderManager = (managerId: string) => {
     return users.filter(user => 
       user.managerId === managerId && 
-      (user.role === 'employee' || user.role === 'EMPLOYEE')
+      (user.role === 'employee' || user.role === 'EMPLOYEE' || user.role === 'intern' || user.role === 'INTERN')
     )
   }
 
@@ -264,6 +268,26 @@ export function ManagerDashboard() {
     const subordinateManagers = getSubordinateManagers()
     const allEmployees: any[] = []
     
+    // For Program Managers, show ALL employees and interns in the organization
+    if (currentUser && (currentUser.role === 'program_manager' || currentUser.role === 'PROGRAM_MANAGER')) {
+      const allOrgEmployees = users.filter(user => 
+        (user.role === 'employee' || user.role === 'EMPLOYEE' || user.role === 'intern' || user.role === 'INTERN')
+      )
+      
+      allOrgEmployees.forEach(employee => {
+        // Find the manager name for this employee
+        const manager = users.find(u => u.id === employee.managerId)
+        allEmployees.push({
+          ...employee,
+          managerName: manager ? manager.name : 'No Manager',
+          managerRole: manager ? manager.role : 'Unknown'
+        })
+      })
+      
+      return allEmployees
+    }
+    
+    // For other roles, use the original logic
     subordinateManagers.forEach(manager => {
       const employees = getEmployeesUnderManager(manager.id)
       employees.forEach(employee => {
@@ -291,6 +315,10 @@ export function ManagerDashboard() {
         return 'Employee'
       case 'MANAGER':
         return 'Manager'
+      case 'INTERN':
+        return 'Intern'
+      case 'LAB IN CHARGE':
+        return 'Lab In Charge'
       case 'admin':
         return 'Admin'
       default:
@@ -333,7 +361,7 @@ export function ManagerDashboard() {
       priority: 'medium',
       tags: [],
       requiredSkills: [],
-      category: 'standard'
+      category: availableCategories[categoryIndex]
     })
   }
 
@@ -373,6 +401,7 @@ export function ManagerDashboard() {
         description: projectForm.description,
         timelineDate: projectForm.timelineDate,
         priority: projectForm.priority,
+        category: projectForm.category,
         tags: projectForm.tags
       }
 
@@ -399,6 +428,10 @@ export function ManagerDashboard() {
       await fetchData()
       
       toast.success(`Project "${projectForm.title}" created successfully!`)
+      
+      // Cycle to next category for next project
+      const nextIndex = (categoryIndex + 1) % availableCategories.length
+      setCategoryIndex(nextIndex)
       
       resetProjectForm()
       setShowCreateProject(false)
@@ -492,7 +525,11 @@ export function ManagerDashboard() {
   // Get total number of employees from users data
   const totalEmployees = users.filter(user => 
     user.role === 'employee' || user.role === 'EMPLOYEE' || 
-    user.role === 'manager' || user.role === 'MANAGER'
+    user.role === 'manager' || user.role === 'MANAGER' ||
+    user.role === 'intern' || user.role === 'INTERN' ||
+    user.role === 'LAB IN CHARGE' ||
+    user.role === 'program_manager' || user.role === 'PROGRAM_MANAGER' ||
+    user.role === 'rd_manager' || user.role === 'RD_MANAGER'
   ).length
 
   const hasActiveFilters = searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'

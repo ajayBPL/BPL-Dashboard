@@ -33,6 +33,7 @@ interface EmployeeProjectAssignment {
   projectId: string
   projectTitle: string
   projectStatus: string
+  category?: string
   involvementPercentage: number
   role: string
   assignedDate: string
@@ -140,6 +141,7 @@ export function EmployeeOverview() {
                   projectId: project.id,
                   projectTitle: project.title,
                   projectStatus: project.status,
+                  category: project.category || 'standard',
                   involvementPercentage: assignment.involvementPercentage || 0,
                   role: assignment.role || 'Team Member',
                   assignedDate: assignment.assignedDate || project.createdAt,
@@ -364,37 +366,61 @@ export function EmployeeOverview() {
         </div>
       </div>
 
-      {/* Employee Thumbnail Grid */}
+      {/* Employee Thumbnail Grid - Updated Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredEmployees.map((employee) => (
           <Card 
             key={employee.id} 
             className="hover:shadow-lg transition-all duration-200"
           >
-            <CardContent className="p-3">
-              <div className="space-y-2">
-                {/* Employee Name - Clickable */}
-                <h3 
-                  className="font-semibold text-sm hover:text-blue-600 transition-colors cursor-pointer text-center"
-                  onClick={() => {
-                    setSelectedEmployee(employee)
-                    setShowDetails(true)
-                  }}
-                >
-                  {employee.name}
-                </h3>
-                
-                {/* Employee ID */}
-                <p className="text-xs text-muted-foreground text-center">
-                  ID: {employee.id}
-                </p>
-                
-                {/* Progress Bar - Increased Height */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Workload</span>
-                    <span className="font-medium">{employee.totalWorkload}% / {employee.workloadCap}%</span>
+            <CardContent className="p-3 relative">
+              <div className="space-y-4">
+                {/* Project Count Badge with Percentage - Top Right */}
+                <div className="absolute top-2 right-2 text-right z-10">
+                  <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold mb-1">
+                    {employee.projects.length}
                   </div>
+                  <div className="text-xs text-muted-foreground leading-tight">
+                    {employee.totalWorkload} / {employee.workloadCap}%
+                  </div>
+                </div>
+                
+                {/* Project Categories - Above Name */}
+                <div className="flex items-center justify-center pr-16 mb-1">
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {['ECR', 'ECN', 'NPD', 'SUST'].map((category) => {
+                      const isInvolved = employee.projects.some(project => project.category === category)
+                      return (
+                        <span 
+                          key={category}
+                          className={`text-xs px-1.5 py-0.5 rounded ${
+                            isInvolved 
+                              ? 'text-green-800 bg-green-100' 
+                              : 'text-gray-400 bg-gray-100'
+                          }`}
+                        >
+                          {category}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+                
+                {/* Employee Name - Centered with right margin to avoid overlap */}
+                <div className="flex items-center justify-center pr-16 mb-3">
+                  <h3 
+                    className="font-semibold text-sm hover:text-blue-600 transition-colors cursor-pointer text-center"
+                    onClick={() => {
+                      setSelectedEmployee(employee)
+                      setShowDetails(true)
+                    }}
+                  >
+                    {employee.name}
+                  </h3>
+                </div>
+                
+                {/* Progress Bar Only - No Text Below */}
+                <div className="space-y-1 mt-2">
                   {/* Progress bar with increased height */}
                   <div 
                     style={{
@@ -427,6 +453,7 @@ export function EmployeeOverview() {
                       }}
                     />
                   </div>
+                  {/* No text below progress bar - percentage only in top right */}
                 </div>
               </div>
             </CardContent>
@@ -569,7 +596,14 @@ export function EmployeeOverview() {
                         <div key={project.projectId} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h4 className="font-semibold">{project.projectTitle}</h4>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold">{project.projectTitle}</h4>
+                                {project.category && (
+                                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                                    {project.category}
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">Role: {project.role}</p>
                             </div>
                             <Badge variant="outline">{project.projectStatus}</Badge>

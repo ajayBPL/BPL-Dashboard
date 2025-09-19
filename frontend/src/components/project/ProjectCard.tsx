@@ -78,6 +78,11 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
                 <Badge className={getPriorityColor(project.priority)} variant="secondary">
                   {project.priority} priority
                 </Badge>
+                {project.category && (
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                    {project.category}
+                  </Badge>
+                )}
               </div>
             </div>
             <Button 

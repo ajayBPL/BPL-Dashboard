@@ -18,7 +18,7 @@ class FileBasedMockDatabase {
   constructor() {
     this.ensureDataDirectory();
     this.initializeDefaultData();
-    this.startDataSync();
+    // this.startDataSync(); // Temporarily disabled for testing
   }
 
   private ensureDataDirectory() {

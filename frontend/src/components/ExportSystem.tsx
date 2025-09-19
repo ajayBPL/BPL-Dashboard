@@ -96,6 +96,7 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
         description: project.description,
         status: project.status,
         priority: project.priority,
+        category: project.category || 'standard',
         manager: manager?.name || 'Unknown',
         managerEmail: manager?.email || '',
         timeline: project.timeline,
@@ -206,9 +207,9 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
     // Add projects CSV
     if (data.projects && data.projects.length > 0) {
       csv += 'PROJECTS\n'
-      csv += 'ID,Title,Status,Priority,Manager,Total Employees,Progress %,Budget,Estimated Hours,Actual Hours\n'
+      csv += 'ID,Title,Status,Priority,Category,Manager,Total Employees,Progress %,Budget,Estimated Hours,Actual Hours\n'
       data.projects.forEach((project: any) => {
-        csv += `${project.projectId},"${project.title}",${project.status},${project.priority},"${project.manager}",${project.totalEmployees},${project.progressPercentage.toFixed(2)},${project.budget || 0},${project.estimatedHours || 0},${project.actualHours || 0}\n`
+        csv += `${project.projectId},"${project.title}",${project.status},${project.priority},"${project.category}","${project.manager}",${project.totalEmployees},${project.progressPercentage.toFixed(2)},${project.budget || 0},${project.estimatedHours || 0},${project.actualHours || 0}\n`
       })
       csv += '\n'
     }
@@ -253,6 +254,7 @@ export function ExportSystem({ isOpen, onClose }: ExportSystemProps) {
         'Title': project.title,
         'Status': project.status,
         'Priority': project.priority,
+        'Category': project.category,
         'Manager': project.manager,
         'Total Employees': project.totalEmployees,
         'Progress %': project.progressPercentage.toFixed(2),

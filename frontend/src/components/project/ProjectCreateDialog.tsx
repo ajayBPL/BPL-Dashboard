@@ -6,7 +6,7 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Badge } from '../ui/badge'
-import { CalendarIcon, AlertTriangleIcon } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '../ui/alert'
 import { Calendar } from '../ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
@@ -21,7 +21,7 @@ interface ProjectForm {
   priority: 'low' | 'medium' | 'high' | 'critical'
   tags: string[]
   requiredSkills: string[]
-  category?: 'standard' | 'over_beyond'
+  category?: 'ECR' | 'ECN' | 'NPD' | 'SUST' | string
 }
 
 interface ProjectCreateDialogProps {
@@ -43,12 +43,25 @@ export function ProjectCreateDialog({
 }: ProjectCreateDialogProps) {
   const [newTag, setNewTag] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [customCategory, setCustomCategory] = useState('')
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [customCategories, setCustomCategories] = useState<string[]>([])
 
   const updateField = (field: keyof ProjectForm, value: string | string[]) => {
     setFormData({ ...formData, [field]: value })
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors({ ...errors, [field]: '' })
+    }
+  }
+
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim() && !customCategories.includes(customCategory.trim())) {
+      const newCategory = customCategory.trim()
+      setCustomCategories([...customCategories, newCategory])
+      setFormData({ ...formData, category: newCategory })
+      setCustomCategory('')
+      setShowCustomInput(false)
     }
   }
 
@@ -201,6 +214,131 @@ export function ProjectCreateDialog({
               </div>
             </div>
             
+            {/* Priority and Category Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-priority">Priority</Label>
+                <Select 
+                  value={formData.priority} 
+                  onValueChange={(value: any) => updateField('priority', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">
+                      <Badge className={getPriorityColor('low')} variant="secondary">
+                        Low
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      <Badge className={getPriorityColor('medium')} variant="secondary">
+                        Medium
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="high">
+                      <Badge className={getPriorityColor('high')} variant="secondary">
+                        High
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="critical">
+                      <Badge className={getPriorityColor('critical')} variant="secondary">
+                        Critical
+                      </Badge>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="project-category">Project Category</Label>
+                <Select 
+                  value={formData.category || ''} 
+                  onValueChange={(value: any) => updateField('category', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ECR">
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                        ECR
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="ECN">
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                        ECN
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="NPD">
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                        NPD
+                      </Badge>
+                    </SelectItem>
+                    <SelectItem value="SUST">
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                        SUST
+                      </Badge>
+                    </SelectItem>
+                    {/* Custom Categories */}
+                    {customCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" variant="secondary">
+                          {category}
+                        </Badge>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom" onSelect={() => setShowCustomInput(true)}>
+                      <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400" variant="secondary">
+                        + Add Custom Category
+                      </Badge>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Custom Category Input */}
+              {showCustomInput && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom-category">Custom Category Name</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="custom-category"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder="Enter custom category name"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddCustomCategory()
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddCustomCategory}
+                      disabled={!customCategory.trim()}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowCustomInput(false)
+                        setCustomCategory('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="project-description" className="flex items-center gap-1">
                 Description *
@@ -244,53 +382,6 @@ export function ProjectCreateDialog({
             </div>
           </div>
 
-          {/* Project Configuration Section */}
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <AlertTriangleIcon className="h-4 w-4" />
-              Project Details
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="project-priority">Priority</Label>
-                <Select 
-                  value={formData.priority} 
-                  onValueChange={(value: any) => updateField('priority', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">
-                      <Badge className={getPriorityColor('low')} variant="secondary">
-                        Low
-                      </Badge>
-                    </SelectItem>
-                    <SelectItem value="medium">
-                      <Badge className={getPriorityColor('medium')} variant="secondary">
-                        Medium
-                      </Badge>
-                    </SelectItem>
-                    <SelectItem value="high">
-                      <Badge className={getPriorityColor('high')} variant="secondary">
-                        High
-                      </Badge>
-                    </SelectItem>
-                    <SelectItem value="critical">
-                      <Badge className={getPriorityColor('critical')} variant="secondary">
-                        Critical
-                      </Badge>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              
-              
-            </div>
-
-          </div>
 
           {/* Tags Section */}
           <div className="space-y-4">

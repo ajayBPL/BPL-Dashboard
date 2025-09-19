@@ -208,5 +208,15 @@
     "priority": "MEDIUM",
     "actionUrl": "/profile",
     "createdAt": "2025-09-18T07:27:38.822Z"
+  },
+  {
+    "id": "notification-1758266395642",
+    "userId": "user-1758266395637",
+    "type": "SYSTEM",
+    "title": "Welcome to BPL Commander!",
+    "message": "Your account has been created successfully. Complete your profile to get started.",
+    "priority": "MEDIUM",
+    "actionUrl": "/profile",
+    "createdAt": "2025-09-19T07:19:55.642Z"
   }
 ]

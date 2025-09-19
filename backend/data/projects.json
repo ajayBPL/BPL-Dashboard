@@ -5,6 +5,7 @@
     "description": "Cardiac Stress Test System",
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
+    "category": "ECR",
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
     "timeline": "30",
@@ -12,7 +13,7 @@
     "status": "PENDING",
     "deadline": "2025-12-15T18:30:00.000Z",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-17T18:15:39.115Z",
+    "updatedAt": "2025-09-19T11:44:39.548Z",
     "assignedEmployees": [
       {
         "id": "assignment-1758028990141",
@@ -33,6 +34,28 @@
         "endDate": "2025-11-25T18:30:00.000Z",
         "assignedAt": "2025-09-17T18:15:39.114Z",
         "updatedAt": "2025-09-17T18:15:39.114Z"
+      },
+      {
+        "id": "assignment-1758277793943",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758170419319",
+        "involvementPercentage": 35,
+        "role": "developer",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-10-10T18:30:00.000Z",
+        "assignedAt": "2025-09-19T10:29:53.943Z",
+        "updatedAt": "2025-09-19T10:29:53.943Z"
+      },
+      {
+        "id": "assignment-1758282279548",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758002829012",
+        "involvementPercentage": 15,
+        "role": "Hardware design",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-09-29T18:30:00.000Z",
+        "assignedAt": "2025-09-19T11:44:39.548Z",
+        "updatedAt": "2025-09-19T11:44:39.548Z"
       }
     ],
     "assignments": [
@@ -55,6 +78,28 @@
         "endDate": "2025-11-25T18:30:00.000Z",
         "assignedAt": "2025-09-17T18:15:39.114Z",
         "updatedAt": "2025-09-17T18:15:39.114Z"
+      },
+      {
+        "id": "assignment-1758277793943",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758170419319",
+        "involvementPercentage": 35,
+        "role": "developer",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-10-10T18:30:00.000Z",
+        "assignedAt": "2025-09-19T10:29:53.943Z",
+        "updatedAt": "2025-09-19T10:29:53.943Z"
+      },
+      {
+        "id": "assignment-1758282279548",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758002829012",
+        "involvementPercentage": 15,
+        "role": "Hardware design",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2025-09-29T18:30:00.000Z",
+        "assignedAt": "2025-09-19T11:44:39.548Z",
+        "updatedAt": "2025-09-19T11:44:39.548Z"
       }
     ]
   },
@@ -64,6 +109,7 @@
     "description": "This document contains the software development plan of Relife 1000 PC Application software. This Software Development Plan (SDP) outlines the technical and managerial approach for the development of the Relife 1000 PC App, a desktop application designed to support data transfer of event and trend data from Relife 1000 defibrillator. The plan defines the scope, objectives and lifecycle processes to ensure successful execution and delivery of the software product.",
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
+    "category": "ECN",
     "estimatedHours": 500,
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
@@ -133,6 +179,7 @@
     "description": "Defibrillator model Relife 1000.",
     "managerId": "user-1757932070077",
     "priority": "CRITICAL",
+    "category": "NPD",
     "budgetCurrency": "USD",
     "timeline": "1 month ",
     "tags": [],
@@ -184,6 +231,7 @@
     "description": "Zzvxcbnvmb,xzxvbcnm,xvcbn,mxgcvnm,",
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
+    "category": "SUST",
     "budgetCurrency": "USD",
     "timeline": "2",
     "tags": [],
@@ -219,6 +267,7 @@
     "description": "Test project with date picker",
     "managerId": "admin-001",
     "priority": "MEDIUM",
+    "category": "ECR",
     "budgetCurrency": "USD",
     "timelineDate": "2025-12-31T00:00:00.000Z",
     "tags": [
@@ -278,6 +327,7 @@
     "description": "Medical equipment's Medical equipment's Medical equipment'sMedical equipment'sMedical equipment's",
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
+    "category": "ECN",
     "budgetCurrency": "USD",
     "timelineDate": "2025-12-30T18:30:00.000Z",
     "tags": [],
@@ -362,6 +412,45 @@
         "endDate": "2025-03-31T23:59:59.999Z",
         "assignedAt": "2025-09-17T18:11:01.328Z",
         "updatedAt": "2025-09-17T18:11:01.328Z"
+      }
+    ]
+  },
+  {
+    "id": "project-1758266304740",
+    "title": "Sale Relife 1000",
+    "description": "Defibrillator DefibrillatorDefibrillatorDefibrillatorDefibrillatorDefibrillatorDefibrillator",
+    "managerId": "user-1757932070077",
+    "priority": "HIGH",
+    "budgetCurrency": "USD",
+    "timelineDate": "2026-02-09T18:30:00.000Z",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-19T07:18:24.740Z",
+    "updatedAt": "2025-09-19T07:21:02.336Z",
+    "assignedEmployees": [
+      {
+        "id": "assignment-1758266462336",
+        "projectId": "project-1758266304740",
+        "employeeId": "user-1758266395637",
+        "involvementPercentage": 30,
+        "role": "Clinical Specialist",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2026-02-09T18:30:00.000Z",
+        "assignedAt": "2025-09-19T07:21:02.336Z",
+        "updatedAt": "2025-09-19T07:21:02.336Z"
+      }
+    ],
+    "assignments": [
+      {
+        "id": "assignment-1758266462336",
+        "projectId": "project-1758266304740",
+        "employeeId": "user-1758266395637",
+        "involvementPercentage": 30,
+        "role": "Clinical Specialist",
+        "startDate": "2025-09-19T18:30:00.000Z",
+        "endDate": "2026-02-09T18:30:00.000Z",
+        "assignedAt": "2025-09-19T07:21:02.336Z",
+        "updatedAt": "2025-09-19T07:21:02.336Z"
       }
     ]
   }

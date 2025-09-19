@@ -14,9 +14,9 @@
 - Health Check: http://localhost:3001/health
 
 ### Network Access (Other Devices)
-- Frontend: http://
-- Backend API: http://
-- Health Check: http:///health
+- Frontend: http://192.168.10.205:3000
+- Backend API: http://192.168.10.205:3001
+- Health Check: http://192.168.10.205:3001/health
 
 ## Testing Network Access
 

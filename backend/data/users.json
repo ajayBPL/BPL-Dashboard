@@ -24,8 +24,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-09-18T13:36:51.301Z",
-    "lastLoginAt": "2025-09-18T13:36:51.300Z"
+    "updatedAt": "2025-09-19T07:18:39.708Z",
+    "lastLoginAt": "2025-09-19T07:18:39.708Z"
   },
   {
     "id": "program-manager-001",
@@ -188,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-09-18T13:37:12.970Z",
-    "lastLoginAt": "2025-09-18T13:37:12.970Z"
+    "updatedAt": "2025-09-19T11:38:22.998Z",
+    "lastLoginAt": "2025-09-19T11:38:22.998Z"
   },
   {
     "id": "user-1757932094744",
@@ -285,8 +285,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-16T06:07:09.012Z",
-    "updatedAt": "2025-09-16T12:44:27.921Z",
-    "lastLoginAt": "2025-09-16T12:44:27.921Z"
+    "updatedAt": "2025-09-19T11:37:39.515Z",
+    "lastLoginAt": "2025-09-19T11:37:39.515Z"
   },
   {
     "id": "user-1758002921806",
@@ -572,7 +572,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-18T04:40:19.319Z",
-    "updatedAt": "2025-09-18T04:40:19.319Z"
+    "updatedAt": "2025-09-19T10:31:27.113Z",
+    "lastLoginAt": "2025-09-19T10:31:27.112Z"
   },
   {
     "id": "user-1758170455425",
@@ -667,5 +668,29 @@
     "isActive": true,
     "createdAt": "2025-09-18T07:27:38.816Z",
     "updatedAt": "2025-09-18T07:27:38.816Z"
+  },
+  {
+    "id": "user-1758266395637",
+    "email": "deeksha.int@bpl.in",
+    "name": "Deeksha P",
+    "password": "$2b$12$8zcz.MFnvtB5eRDnKFoYVeZvEVY.yTMdq5fxGo2qlYrRL4ERbbkUS",
+    "role": "EMPLOYEE",
+    "designation": "Clinical Specialist",
+    "managerId": "user-1757932070077",
+    "department": "Sales",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-19T07:19:55.637Z",
+    "updatedAt": "2025-09-19T07:19:55.637Z"
   }
 ]

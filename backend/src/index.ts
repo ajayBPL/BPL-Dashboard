@@ -171,7 +171,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Network access: http://192.168.29.213:${PORT}/health`);
+  console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
 });
 
 // Handle unhandled promise rejections

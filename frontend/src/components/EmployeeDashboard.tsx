@@ -288,6 +288,11 @@ export function EmployeeDashboard() {
                               <h3 className="font-medium">{project.title}</h3>
                               <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
                               <Badge className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+                              {project.category && (
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" variant="secondary">
+                                  {project.category}
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
                           </div>

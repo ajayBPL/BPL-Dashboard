@@ -437,5 +437,54 @@
     "entityId": "user-1758180458816",
     "details": "User registered: Ananthu S (ananthu@bpl.in)",
     "timestamp": "2025-09-18T07:27:38.821Z"
+  },
+  {
+    "id": "activity-1758266304742",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758266304740",
+    "projectId": "project-1758266304740",
+    "details": "Created project: Sale Relife 1000",
+    "timestamp": "2025-09-19T07:18:24.742Z"
+  },
+  {
+    "id": "activity-1758266395641",
+    "userId": "user-1758266395637",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758266395637",
+    "details": "User registered: Deeksha P (deeksha.int@bpl.in)",
+    "timestamp": "2025-09-19T07:19:55.641Z"
+  },
+  {
+    "id": "activity-1758266462337",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758266304740",
+    "projectId": "project-1758266304740",
+    "details": "Assigned Deeksha P to project with 30% involvement",
+    "timestamp": "2025-09-19T07:21:02.337Z"
+  },
+  {
+    "id": "activity-1758277793948",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Saikrishna Putta to project with 35% involvement",
+    "timestamp": "2025-09-19T10:29:53.948Z"
+  },
+  {
+    "id": "activity-1758282279549",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Vaisakh to project with 15% involvement",
+    "timestamp": "2025-09-19T11:44:39.549Z"
   }
 ]

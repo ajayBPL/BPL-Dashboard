@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button'
 import { Dialog, DialogTrigger } from './ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { Avatar, AvatarFallback } from './ui/avatar'
 import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Badge } from './ui/badge'
@@ -869,25 +870,25 @@ export function ManagerDashboard() {
                         ).map((employee) => {
                           const workload = employee.workloadCap || 0
                           return (
-                            <Card key={employee.id} className="p-4">
+                            <Card key={employee.id} className="p-4" style={{ backgroundColor: '#7FFFD4', border: '2px solid #40E0D0' }}>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
-                                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                                    <span className="text-blue-600 dark:text-blue-300 font-medium">
-                                      {employee.name.charAt(0).toUpperCase()}
-                                    </span>
-                                  </div>
+        <Avatar className="h-10 w-10">
+          <AvatarFallback className="font-medium">
+            {employee.name.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
                                   <div>
-                                    <h4 className="font-medium">{employee.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{employee.email}</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <h4 className="font-medium" style={{ color: '#006400' }}>{employee.name}</h4>
+                                    <p className="text-sm" style={{ color: '#2E8B57' }}>{employee.email}</p>
+                                    <p className="text-sm" style={{ color: '#2E8B57' }}>
                                       Reports to: {employee.managerName} ({getRoleDisplay(employee.managerRole)})
                                     </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-4">
                                   <div className="text-right">
-                                    <p className="text-sm text-muted-foreground">Workload</p>
+                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Workload</p>
                                     <p className={`font-medium ${
                                       workload > 100 ? 'text-red-600' :
                                       workload > 80 ? 'text-yellow-600' : 'text-green-600'
@@ -896,14 +897,14 @@ export function ManagerDashboard() {
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm text-muted-foreground">Department</p>
-                                    <p className="font-medium">{employee.department || 'Not assigned'}</p>
+                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Department</p>
+                                    <p className="font-medium" style={{ color: '#006400' }}>{employee.department || 'Not assigned'}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm text-muted-foreground">Designation</p>
-                                    <p className="font-medium">{employee.designation || 'Not assigned'}</p>
+                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Designation</p>
+                                    <p className="font-medium" style={{ color: '#006400' }}>{employee.designation || 'Not assigned'}</p>
                                   </div>
-                                  <Badge variant="outline">
+                                  <Badge variant="outline" style={{ backgroundColor: '#40E0D0', color: '#006400', borderColor: '#2E8B57' }}>
                                     {getRoleDisplay(employee.role)}
                                   </Badge>
                                 </div>

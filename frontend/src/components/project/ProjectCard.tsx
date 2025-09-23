@@ -202,7 +202,10 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
                   {project.assignedEmployees.slice(0, 3).map((emp) => {
                     const user = centralizedDb.getUserById(emp.employeeId)
                     return (
-                      <Avatar key={emp.employeeId} className="h-6 w-6 border-2 border-background">
+                      <Avatar 
+                        key={emp.employeeId} 
+                        className="h-6 w-6 border-2 border-background"
+                      >
                         <AvatarFallback className="text-xs">
                           {user?.name.charAt(0).toUpperCase() || '?'}
                         </AvatarFallback>

@@ -7,7 +7,6 @@ import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
-import { Avatar, AvatarFallback } from './ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { 
   Users, 
@@ -28,6 +27,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getDepartmentColors, getEnhancedColors } from '../utils/departmentColors'
 
 interface EmployeeProjectAssignment {
   projectId: string
@@ -368,19 +368,33 @@ export function EmployeeOverview() {
 
       {/* Employee Thumbnail Grid - Updated Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredEmployees.map((employee) => (
-          <Card 
-            key={employee.id} 
-            className="hover:shadow-lg transition-all duration-200"
-          >
+        {filteredEmployees.map((employee) => {
+          const departmentColors = getDepartmentColors(employee.department);
+          const enhancedColors = getEnhancedColors(departmentColors, employee.role);
+          
+          return (
+            <Card 
+              key={employee.id} 
+              className="hover:shadow-lg transition-all duration-200"
+              style={{ 
+                backgroundColor: enhancedColors.background, 
+                border: `2px solid ${enhancedColors.border}` 
+              }}
+            >
             <CardContent className="p-3 relative">
               <div className="space-y-4">
                 {/* Project Count Badge with Percentage - Top Right */}
                 <div className="absolute top-2 right-2 text-right z-10">
-                  <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold mb-1">
+                  <div 
+                    className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold mb-1"
+                    style={{ 
+                      backgroundColor: enhancedColors.badge, 
+                      color: enhancedColors.background 
+                    }}
+                  >
                     {employee.projects.length}
                   </div>
-                  <div className="text-xs text-muted-foreground leading-tight">
+                  <div className="text-xs leading-tight" style={{ color: enhancedColors.text }}>
                     {employee.totalWorkload} / {employee.workloadCap}%
                   </div>
                 </div>
@@ -406,10 +420,12 @@ export function EmployeeOverview() {
                   </div>
                 </div>
                 
+
                 {/* Employee Name - Centered with right margin to avoid overlap */}
                 <div className="flex items-center justify-center pr-16 mb-3">
                   <h3 
-                    className="font-semibold text-sm hover:text-blue-600 transition-colors cursor-pointer text-center"
+                    className="font-semibold text-sm transition-colors cursor-pointer text-center"
+                    style={{ color: enhancedColors.text }}
                     onClick={() => {
                       setSelectedEmployee(employee)
                       setShowDetails(true)
@@ -458,7 +474,8 @@ export function EmployeeOverview() {
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {filteredEmployees.length === 0 && (

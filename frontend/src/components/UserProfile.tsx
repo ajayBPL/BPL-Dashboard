@@ -144,7 +144,7 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
             <CardContent className="pt-6">
               <div className="flex items-start space-x-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                  <AvatarFallback className="text-lg">
                     {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

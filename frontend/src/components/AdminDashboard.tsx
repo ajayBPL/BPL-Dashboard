@@ -15,6 +15,7 @@ import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Switch } from './ui/switch'
+import { Avatar, AvatarFallback } from './ui/avatar'
 import { 
   Users, 
   UserPlus, 
@@ -992,11 +993,11 @@ export function AdminDashboard() {
                         <Card key={employee.id} className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
-                              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 dark:text-blue-300 font-medium">
-                                  {employee.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
+        <Avatar className="h-10 w-10">
+          <AvatarFallback className="font-medium">
+            {employee.name.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
                               <div>
                                 <h4 className="font-medium">{employee.name}</h4>
                                 <p className="text-sm text-muted-foreground">{employee.email}</p>

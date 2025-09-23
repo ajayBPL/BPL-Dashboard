@@ -492,7 +492,7 @@ export function ProjectEditDialog({ project, isOpen, onClose, onProjectUpdated }
                               
                               <div className="flex items-center gap-2 mt-2">
                                 <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  <AvatarFallback className="text-xs">
                                     {changer?.name.charAt(0) || '?'}
                                   </AvatarFallback>
                                 </Avatar>

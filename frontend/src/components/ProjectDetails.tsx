@@ -1002,7 +1002,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                       return (
                         <div key={comment.id} className="flex space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                            <AvatarFallback className="text-sm">
                               {commenter?.name.charAt(0) || '?'}
                             </AvatarFallback>
                           </Avatar>

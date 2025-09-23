@@ -522,8 +522,8 @@ export function EmployeeManagement() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 flex-1">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {empData.user.name.charAt(0)}
+                  <AvatarFallback>
+                    {empData.user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 

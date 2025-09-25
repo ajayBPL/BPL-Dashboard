@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { centralizedDb, CentralizedProject } from '../utils/centralizedDb'
 import { useAuth } from '../contexts/AuthContext'
+import { apiService } from '../services/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -98,34 +99,47 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
         return milestone
       })
 
-      // Update project with new progress and milestone states
-      const updatedProject = centralizedDb.updateProject(
-        project.id,
-        {
+      // Update milestones individually via API
+      let allUpdatesSuccessful = true
+      
+      for (const milestone of updatedMilestones) {
+        if (milestone.completed && !project.milestones.find(m => m.id === milestone.id)?.completed) {
+          // Mark milestone as completed
+          const response = await apiService.request('/projects', {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'milestone',
+              id: project.id,
+              data: {
+                action: 'complete',
+                milestoneId: milestone.id
+              }
+            })
+          })
+          
+          if (!response.success) {
+            allUpdatesSuccessful = false
+            console.error('Failed to complete milestone:', milestone.title, response.error)
+          }
+        }
+      }
+
+      if (allUpdatesSuccessful) {
+        toast.success(`Project progress updated to ${newProgress}%!`)
+        
+        // Create updated project object with new milestone states
+        const updatedProject = {
+          ...project,
           milestones: updatedMilestones,
           lastActivity: new Date().toISOString()
-        },
-        currentUser.id
-      )
-
-      if (updatedProject) {
-        // Log the progress update activity
-        centralizedDb.logActivity(
-          currentUser.id,
-          'UPDATE_PROGRESS',
-          'project',
-          project.id,
-          `Updated project progress from ${currentProgress.toFixed(1)}% to ${newProgress}%: ${reason}`,
-          progressSnapshot
-        )
-
-        toast.success(`Project progress updated to ${newProgress}%!`)
+        }
+        
         onProjectUpdate(updatedProject)
         setReason('')
         setNewProgress(0)
         onClose()
       } else {
-        toast.error('Failed to update project progress')
+        toast.error('Some milestone updates failed. Please try again.')
       }
     } catch (error) {
       console.error('Error updating progress:', error)

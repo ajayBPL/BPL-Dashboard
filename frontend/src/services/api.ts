@@ -17,7 +17,7 @@ class ApiService {
     this.token = localStorage.getItem('bpl-token');
   }
 
-  private async request<T>(
+  async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {

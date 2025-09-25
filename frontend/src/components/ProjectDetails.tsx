@@ -1414,7 +1414,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           onClose={() => setShowProgressEditor(false)}
           onProjectUpdate={(updatedProject) => {
             setProject(updatedProject)
-            fetchProjectDetails()
+            // Don't call fetchProjectDetails() here as it might override the updated data
+            // The updatedProject already contains the latest milestone states
           }}
         />
       )}

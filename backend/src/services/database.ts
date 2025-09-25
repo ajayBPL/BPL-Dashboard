@@ -11,8 +11,8 @@ class DatabaseService {
     this.prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
-    // Force mock data for now since database connection is failing
-    this.useMock = true;
+    // Try real database connection first
+    this.useMock = false;
   }
 
   // Test database connection
@@ -45,8 +45,24 @@ class DatabaseService {
 
   // User operations
   async findUserByEmail(email: string) {
-    // Always use mock data for now since database connection is failing
-    return await fileBasedMockDb.findUserByEmail(email);
+    await this.checkConnection();
+    if (this.useMock) {
+      return await fileBasedMockDb.findUserByEmail(email);
+    }
+    
+    try {
+      return await this.prisma.user.findUnique({
+        where: { email },
+        include: {
+          manager: true,
+          subordinates: true,
+        },
+      });
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.findUserByEmail(email);
+    }
   }
 
   async findUserById(id: string) {

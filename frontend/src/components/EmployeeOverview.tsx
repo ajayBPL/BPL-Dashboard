@@ -381,37 +381,38 @@ export function EmployeeOverview() {
                 border: `2px solid ${enhancedColors.border}` 
               }}
             >
-            <CardContent className="p-3 relative">
-              <div className="space-y-4">
-                {/* Project Count Badge with Percentage - Top Right */}
+            <CardContent className="p-2 relative">
+              <div className="space-y-2 pt-8">
+                {/* Project Count Badge - Top Right */}
                 <div className="absolute top-2 right-2 text-right z-10">
                   <div 
-                    className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold mb-1"
+                    className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold"
                     style={{ 
-                      backgroundColor: enhancedColors.badge, 
-                      color: enhancedColors.background 
+                      backgroundColor: '#000000', 
+                      color: '#FFFFFF' 
                     }}
                   >
                     {employee.projects.length}
                   </div>
-                  <div className="text-xs leading-tight" style={{ color: enhancedColors.text }}>
-                    {employee.totalWorkload} / {employee.workloadCap}%
-                  </div>
                 </div>
                 
-                {/* Project Categories - Above Name */}
-                <div className="flex items-center justify-center pr-16 mb-1">
+                {/* Project Categories - Top Section */}
+                <div className="flex items-center justify-center pr-12 mb-1">
                   <div className="flex flex-wrap gap-1 justify-center">
-                    {['ECR', 'ECN', 'NPD', 'SUST'].map((category) => {
+                    {['ECR', 'ECN', 'NPD', 'SUST'].map((category, index) => {
                       const isInvolved = employee.projects.some(project => project.category === category)
+                      const colors = ['#ef4444', '#3b82f6', '#10b981', '#8b5cf6'] // Red, Blue, Green, Purple
                       return (
                         <span 
                           key={category}
-                          className={`text-xs px-1.5 py-0.5 rounded ${
+                          className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                             isInvolved 
-                              ? 'text-green-800 bg-green-100' 
-                              : 'text-gray-400 bg-gray-100'
+                              ? 'text-white' 
+                              : 'text-gray-400'
                           }`}
+                          style={{
+                            backgroundColor: isInvolved ? colors[index] : '#e5e7eb'
+                          }}
                         >
                           {category}
                         </span>
@@ -419,25 +420,65 @@ export function EmployeeOverview() {
                     })}
                   </div>
                 </div>
-                
 
-                {/* Employee Name - Centered with right margin to avoid overlap */}
-                <div className="flex items-center justify-center pr-16 mb-3">
-                  <h3 
-                    className="font-semibold text-sm transition-colors cursor-pointer text-center"
-                    style={{ color: enhancedColors.text }}
-                    onClick={() => {
-                      setSelectedEmployee(employee)
-                      setShowDetails(true)
+                {/* Main Horizontal Progress Bar */}
+                <div className="space-y-1 mb-0">
+                  <div 
+                    style={{
+                      width: '100%',
+                      height: '12px',
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      border: '1px solid #d1d5db'
                     }}
                   >
-                    {employee.name}
-                  </h3>
+                    {(() => {
+                      const categoryData = ['ECR', 'ECN', 'NPD', 'SUST'].map(category => {
+                        const categoryProjects = employee.projects.filter(project => project.category === category)
+                        const categoryWorkload = categoryProjects.reduce((total, project) => total + project.involvementPercentage, 0)
+                        return { category, workload: categoryWorkload }
+                      })
+                      
+                      const colors = ['#ef4444', '#3b82f6', '#10b981', '#8b5cf6'] // Red, Blue, Green, Purple
+                      const totalInvolvement = categoryData.reduce((total, cat) => total + cat.workload, 0)
+                      
+                      // Show total involvement as a single bar, then segment it by categories
+                      const totalBarWidth = Math.min(totalInvolvement, 100)
+                      
+                      let cumulativeWidth = 0
+                      return categoryData.map((cat, index) => {
+                        if (cat.workload === 0) return null
+                        
+                        // Calculate proportional width within the total involvement
+                        const proportionalWidth = totalInvolvement > 0 ? (cat.workload / totalInvolvement) * totalBarWidth : 0
+                        const left = (cumulativeWidth / totalInvolvement) * totalBarWidth
+                        cumulativeWidth += cat.workload
+                        
+                        return (
+                          <div
+                            key={cat.category}
+                            style={{
+                              position: 'absolute',
+                              top: '0',
+                              left: `${left}%`,
+                              height: '100%',
+                              backgroundColor: colors[index],
+                              width: `${proportionalWidth}%`,
+                              transition: 'width 0.3s ease'
+                            }}
+                            title={`${cat.category}: ${cat.workload.toFixed(1)}% involvement`}
+                          />
+                        )
+                      }).filter(Boolean)
+                    })()}
+                  </div>
                 </div>
                 
-                {/* Progress Bar Only - No Text Below */}
-                <div className="space-y-1 mt-2">
-                  {/* Progress bar with increased height */}
+
+                {/* Overall Workload Progress Bar */}
+                <div className="space-y-1 mt-0">
                   <div 
                     style={{
                       width: '100%',
@@ -461,7 +502,7 @@ export function EmployeeOverview() {
                       style={{
                         position: 'absolute',
                         top: '0',
-                        left: `${Math.min((employee.totalWorkload / employee.workloadCap) * 100, 100)}%`,
+                        left: '0',
                         height: '100%',
                         backgroundColor: '#22c55e',
                         width: `${Math.max(100 - (employee.totalWorkload / employee.workloadCap) * 100, 0)}%`,
@@ -469,8 +510,30 @@ export function EmployeeOverview() {
                       }}
                     />
                   </div>
-                  {/* No text below progress bar - percentage only in top right */}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-red-600 font-medium">
+                      Involved: {employee.totalWorkload}%
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      Available: {Math.max(employee.workloadCap - employee.totalWorkload, 0)}%
+                    </span>
+                  </div>
                 </div>
+
+                {/* Employee Name - Centered with right margin to avoid overlap */}
+                <div className="flex items-center justify-center pr-12 mb-1 mt-0">
+                  <h3 
+                    className="font-semibold text-sm transition-colors cursor-pointer text-center"
+                    style={{ color: enhancedColors.text }}
+                    onClick={() => {
+                      setSelectedEmployee(employee)
+                      setShowDetails(true)
+                    }}
+                  >
+                    {employee.name}
+                  </h3>
+                </div>
+                
               </div>
             </CardContent>
           </Card>

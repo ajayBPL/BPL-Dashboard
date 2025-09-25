@@ -486,5 +486,65 @@
     "projectId": "project-1757937356657",
     "details": "Assigned Vaisakh to project with 15% involvement",
     "timestamp": "2025-09-19T11:44:39.549Z"
+  },
+  {
+    "id": "activity-1758689574162",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-24T04:52:54.162Z"
+  },
+  {
+    "id": "activity-1758689621763",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757938579123",
+    "projectId": "project-1757938579123",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-24T04:53:41.763Z"
+  },
+  {
+    "id": "activity-1758689645609",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758003200079",
+    "projectId": "project-1758003200079",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-24T04:54:05.609Z"
+  },
+  {
+    "id": "activity-1758689658806",
+    "userId": "user-1757932070077",
+    "action": "USER_UNASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758130709872",
+    "projectId": "project-1758130709872",
+    "details": "Unassigned Ajay Jabaji Khatake from project",
+    "timestamp": "2025-09-24T04:54:18.806Z"
+  },
+  {
+    "id": "activity-1758689897054",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758003200079",
+    "projectId": "project-1758003200079",
+    "details": "Assigned ardra l to project with 50% involvement",
+    "timestamp": "2025-09-24T04:58:17.054Z"
+  },
+  {
+    "id": "activity-1758727011110",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Shivanagu M to project with 45% involvement",
+    "timestamp": "2025-09-24T15:16:51.110Z"
   }
 ]

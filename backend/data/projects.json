@@ -13,17 +13,8 @@
     "status": "PENDING",
     "deadline": "2025-12-15T18:30:00.000Z",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-19T11:44:39.548Z",
+    "updatedAt": "2025-09-24T15:16:51.038Z",
     "assignedEmployees": [
-      {
-        "id": "assignment-1758028990141",
-        "projectId": "project-1757937356657",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 80,
-        "role": "programmer",
-        "assignedAt": "2025-09-16T13:23:10.141Z",
-        "updatedAt": "2025-09-16T13:23:10.141Z"
-      },
       {
         "id": "assignment-1758132939114",
         "projectId": "project-1757937356657",
@@ -56,19 +47,21 @@
         "endDate": "2025-09-29T18:30:00.000Z",
         "assignedAt": "2025-09-19T11:44:39.548Z",
         "updatedAt": "2025-09-19T11:44:39.548Z"
+      },
+      {
+        "id": "assignment-1758727011037",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758005074568",
+        "involvementPercentage": 45,
+        "role": "testing",
+        "startDate": "2025-09-24T18:30:00.000Z",
+        "endDate": "2025-09-25T18:30:00.000Z",
+        "assignedAt": "2025-09-24T15:16:51.037Z",
+        "updatedAt": "2025-09-24T15:16:51.037Z"
       }
     ],
     "assignments": [
       {
-        "id": "assignment-1758028990141",
-        "projectId": "project-1757937356657",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 80,
-        "role": "programmer",
-        "assignedAt": "2025-09-16T13:23:10.141Z",
-        "updatedAt": "2025-09-16T13:23:10.141Z"
-      },
-      {
         "id": "assignment-1758132939114",
         "projectId": "project-1757937356657",
         "employeeId": "user-1758004336591",
@@ -100,6 +93,17 @@
         "endDate": "2025-09-29T18:30:00.000Z",
         "assignedAt": "2025-09-19T11:44:39.548Z",
         "updatedAt": "2025-09-19T11:44:39.548Z"
+      },
+      {
+        "id": "assignment-1758727011037",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758005074568",
+        "involvementPercentage": 45,
+        "role": "testing",
+        "startDate": "2025-09-24T18:30:00.000Z",
+        "endDate": "2025-09-25T18:30:00.000Z",
+        "assignedAt": "2025-09-24T15:16:51.037Z",
+        "updatedAt": "2025-09-24T15:16:51.037Z"
       }
     ]
   },
@@ -118,7 +122,7 @@
     "status": "PENDING",
     "deadline": "2025-10-31T18:30:00.000Z",
     "createdAt": "2025-09-15T12:16:19.123Z",
-    "updatedAt": "2025-09-16T15:29:59.614Z",
+    "updatedAt": "2025-09-24T04:53:41.762Z",
     "assignedEmployees": [
       {
         "id": "assignment-1758012721442",
@@ -128,15 +132,6 @@
         "role": "developer",
         "assignedAt": "2025-09-16T08:52:01.442Z",
         "updatedAt": "2025-09-16T08:52:01.442Z"
-      },
-      {
-        "id": "assignment-1758036599613",
-        "projectId": "project-1757938579123",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 10,
-        "role": "programmer",
-        "assignedAt": "2025-09-16T15:29:59.613Z",
-        "updatedAt": "2025-09-16T15:29:59.613Z"
       },
       {
         "id": "assignment-1758036599614",
@@ -151,15 +146,6 @@
       }
     ],
     "assignments": [
-      {
-        "id": "assignment-1758036599613",
-        "projectId": "project-1757938579123",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 10,
-        "role": "programmer",
-        "assignedAt": "2025-09-16T15:29:59.613Z",
-        "updatedAt": "2025-09-16T15:29:59.613Z"
-      },
       {
         "id": "assignment-1758036599614",
         "projectId": "project-1757938579123",
@@ -185,24 +171,8 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-16T06:13:20.079Z",
-    "updatedAt": "2025-09-16T09:10:39.205Z",
+    "updatedAt": "2025-09-24T04:58:17.052Z",
     "assignedEmployees": [
-      {
-        "id": "assignment-1758006498444",
-        "projectId": "project-1758003200079",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 100,
-        "role": "LPI",
-        "assignedAt": "2025-09-16T07:08:18.444Z",
-        "updatedAt": "2025-09-16T07:08:18.444Z",
-        "employee": {
-          "id": "user-1758002829012",
-          "name": "Vaisakh",
-          "email": "vaisakh.k@bpl.in",
-          "role": "EMPLOYEE",
-          "designation": "senior engineer"
-        }
-      },
       {
         "id": "assignment-1758013839204",
         "projectId": "project-1758003200079",
@@ -211,17 +181,30 @@
         "role": "developer",
         "assignedAt": "2025-09-16T09:10:39.204Z",
         "updatedAt": "2025-09-16T09:10:39.204Z"
+      },
+      {
+        "id": "assignment-1758689897052",
+        "projectId": "project-1758003200079",
+        "employeeId": "user-1758002921806",
+        "involvementPercentage": 50,
+        "role": "Intern",
+        "startDate": "2025-09-30T18:30:00.000Z",
+        "endDate": "2025-10-30T18:30:00.000Z",
+        "assignedAt": "2025-09-24T04:58:17.052Z",
+        "updatedAt": "2025-09-24T04:58:17.052Z"
       }
     ],
     "assignments": [
       {
-        "id": "assignment-1758013839204",
+        "id": "assignment-1758689897052",
         "projectId": "project-1758003200079",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 30,
-        "role": "developer",
-        "assignedAt": "2025-09-16T09:10:39.204Z",
-        "updatedAt": "2025-09-16T09:10:39.204Z"
+        "employeeId": "user-1758002921806",
+        "involvementPercentage": 50,
+        "role": "Intern",
+        "startDate": "2025-09-30T18:30:00.000Z",
+        "endDate": "2025-10-30T18:30:00.000Z",
+        "assignedAt": "2025-09-24T04:58:17.052Z",
+        "updatedAt": "2025-09-24T04:58:17.052Z"
       }
     ]
   },
@@ -333,17 +316,8 @@
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-17T17:38:29.872Z",
-    "updatedAt": "2025-09-17T18:11:01.329Z",
+    "updatedAt": "2025-09-24T04:54:18.804Z",
     "assignedEmployees": [
-      {
-        "id": "assignment-1758131276588",
-        "projectId": "project-1758130709872",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 40,
-        "role": "developer",
-        "assignedAt": "2025-09-17T17:47:56.588Z",
-        "updatedAt": "2025-09-17T17:47:56.588Z"
-      },
       {
         "id": "assignment-1758131450457",
         "projectId": "project-1758130709872",
@@ -375,15 +349,6 @@
       }
     ],
     "assignments": [
-      {
-        "id": "assignment-1758131276588",
-        "projectId": "project-1758130709872",
-        "employeeId": "user-1757932856400",
-        "involvementPercentage": 40,
-        "role": "developer",
-        "assignedAt": "2025-09-17T17:47:56.588Z",
-        "updatedAt": "2025-09-17T17:47:56.588Z"
-      },
       {
         "id": "assignment-1758131450457",
         "projectId": "project-1758130709872",

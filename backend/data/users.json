@@ -714,5 +714,27 @@
     "isActive": true,
     "createdAt": "2025-09-26T06:56:44.344Z",
     "updatedAt": "2025-09-26T06:56:44.344Z"
+  },
+  {
+    "id": "user-1758870684639",
+    "email": "testuser@example.com",
+    "name": "Test User",
+    "password": "$2b$12$2wcW5UnUTOWdXve5oh5Rl.7smtw3/9atZEYcoDH.gMwfqB69ati5C",
+    "role": "EMPLOYEE",
+    "designation": "Test Engineer",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-09-26T07:11:24.639Z",
+    "updatedAt": "2025-09-26T07:11:24.639Z"
   }
 ]

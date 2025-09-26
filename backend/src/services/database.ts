@@ -503,6 +503,170 @@ class DatabaseService {
     // For real database, you would implement this
     return [];
   }
+
+  // Initiative methods
+  async getInitiatives(options: any) {
+    if (this.useMock) {
+      return { data: [], total: 0 };
+    }
+    return { data: [], total: 0 };
+  }
+
+  async createInitiative(data: any) {
+    if (this.useMock) {
+      return { id: `initiative-${Date.now()}`, ...data };
+    }
+    return { id: `initiative-${Date.now()}`, ...data };
+  }
+
+  async getInitiativeById(id: string) {
+    if (this.useMock) {
+      return null;
+    }
+    return null;
+  }
+
+  async updateInitiative(id: string, data: any) {
+    if (this.useMock) {
+      return { id, ...data };
+    }
+    return { id, ...data };
+  }
+
+  async deleteInitiative(id: string) {
+    if (this.useMock) {
+      return true;
+    }
+    return true;
+  }
+
+  async assignUsersToInitiative(initiativeId: string, userIds: string[]) {
+    if (this.useMock) {
+      return true;
+    }
+    return true;
+  }
+
+  async getInitiativeAssignments(initiativeId: string) {
+    if (this.useMock) {
+      return [];
+    }
+    return [];
+  }
+
+  async getInitiativeProjects(initiativeId: string) {
+    if (this.useMock) {
+      return [];
+    }
+    return [];
+  }
+
+  async getInitiativeActivityLogs(initiativeId: string) {
+    if (this.useMock) {
+      return [];
+    }
+    return [];
+  }
+
+  // Analytics methods
+  async getProjectAnalytics(options: any) {
+    if (this.useMock) {
+      return { total: 0, completed: 0, active: 0, onHold: 0 };
+    }
+    return { total: 0, completed: 0, active: 0, onHold: 0 };
+  }
+
+  async getUserAnalytics(options: any) {
+    if (this.useMock) {
+      return { total: 0, active: 0, workload: [] };
+    }
+    return { total: 0, active: 0, workload: [] };
+  }
+
+  async getInitiativeAnalytics(options: any) {
+    if (this.useMock) {
+      return { total: 0, completed: 0, active: 0 };
+    }
+    return { total: 0, completed: 0, active: 0 };
+  }
+
+  async getActivityAnalytics(options: any) {
+    if (this.useMock) {
+      return { total: 0, recent: [] };
+    }
+    return { total: 0, recent: [] };
+  }
+
+  async getWorkloadAnalytics(options: any) {
+    if (this.useMock) {
+      return { total: 0, overloaded: 0, available: 0 };
+    }
+    return { total: 0, overloaded: 0, available: 0 };
+  }
+
+  async generateReport(options: any) {
+    if (this.useMock) {
+      return { type: options.type, data: [], generatedAt: new Date().toISOString() };
+    }
+    return { type: options.type, data: [], generatedAt: new Date().toISOString() };
+  }
+
+  // Notification methods
+  async getUserNotifications(userId: string, options: any) {
+    if (this.useMock) {
+      return { data: [], total: 0, unreadCount: 0 };
+    }
+    return { data: [], total: 0, unreadCount: 0 };
+  }
+
+  async getNotificationById(id: string) {
+    if (this.useMock) {
+      return null;
+    }
+    return null;
+  }
+
+  async markNotificationAsRead(id: string, userId: string) {
+    if (this.useMock) {
+      return true;
+    }
+    return true;
+  }
+
+  async markNotificationAsUnread(id: string, userId: string) {
+    if (this.useMock) {
+      return true;
+    }
+    return true;
+  }
+
+  async markAllNotificationsAsRead(userId: string) {
+    if (this.useMock) {
+      return 0;
+    }
+    return 0;
+  }
+
+  async deleteNotification(id: string) {
+    if (this.useMock) {
+      return true;
+    }
+    return true;
+  }
+
+  async getUserNotificationPreferences(userId: string) {
+    if (this.useMock) {
+      return { email: true, inApp: true, projectUpdates: true };
+    }
+    return { email: true, inApp: true, projectUpdates: true };
+  }
+
+  async updateUserNotificationPreferences(userId: string, preferences: any) {
+    if (this.useMock) {
+      return { ...preferences, updatedAt: new Date().toISOString() };
+    }
+    return { ...preferences, updatedAt: new Date().toISOString() };
+  }
 }
 
 export const db = new DatabaseService();

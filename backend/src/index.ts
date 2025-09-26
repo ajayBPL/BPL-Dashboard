@@ -124,7 +124,8 @@ app.use(cors({
       callback(null, true);
     } else {
       console.log(`CORS: Blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      // Return proper CORS error response instead of throwing
+      callback(null, false);
     }
   },
   credentials: true, // Allow cookies and authorization headers

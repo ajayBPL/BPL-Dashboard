@@ -148,10 +148,8 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
     throw new ValidationError('Validation failed');
   }
 
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email: userData.email }
-  });
+  // Check if user already exists using database service abstraction
+  const existingUser = await db.findUserByEmail(userData.email);
 
   if (existingUser) {
     throw new ValidationError('User with this email already exists');
@@ -160,54 +158,34 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
   // Hash password
   const hashedPassword = await bcrypt.hash(userData.password, 12);
 
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      email: userData.email,
-      password: hashedPassword,
-      name: userData.name,
-      role: userData.role.toUpperCase(),
-      designation: userData.designation,
-      managerId: userData.managerId,
-      department: userData.department,
-      skills: userData.skills || [],
-      workloadCap: userData.workloadCap || 100,
-      overBeyondCap: userData.overBeyondCap || 20,
-      notificationSettings: userData.notificationSettings || {
-        email: true,
-        inApp: true,
-        projectUpdates: true,
-        deadlineReminders: true,
-        weeklyReports: false
-      }
-    },
-    select: {
-      id: true,
+  // Create user using database service abstraction
+  const user = await db.createUser({
+    email: userData.email,
+    password: hashedPassword,
+    name: userData.name,
+    role: userData.role.toUpperCase(),
+    designation: userData.designation,
+    managerId: userData.managerId,
+    department: userData.department,
+    skills: userData.skills || [],
+    workloadCap: userData.workloadCap || 100,
+    overBeyondCap: userData.overBeyondCap || 20,
+    notificationSettings: userData.notificationSettings || {
       email: true,
-      name: true,
-      role: true,
-      designation: true,
-      managerId: true,
-      department: true,
-      skills: true,
-      workloadCap: true,
-      overBeyondCap: true,
-      notificationSettings: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
+      inApp: true,
+      projectUpdates: true,
+      deadlineReminders: true,
+      weeklyReports: false
     }
   });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'USER_CREATED',
-      entityType: 'USER',
-      entityId: user.id,
-      details: `Created user: ${user.name} (${user.email})`
-    }
+  // Log activity using database service abstraction
+  await db.createActivityLog({
+    userId: req.user!.id,
+    action: 'USER_CREATED',
+    entityType: 'USER',
+    entityId: user.id,
+    details: `Created user: ${user.name} (${user.email})`
   });
 
   res.status(201).json({
@@ -217,8 +195,8 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
       role: user.role.toLowerCase(),
       managerId: user.managerId || undefined,
       department: user.department || undefined,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       notificationSettings: user.notificationSettings || {}
     },
     message: 'User created successfully',
@@ -229,63 +207,40 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
 }
 
 async function handleUpdateUser(req: Request, res: Response, userId: string, userData: any): Promise<void> {
-  // Check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { id: userId }
-  });
+  // Check if user exists using database service abstraction
+  const existingUser = await db.findUserById(userId);
 
   if (!existingUser) {
     throw new NotFoundError('User not found');
   }
 
-  // Update user
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(userData.name && { name: userData.name }),
-      ...(userData.designation && { designation: userData.designation }),
-      ...(userData.managerId !== undefined && { managerId: userData.managerId }),
-      ...(userData.department && { department: userData.department }),
-      ...(userData.skills && { skills: userData.skills }),
-      ...(userData.workloadCap && { workloadCap: userData.workloadCap }),
-      ...(userData.overBeyondCap && { overBeyondCap: userData.overBeyondCap }),
-      ...(userData.avatar !== undefined && { avatar: userData.avatar }),
-      ...(userData.phoneNumber !== undefined && { phoneNumber: userData.phoneNumber }),
-      ...(userData.timezone && { timezone: userData.timezone }),
-      ...(userData.preferredCurrency && { preferredCurrency: userData.preferredCurrency }),
-      ...(userData.notificationSettings && { notificationSettings: userData.notificationSettings })
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      designation: true,
-      managerId: true,
-      department: true,
-      skills: true,
-      workloadCap: true,
-      overBeyondCap: true,
-      avatar: true,
-      phoneNumber: true,
-      timezone: true,
-      preferredCurrency: true,
-      notificationSettings: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true
-    }
+  // Update user using database service abstraction
+  const user = await db.updateUser(userId, {
+    ...(userData.name && { name: userData.name }),
+    ...(userData.designation && { designation: userData.designation }),
+    ...(userData.managerId !== undefined && { managerId: userData.managerId }),
+    ...(userData.department && { department: userData.department }),
+    ...(userData.skills && { skills: userData.skills }),
+    ...(userData.workloadCap && { workloadCap: userData.workloadCap }),
+    ...(userData.overBeyondCap && { overBeyondCap: userData.overBeyondCap }),
+    ...(userData.avatar !== undefined && { avatar: userData.avatar }),
+    ...(userData.phoneNumber !== undefined && { phoneNumber: userData.phoneNumber }),
+    ...(userData.timezone && { timezone: userData.timezone }),
+    ...(userData.preferredCurrency && { preferredCurrency: userData.preferredCurrency }),
+    ...(userData.notificationSettings && { notificationSettings: userData.notificationSettings })
   });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'USER_UPDATED',
-      entityType: 'USER',
-      entityId: user.id,
-      details: `Updated user: ${user.name}`
-    }
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Log activity using database service abstraction
+  await db.createActivityLog({
+    userId: req.user!.id,
+    action: 'USER_UPDATED',
+    entityType: 'USER',
+    entityId: user.id,
+    details: `Updated user: ${user.name}`
   });
 
   res.json({
@@ -299,8 +254,8 @@ async function handleUpdateUser(req: Request, res: Response, userId: string, use
       phoneNumber: user.phoneNumber || undefined,
       timezone: user.timezone || undefined,
       preferredCurrency: user.preferredCurrency || undefined,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       notificationSettings: user.notificationSettings || {}
     },
     message: 'User updated successfully',
@@ -311,30 +266,23 @@ async function handleUpdateUser(req: Request, res: Response, userId: string, use
 }
 
 async function handleDeleteUser(req: Request, res: Response, userId: string): Promise<void> {
-  // Check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { id: userId }
-  });
+  // Check if user exists using database service abstraction
+  const existingUser = await db.findUserById(userId);
 
   if (!existingUser) {
     throw new NotFoundError('User not found');
   }
 
-  // Soft delete (deactivate) instead of hard delete
-  await prisma.user.update({
-    where: { id: userId },
-    data: { isActive: false }
-  });
+  // Soft delete (deactivate) instead of hard delete using database service abstraction
+  await db.updateUser(userId, { isActive: false });
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'USER_DELETED',
-      entityType: 'USER',
-      entityId: userId,
-      details: `Deleted user: ${existingUser.name}`
-    }
+  // Log activity using database service abstraction
+  await db.createActivityLog({
+    userId: req.user!.id,
+    action: 'USER_DELETED',
+    entityType: 'USER',
+    entityId: userId,
+    details: `Deleted user: ${existingUser.name}`
   });
 
   res.json({

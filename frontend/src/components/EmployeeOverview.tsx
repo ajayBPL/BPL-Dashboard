@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Badge } from './ui/badge'
@@ -11,19 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { 
   Users, 
   Search, 
-  Filter, 
   Calendar,
   Clock,
   Target,
   Briefcase,
-  Mail,
-  Phone,
-  MapPin,
-  TrendingUp,
   AlertCircle,
-  CheckCircle,
   User,
-  Eye,
   Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -68,8 +60,8 @@ export function EmployeeOverview() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'role' | 'department' | 'workload' | 'projects'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [roleFilter, setRoleFilter] = useState<string>('all')
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all')
+  const [roleFilter] = useState<string>('all')
+  const [departmentFilter] = useState<string>('all')
   const [workloadFilter, setWorkloadFilter] = useState<string>('all')
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithProjects | null>(null)
   const [showDetails, setShowDetails] = useState(false)
@@ -273,15 +265,7 @@ export function EmployeeOverview() {
     return 'text-green-600'
   }
 
-  const getWorkloadBadgeVariant = (workload: number, capacity: number) => {
-    if (workload > capacity) return 'destructive'
-    if (workload === capacity) return 'secondary'
-    if (workload > capacity * 0.8) return 'outline'
-    return 'default'
-  }
-
-  const uniqueRoles = [...new Set(employees.map(emp => emp.role))]
-  const uniqueDepartments = [...new Set(employees.map(emp => emp.department))]
+  // Removed unused functions and variables to fix linting issues
 
   if (!canViewEmployees) {
     return (

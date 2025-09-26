@@ -418,5 +418,29 @@
         "updatedAt": "2025-09-19T07:21:02.336Z"
       }
     ]
+  },
+  {
+    "id": "project-1758869866201",
+    "title": "Test Project",
+    "description": "Test Description",
+    "managerId": "admin-001",
+    "priority": "MEDIUM",
+    "budgetCurrency": "USD",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-26T06:57:46.201Z",
+    "updatedAt": "2025-09-26T06:57:46.201Z"
+  },
+  {
+    "id": "project-1758869932423",
+    "title": "Database Test Project",
+    "description": "Testing database connectivity",
+    "managerId": "admin-001",
+    "priority": "HIGH",
+    "budgetCurrency": "USD",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-09-26T06:58:52.423Z",
+    "updatedAt": "2025-09-26T06:58:52.423Z"
   }
 ]

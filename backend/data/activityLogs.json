@@ -546,5 +546,34 @@
     "projectId": "project-1757937356657",
     "details": "Assigned Shivanagu M to project with 45% involvement",
     "timestamp": "2025-09-24T15:16:51.110Z"
+  },
+  {
+    "id": "activity-1758869804350",
+    "userId": "user-1758869804344",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1758869804344",
+    "details": "User registered: Test User (test@example.com)",
+    "timestamp": "2025-09-26T06:56:44.350Z"
+  },
+  {
+    "id": "activity-1758869866202",
+    "userId": "admin-001",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758869866201",
+    "projectId": "project-1758869866201",
+    "details": "Created project: Test Project",
+    "timestamp": "2025-09-26T06:57:46.202Z"
+  },
+  {
+    "id": "activity-1758869932424",
+    "userId": "admin-001",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1758869932423",
+    "projectId": "project-1758869932423",
+    "details": "Created project: Database Test Project",
+    "timestamp": "2025-09-26T06:58:52.424Z"
   }
 ]

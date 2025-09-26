@@ -1,3 +1,21 @@
+/**
+ * BPL Commander Backend Server
+ * 
+ * This is the main entry point for the BPL Commander API server.
+ * It sets up Express.js with all necessary middleware, routes, and configurations
+ * for a comprehensive project management and employee tracking system.
+ * 
+ * Key Features:
+ * - JWT-based authentication
+ * - Role-based access control (Admin, Manager, Employee)
+ * - Project and initiative management
+ * - Employee workload tracking
+ * - Analytics and reporting
+ * - File upload/download
+ * - Real-time notifications
+ * - Database abstraction with mock data fallback
+ */
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,43 +24,51 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 
-// Import routes
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import projectRoutes from './routes/projects';
-import initiativeRoutes from './routes/initiatives';
-import workloadRoutes from './routes/workload';
-import analyticsRoutes from './routes/analytics';
-import notificationRoutes from './routes/notifications';
-import commentRoutes from './routes/comments';
-import fileRoutes from './routes/files';
-import exportRoutes from './routes/export';
-import settingsRoutes from './routes/settings';
-import searchRoutes from './routes/search';
-import activityRoutes from './routes/activity';
-import mockUserRoutes from './routes/mock-users';
-import syncRoutes from './routes/sync';
-import roleRoutes from './routes/roles';
-import departmentRoutes from './routes/departments';
+// Import all API route modules
+import authRoutes from './routes/auth';           // Authentication endpoints (login, register, logout)
+import userRoutes from './routes/users';          // User management endpoints
+import projectRoutes from './routes/projects';    // Project CRUD operations
+import initiativeRoutes from './routes/initiatives'; // Initiative management
+import workloadRoutes from './routes/workload';   // Employee workload tracking
+import analyticsRoutes from './routes/analytics'; // Dashboard analytics and reports
+import notificationRoutes from './routes/notifications'; // Notification system
+import commentRoutes from './routes/comments';    // Project/initiative comments
+import fileRoutes from './routes/files';          // File upload/download
+import exportRoutes from './routes/export';       // Data export functionality
+import settingsRoutes from './routes/settings';   // Application settings
+import searchRoutes from './routes/search';       // Global search functionality
+import activityRoutes from './routes/activity';   // Activity logging
+import mockUserRoutes from './routes/mock-users'; // Mock user data for testing
+import syncRoutes from './routes/sync';           // Data synchronization
+import roleRoutes from './routes/roles';          // Role management
+import departmentRoutes from './routes/departments'; // Department management
 
-// Import middleware
-import { errorHandler } from './middleware/errorHandler';
-import { notFoundHandler } from './middleware/notFoundHandler';
-import { db } from './services/database';
+// Import custom middleware
+import { errorHandler } from './middleware/errorHandler';     // Global error handling
+import { notFoundHandler } from './middleware/notFoundHandler'; // 404 handler
+import { db } from './services/database';                     // Database service abstraction
 
-// Load environment variables
+// Load environment variables from .env file
 dotenv.config();
 
-// Initialize Express app
+// Initialize Express application instance
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-// Initialize Prisma client
+/**
+ * Initialize Prisma ORM client for database operations
+ * - Enables query logging in development mode
+ * - Only logs errors in production for performance
+ */
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-// Initialize database service (with fallback to mock data)
+/**
+ * Initialize database service with fallback to mock data
+ * This allows the application to run without PostgreSQL installation
+ * for development and testing purposes
+ */
 db.initialize().then(() => {
   console.log('Database service initialized');
   if (db.isUsingMock()) {
@@ -54,37 +80,46 @@ db.initialize().then(() => {
   console.error('Database initialization failed:', error);
 });
 
-// Security middleware
+/**
+ * Security middleware configuration
+ * Helmet provides security headers to protect against common vulnerabilities
+ */
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS configuration
+/**
+ * CORS (Cross-Origin Resource Sharing) configuration
+ * Allows frontend applications from different origins to access the API
+ * Supports both localhost development and network access scenarios
+ */
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Define allowed origins for different environments
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3002',
-      'http://192.168.29.213:3000',
+      'http://localhost:3000',      // Local development
+      'http://localhost:3002',      // Alternative local port
+      'http://192.168.29.213:3000', // Network IP variations
       'http://192.168.29.213:3002',
-      'http://192.168.10.205:3000',
+      'http://192.168.10.205:3000', // Current network IP
       'http://192.168.10.205:3002',
-      'http://192.168.10.11:3000',
+      'http://192.168.10.11:3000',  // Additional network IPs
       'http://192.168.10.11:3002',
-      'http://192.168.29.213:5173',
+      'http://192.168.29.213:5173', // Vite dev server ports
       'http://192.168.10.205:5173',
       'http://192.168.10.11:5173',
-      process.env.CORS_ORIGIN || 'http://localhost:3000'
+      process.env.CORS_ORIGIN || 'http://localhost:3000' // Environment-specific origin
     ];
     
-    // Allow any localhost or 192.168.x.x origin for development
+    // Allow any localhost or 192.168.x.x origin for development flexibility
     if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/)) {
       return callback(null, true);
     }
     
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -92,35 +127,51 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true, // Allow cookies and authorization headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed request headers
 }));
 
-// Rate limiting
+/**
+ * Rate limiting middleware to prevent abuse
+ * Limits the number of requests per IP address within a time window
+ */
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes default
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // 100 requests per window
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.'
   },
-  standardHeaders: true,
-  legacyHeaders: false,
+  standardHeaders: true,  // Return rate limit info in headers
+  legacyHeaders: false,   // Disable X-RateLimit-* headers
 });
 
+// Apply rate limiting to all API routes
 app.use('/api/', limiter);
 
-// Body parsing middleware
+/**
+ * Body parsing middleware
+ * - JSON parsing with 10MB limit for large file uploads
+ * - URL-encoded form parsing for form submissions
+ */
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging middleware
+/**
+ * HTTP request logging middleware
+ * Uses Morgan to log all HTTP requests in combined format
+ * Disabled in test environment to reduce noise
+ */
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
-// Health check endpoint
+/**
+ * Health check endpoint
+ * Provides basic server status information for monitoring and load balancers
+ * Returns server status, timestamp, and version information
+ */
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -130,30 +181,42 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/initiatives', initiativeRoutes);
-app.use('/api/workload', workloadRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/activity', activityRoutes);
-app.use('/api/mock-users', mockUserRoutes);
-app.use('/api/sync', syncRoutes);
-app.use('/api/roles', roleRoutes);
-app.use('/api/departments', departmentRoutes);
+/**
+ * API Route Registration
+ * All API endpoints are prefixed with '/api' for clear separation
+ * Each route module handles specific domain functionality
+ */
+app.use('/api/auth', authRoutes);           // Authentication & authorization
+app.use('/api/users', userRoutes);          // User management & profiles
+app.use('/api/projects', projectRoutes);    // Project CRUD operations
+app.use('/api/initiatives', initiativeRoutes); // Initiative management
+app.use('/api/workload', workloadRoutes);   // Employee workload tracking
+app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports
+app.use('/api/notifications', notificationRoutes); // Notification system
+app.use('/api/comments', commentRoutes);    // Comments on projects/initiatives
+app.use('/api/files', fileRoutes);          // File upload/download
+app.use('/api/export', exportRoutes);       // Data export functionality
+app.use('/api/settings', settingsRoutes);   // Application settings
+app.use('/api/search', searchRoutes);       // Global search functionality
+app.use('/api/activity', activityRoutes);    // Activity logging & audit trail
+app.use('/api/mock-users', mockUserRoutes); // Mock data for testing
+app.use('/api/sync', syncRoutes);           // Data synchronization
+app.use('/api/roles', roleRoutes);          // Role management
+app.use('/api/departments', departmentRoutes); // Department management
 
-// Error handling middleware (must be last)
+/**
+ * Error handling middleware (must be registered last)
+ * - notFoundHandler: Handles 404 errors for undefined routes
+ * - errorHandler: Global error handler for all unhandled errors
+ */
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Graceful shutdown
+/**
+ * Graceful shutdown handlers
+ * Ensures proper cleanup of database connections and resources
+ * when the server receives termination signals
+ */
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, shutting down gracefully...');
   await prisma.$disconnect();
@@ -166,7 +229,11 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Start server
+/**
+ * Start the HTTP server
+ * - Binds to all network interfaces (0.0.0.0) for network access
+ * - Logs server startup information including network URLs
+ */
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
@@ -174,7 +241,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
 });
 
-// Handle unhandled promise rejections
+/**
+ * Handle unhandled promise rejections
+ * Prevents the server from crashing due to unhandled async errors
+ * Logs the error and gracefully shuts down the server
+ */
 process.on('unhandledRejection', (err: Error) => {
   console.error('Unhandled Promise Rejection:', err);
   server.close(() => {
@@ -182,5 +253,6 @@ process.on('unhandledRejection', (err: Error) => {
   });
 });
 
+// Export the Express app for testing purposes
 export default app;
 

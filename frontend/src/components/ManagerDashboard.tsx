@@ -1,3 +1,30 @@
+/**
+ * ManagerDashboard Component
+ * 
+ * This is the main dashboard component for managers in the BPL Commander system.
+ * It provides comprehensive project and team management capabilities including:
+ * 
+ * Key Features:
+ * - Project management (create, edit, view, track progress)
+ * - Initiative management (create and track initiatives)
+ * - Team management (view subordinates, assign projects)
+ * - Employee overview and workload tracking
+ * - Export system for reports and data
+ * - Real-time filtering and search capabilities
+ * - Budget tracking and analytics
+ * 
+ * User Roles Supported:
+ * - Manager: Full access to team management
+ * - Program Manager: Cross-team project oversight
+ * - RD Manager: Research & Development focus
+ * 
+ * Data Management:
+ * - Integrates with centralized database service
+ * - Real-time API synchronization
+ * - Local state management with React hooks
+ * - Error handling and user feedback via toast notifications
+ */
+
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { CentralizedProject, CentralizedInitiative, BudgetInfo } from '../utils/centralizedDb'
@@ -24,54 +51,70 @@ import { Label } from './ui/label'
 import { Plus, Download, Target, Lightbulb, Search, Filter, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 
+/**
+ * Main ManagerDashboard Component Function
+ * 
+ * @returns {JSX.Element} The complete manager dashboard interface
+ */
 export function ManagerDashboard() {
+  // Authentication context - provides current user information
   const { user: currentUser } = useAuth()
-  const [projects, setProjects] = useState<CentralizedProject[]>([])
-  const [filteredProjects, setFilteredProjects] = useState<CentralizedProject[]>([])
-  const [initiatives, setInitiatives] = useState<CentralizedInitiative[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateProject, setShowCreateProject] = useState(false)
-  const [showCreateInitiative, setShowCreateInitiative] = useState(false)
-  const [showExportSystem, setShowExportSystem] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   
-  // Filter and search states
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  // Core data state management
+  const [projects, setProjects] = useState<CentralizedProject[]>([])           // All projects data
+  const [filteredProjects, setFilteredProjects] = useState<CentralizedProject[]>([]) // Filtered projects for display
+  const [initiatives, setInitiatives] = useState<CentralizedInitiative[]>([])   // All initiatives data
+  const [loading, setLoading] = useState(true)                                 // Loading state for API calls
   
-  // Team hierarchy states
-  const [users, setUsers] = useState<any[]>([])
-  const [subordinateEmployees, setSubordinateEmployees] = useState<any[]>([])
-  const [selectedManager, setSelectedManager] = useState<string>('all')
+  // UI state management for dialogs and modals
+  const [showCreateProject, setShowCreateProject] = useState(false)            // Project creation dialog
+  const [showCreateInitiative, setShowCreateInitiative] = useState(false)     // Initiative creation dialog
+  const [showExportSystem, setShowExportSystem] = useState(false)             // Export system dialog
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null) // Selected project for details view
   
-  // Form states with improved structure
-  // Available categories for rotation
+  // Filter and search state management
+  const [searchQuery, setSearchQuery] = useState('')                           // Text search query
+  const [statusFilter, setStatusFilter] = useState<string>('all')             // Project status filter
+  const [priorityFilter, setPriorityFilter] = useState<string>('all')         // Project priority filter
+  
+  // Team hierarchy and user management state
+  const [users, setUsers] = useState<any[]>([])                               // All users data
+  const [subordinateEmployees, setSubordinateEmployees] = useState<any[]>([]) // Direct subordinates
+  const [selectedManager, setSelectedManager] = useState<string>('all')       // Manager filter selection
+  
+  // Form state management for project and initiative creation
+  // Available project categories for rotation (Engineering Change Request, Engineering Change Notice, New Product Development, Sustainability)
   const availableCategories: ('ECR' | 'ECN' | 'NPD' | 'SUST')[] = ['ECR', 'ECN', 'NPD', 'SUST']
-  const [categoryIndex, setCategoryIndex] = useState(0)
+  const [categoryIndex, setCategoryIndex] = useState(0) // Index for rotating through categories
 
+  // Project creation form state
   const [projectForm, setProjectForm] = useState({
-    title: '',
-    description: '',
-    projectDetails: '',
-    timelineDate: '',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
-    tags: [] as string[],
-    requiredSkills: [] as string[],
-    category: availableCategories[0] as 'ECR' | 'ECN' | 'NPD' | 'SUST'
+    title: '',                    // Project title
+    description: '',              // Project description
+    projectDetails: '',           // Detailed project information
+    timelineDate: '',            // Project deadline/timeline
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical', // Project priority level
+    tags: [] as string[],         // Project tags for categorization
+    requiredSkills: [] as string[], // Skills required for the project
+    category: availableCategories[0] as 'ECR' | 'ECN' | 'NPD' | 'SUST' // Project category
   })
 
+  // Initiative creation form state
   const [initiativeForm, setInitiativeForm] = useState({
-    title: '',
-    description: '',
-    category: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
-    estimatedHours: 10,
-    workloadPercentage: 5,
-    assignedTo: '',
-    dueDate: ''
+    title: '',                    // Initiative title
+    description: '',              // Initiative description
+    category: '',                 // Initiative category
+    priority: 'medium' as 'low' | 'medium' | 'high', // Initiative priority
+    estimatedHours: 10,           // Estimated hours to complete
+    workloadPercentage: 5,        // Percentage of workload this initiative represents
+    assignedTo: '',               // Employee assigned to the initiative
+    dueDate: ''                   // Initiative due date
   })
 
+  /**
+   * Effect hook to fetch initial data when component mounts or user changes
+   * Fetches projects, initiatives, and user data from the API
+   */
   useEffect(() => {
     fetchData()
   }, [currentUser])
@@ -87,16 +130,33 @@ export function ManagerDashboard() {
     }
   }, [users, currentUser])
 
+  /**
+   * fetchData - Main data fetching function
+   * 
+   * Fetches all necessary data for the manager dashboard including:
+   * - Projects data from the backend API
+   * - Users data for team management
+   * - Initiatives data for initiative tracking
+   * 
+   * Handles API errors gracefully and provides user feedback via toast notifications.
+   * Updates loading state throughout the process.
+   * 
+   * @async
+   * @function fetchData
+   * @returns {Promise<void>}
+   */
   const fetchData = async () => {
+    // Early return if no authenticated user
     if (!currentUser) return
     
     try {
-      setLoading(true)
+      setLoading(true) // Set loading state to show loading indicators
       
-      // Fetch projects and users from backend API
+      // Get authentication token from localStorage
       const token = localStorage.getItem('bpl-token')
       if (token) {
         try {
+          // Fetch projects and users data in parallel for better performance
           const [projectsResponse, usersResponse] = await Promise.all([
             fetch(API_ENDPOINTS.PROJECTS, {
               headers: getDefaultHeaders(token)
@@ -106,37 +166,40 @@ export function ManagerDashboard() {
             })
           ])
 
+          // Check if both API calls were successful
           if (projectsResponse.ok && usersResponse.ok) {
             const projectsData = await projectsResponse.json()
             const usersData = await usersResponse.json()
             
+            // Process projects data if successful
             if (projectsData.success && projectsData.data) {
-              // Convert backend projects to frontend format
+              // Convert backend project format to frontend CentralizedProject format
               const backendProjects = projectsData.data.map((project: any) => ({
-                id: project.id,
-                title: project.title,
-                description: project.description,
-                projectDetails: project.description || '', // Use description as projectDetails
-                managerId: project.managerId,
-                timeline: project.timeline,
-                status: project.status?.toLowerCase() || 'pending',
-                priority: project.priority?.toLowerCase() || 'medium',
-                category: project.category || 'standard',
-                assignedEmployees: project.assignments || [],
-                milestones: [],
-                tags: project.tags || [],
-                requiredSkills: [],
-                estimatedHours: project.estimatedHours,
+                id: project.id,                                    // Unique project identifier
+                title: project.title,                             // Project title
+                description: project.description,                 // Project description
+                projectDetails: project.description || '',        // Detailed project information
+                managerId: project.managerId,                     // ID of project manager
+                timeline: project.timeline,                       // Project timeline/deadline
+                status: project.status?.toLowerCase() || 'pending', // Project status (normalized to lowercase)
+                priority: project.priority?.toLowerCase() || 'medium', // Project priority (normalized to lowercase)
+                category: project.category || 'standard',         // Project category
+                assignedEmployees: project.assignments || [],     // List of assigned employees
+                milestones: [],                                   // Project milestones (empty for now)
+                tags: project.tags || [],                         // Project tags for categorization
+                requiredSkills: [],                              // Required skills (empty for now)
+                estimatedHours: project.estimatedHours,          // Estimated hours to complete
+                // Budget information if available
                 budget: project.budgetAmount ? {
-                  amount: project.budgetAmount,
-                  currency: project.budgetCurrency || 'USD',
-                  allocatedAt: project.createdAt,
-                  allocatedBy: project.managerId,
-                  notes: 'Initial budget allocation'
+                  amount: project.budgetAmount,                  // Budget amount
+                  currency: project.budgetCurrency || 'USD',     // Budget currency
+                  allocatedAt: project.createdAt,                // When budget was allocated
+                  allocatedBy: project.managerId,                // Who allocated the budget
+                  notes: 'Initial budget allocation'             // Budget notes
                 } : undefined,
-                createdAt: project.createdAt,
-                updatedAt: project.updatedAt,
-                version: project.version || 1,
+                createdAt: project.createdAt,                    // Project creation timestamp
+                updatedAt: project.updatedAt,                    // Last update timestamp
+                version: project.version || 1,                   // Project version number
                 discussionCount: 0,
                 lastActivity: project.updatedAt
               }))

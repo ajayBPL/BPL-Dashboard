@@ -1,3 +1,20 @@
+/**
+ * Authentication Routes
+ * 
+ * This module handles all authentication-related endpoints including:
+ * - User registration with validation
+ * - User login with JWT token generation
+ * - Password hashing and verification
+ * - Role-based access validation
+ * 
+ * Security Features:
+ * - Password hashing with bcrypt (12 salt rounds)
+ * - JWT token generation with expiration
+ * - Input validation and sanitization
+ * - Duplicate email/employee ID prevention
+ * - Manager validation for hierarchical structures
+ */
+
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -8,12 +25,36 @@ import { authenticateToken, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
-// Register endpoint
+/**
+ * POST /register - User Registration Endpoint
+ * 
+ * Creates a new user account with comprehensive validation:
+ * - Email format validation and normalization
+ * - Password strength requirements (minimum 6 characters)
+ * - Name validation (minimum 2 characters)
+ * - Employee ID uniqueness check
+ * - Role validation against built-in and custom roles
+ * - Designation requirement
+ * - Manager validation if provided
+ * 
+ * @route POST /api/auth/register
+ * @access Public
+ * @returns {Object} Success response with user data and JWT token
+ */
 router.post('/register', [
+  // Email validation: must be valid email format and will be normalized
   body('email').isEmail().normalizeEmail(),
+  
+  // Password validation: minimum 6 characters required
   body('password').isLength({ min: 6 }),
+  
+  // Name validation: minimum 2 characters required
   body('name').isLength({ min: 2 }),
+  
+  // Employee ID validation: required field
   body('employeeId').isLength({ min: 1 }).withMessage('Employee ID is required'),
+  
+  // Role validation: checks against built-in and custom roles
   body('role').custom(async (value) => {
     const builtInRoles = ['admin', 'program_manager', 'rd_manager', 'manager', 'employee'];
     const customRoles = await db.getCustomRoles();
@@ -25,9 +66,11 @@ router.post('/register', [
     }
     return true;
   }),
+  
+  // Designation validation: minimum 2 characters required
   body('designation').isLength({ min: 2 })
 ], asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  // Check validation errors
+  // Validate all input fields according to the validation rules above
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
@@ -38,11 +81,11 @@ router.post('/register', [
     return;
   }
 
+  // Extract user data from request body
   const { email, password, name, employeeId, role, designation, managerId, department } = req.body;
 
-  // Check if user already exists by email
+  // Check for duplicate email addresses
   const existingUser = await db.findUserByEmail(email);
-
   if (existingUser) {
     res.status(409).json({
       success: false,
@@ -51,9 +94,8 @@ router.post('/register', [
     return;
   }
 
-  // Check if employee ID already exists
+  // Check for duplicate employee IDs
   const existingEmployeeId = await db.findUserByEmployeeId(employeeId);
-
   if (existingEmployeeId) {
     res.status(409).json({
       success: false,
@@ -62,10 +104,9 @@ router.post('/register', [
     return;
   }
 
-  // Validate manager exists if managerId provided
+  // Validate manager exists if managerId is provided
   if (managerId) {
     const manager = await db.findUserById(managerId);
-
     if (!manager) {
       res.status(400).json({
         success: false,
@@ -75,23 +116,23 @@ router.post('/register', [
     }
   }
 
-  // Hash password
+  // Hash password using bcrypt with 12 salt rounds for security
   const saltRounds = 12;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  // Create user
+  // Create new user with default settings
   const user = await db.createUser({
     email,
     password: hashedPassword,
     name,
     employeeId,
-    role: role.toUpperCase(),
+    role: role.toUpperCase(), // Store role in uppercase for consistency
     designation,
     managerId,
     department,
-    skills: [],
-    workloadCap: 100,
-    overBeyondCap: 20,
+    skills: [], // Initialize empty skills array
+    workloadCap: 100, // Default workload capacity
+    overBeyondCap: 20, // Default over-capacity allowance
     notificationSettings: {
       email: true,
       inApp: true,
@@ -101,7 +142,7 @@ router.post('/register', [
     }
   });
 
-  // Generate JWT token
+  // Generate JWT token for immediate authentication
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error('JWT_SECRET not configured');
@@ -114,10 +155,10 @@ router.post('/register', [
       role: user.role
     },
     jwtSecret,
-    { expiresIn: '24h' }
+    { expiresIn: '24h' } // Token expires in 24 hours
   );
 
-  // Log activity
+  // Log user registration activity for audit trail
   await db.createActivityLog({
     userId: user.id,
     action: 'USER_REGISTERED',
@@ -126,7 +167,7 @@ router.post('/register', [
     details: `User registered: ${user.name} (${user.email})`
   });
 
-  // Create welcome notification
+  // Create welcome notification for new user
   await db.createNotification({
     userId: user.id,
     type: 'SYSTEM',
@@ -136,12 +177,13 @@ router.post('/register', [
     actionUrl: '/profile'
   });
 
+  // Return success response with user data and JWT token
   res.status(201).json({
     success: true,
     data: {
       user: {
         ...user,
-        role: user.role.toLowerCase(),
+        role: user.role.toLowerCase(), // Return role in lowercase for frontend consistency
         managerId: user.managerId || undefined,
         department: user.department || undefined,
         createdAt: user.createdAt,
@@ -149,7 +191,7 @@ router.post('/register', [
         notificationSettings: user.notificationSettings || {}
       },
       token,
-      expiresIn: 24 * 60 * 60
+      expiresIn: 24 * 60 * 60 // Token expiration in seconds
     },
     message: 'User registered successfully',
     meta: {
@@ -158,12 +200,28 @@ router.post('/register', [
   });
 }));
 
-// Login endpoint
+/**
+ * POST /login - User Login Endpoint
+ * 
+ * Authenticates users and returns JWT token for session management:
+ * - Email format validation and normalization
+ * - Password verification (supports both bcrypt hashed and plain text)
+ * - Account status validation (active users only)
+ * - JWT token generation with user information
+ * - Login activity logging for audit trail
+ * 
+ * @route POST /api/auth/login
+ * @access Public
+ * @returns {Object} Success response with user data and JWT token
+ */
 router.post('/login', [
+  // Email validation: must be valid email format and will be normalized
   body('email').isEmail().normalizeEmail(),
+  
+  // Password validation: minimum 6 characters required
   body('password').isLength({ min: 6 })
 ], asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  // Check validation errors
+  // Validate input fields according to validation rules
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
@@ -174,11 +232,13 @@ router.post('/login', [
     return;
   }
 
+  // Extract credentials from request body
   const { email, password } = req.body;
 
-  // Find user by email
+  // Find user by email address
   const user = await db.findUserByEmail(email);
 
+  // Check if user exists and is active
   if (!user || !user.isActive) {
     res.status(401).json({
       success: false,
@@ -187,20 +247,20 @@ router.post('/login', [
     return;
   }
 
-  // Verify password
-  // Handle both plain text and bcrypt hashed passwords
+  // Verify password with support for both bcrypt hashed and plain text passwords
   let isPasswordValid = false;
   const storedPassword = (user as any).password;
   
-  // Check if the stored password is bcrypt hashed (starts with $2b$)
+  // Check if stored password is bcrypt hashed (starts with $2b$)
   if (storedPassword.startsWith('$2b$')) {
-    // Password is bcrypt hashed, use bcrypt comparison
+    // Password is bcrypt hashed, use bcrypt comparison for security
     isPasswordValid = await bcrypt.compare(password, storedPassword);
   } else {
-    // Password is plain text, compare directly
+    // Password is stored as plain text (legacy support), compare directly
     isPasswordValid = password === storedPassword;
   }
   
+  // Return error if password doesn't match
   if (!isPasswordValid) {
     res.status(401).json({
       success: false,
@@ -209,7 +269,7 @@ router.post('/login', [
     return;
   }
 
-  // Generate JWT token
+  // Generate JWT token for authenticated session
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error('JWT_SECRET not configured');
@@ -222,21 +282,22 @@ router.post('/login', [
       role: user.role
     },
     jwtSecret,
-    { expiresIn: '24h' }
+    { expiresIn: '24h' } // Token expires in 24 hours
   );
 
-  // Update last login time
+  // Update user's last login timestamp for tracking
   await db.updateUser(user.id, { lastLoginAt: new Date() });
 
-  // Remove password from response
+  // Remove password from response for security
   const { password: _, ...userWithoutPassword } = user as any;
 
+  // Return success response with user data and JWT token
   res.json({
     success: true,
     data: {
       user: {
         ...userWithoutPassword,
-        role: user.role.toLowerCase(),
+        role: user.role.toLowerCase(), // Return role in lowercase for frontend consistency
         managerId: user.managerId || undefined,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -244,7 +305,7 @@ router.post('/login', [
         notificationSettings: user.notificationSettings || {}
       },
       token,
-      expiresIn: 24 * 60 * 60 // 24 hours in seconds
+      expiresIn: 24 * 60 * 60 // Token expiration in seconds (24 hours)
     },
     meta: {
       timestamp: new Date().toISOString()
@@ -252,8 +313,20 @@ router.post('/login', [
   });
 }));
 
-// Logout endpoint
+/**
+ * POST /logout - User Logout Endpoint
+ * 
+ * Handles user logout by invalidating the session:
+ * - Requires valid JWT token for authentication
+ * - Returns success message (token invalidation handled client-side)
+ * - Can be extended to implement server-side token blacklisting
+ * 
+ * @route POST /api/auth/logout
+ * @access Private (requires valid JWT token)
+ * @returns {Object} Success response confirming logout
+ */
 router.post('/logout', authenticateToken, asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  // Return success response (token invalidation is handled client-side)
   res.json({
     success: true,
     message: 'Logged out successfully',
@@ -263,8 +336,20 @@ router.post('/logout', authenticateToken, asyncHandler(async (req: Request, res:
   });
 }));
 
-// Get current user profile
+/**
+ * GET /me - Get Current User Profile
+ * 
+ * Returns the current authenticated user's profile information:
+ * - Requires valid JWT token for authentication
+ * - Returns user data from the JWT token payload
+ * - Used for profile display and user context
+ * 
+ * @route GET /api/auth/me
+ * @access Private (requires valid JWT token)
+ * @returns {Object} Current user profile data
+ */
 router.get('/me', authenticateToken, asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  // Check if user data exists in request (set by authenticateToken middleware)
   if (!req.user) {
     res.status(401).json({
       success: false,
@@ -273,6 +358,7 @@ router.get('/me', authenticateToken, asyncHandler(async (req: Request, res: Resp
     return;
   }
 
+  // Return current user profile data
   res.json({
     success: true,
     data: req.user,
@@ -282,8 +368,20 @@ router.get('/me', authenticateToken, asyncHandler(async (req: Request, res: Resp
   });
 }));
 
-// Refresh token endpoint
+/**
+ * POST /refresh - Refresh JWT Token
+ * 
+ * Generates a new JWT token for the current authenticated user:
+ * - Requires valid JWT token for authentication
+ * - Extends session without requiring re-login
+ * - Returns new token with updated expiration time
+ * 
+ * @route POST /api/auth/refresh
+ * @access Private (requires valid JWT token)
+ * @returns {Object} New JWT token with expiration info
+ */
 router.post('/refresh', authenticateToken, asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  // Check if user data exists in request
   if (!req.user) {
     res.status(401).json({
       success: false,
@@ -292,12 +390,13 @@ router.post('/refresh', authenticateToken, asyncHandler(async (req: Request, res
     return;
   }
 
+  // Get JWT secret from environment
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error('JWT_SECRET not configured');
   }
 
-  // Generate new token
+  // Generate new JWT token with same user information
   const token = jwt.sign(
     {
       userId: req.user.id,
@@ -305,14 +404,15 @@ router.post('/refresh', authenticateToken, asyncHandler(async (req: Request, res
       role: req.user.role
     },
     jwtSecret,
-    { expiresIn: '24h' }
+    { expiresIn: '24h' } // New token expires in 24 hours
   );
 
+  // Return new token with expiration information
   res.json({
     success: true,
     data: {
       token,
-      expiresIn: 24 * 60 * 60
+      expiresIn: 24 * 60 * 60 // Token expiration in seconds
     },
     meta: {
       timestamp: new Date().toISOString()
@@ -320,7 +420,18 @@ router.post('/refresh', authenticateToken, asyncHandler(async (req: Request, res
   });
 }));
 
-// Change password endpoint
+/**
+ * POST /change-password - Change User Password
+ * 
+ * Allows authenticated users to change their password:
+ * - Requires valid JWT token for authentication
+ * - Validates current password before allowing change
+ * - Hashes new password with bcrypt for security
+ * 
+ * @route POST /api/auth/change-password
+ * @access Private (requires valid JWT token)
+ * @returns {Object} Success response confirming password change
+ */
 router.post('/change-password', [
   authenticateToken,
   body('currentPassword').isLength({ min: 6 }),

@@ -349,6 +349,27 @@ class FileBasedMockDatabase {
     return assignment;
   }
 
+  async updateProject(projectId: string, updateData: any): Promise<any> {
+    const projects = this.readFromFile(this.projectsFile);
+    const projectIndex = projects.findIndex(p => p.id === projectId);
+    
+    if (projectIndex === -1) {
+      throw new Error('Project not found');
+    }
+
+    // Update the project with new data
+    const updatedProject = {
+      ...projects[projectIndex],
+      ...updateData,
+      updatedAt: new Date().toISOString()
+    };
+
+    projects[projectIndex] = updatedProject;
+    this.writeToFile(this.projectsFile, projects);
+
+    return updatedProject;
+  }
+
   private calculateEmployeeWorkload(employeeId: string): number {
     const projects = this.readFromFile(this.projectsFile);
     const initiatives = this.readFromFile(this.initiativesFile);

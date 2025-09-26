@@ -71,6 +71,7 @@ export interface Project {
   status: 'pending' | 'active' | 'completed' | 'on-hold' | 'cancelled'; // Current project status
   priority: 'low' | 'medium' | 'high' | 'critical';             // Project priority level
   category?: 'ECR' | 'ECN' | 'NPD' | 'SUST' | string;           // Project category
+  progress: number;                                              // Project progress percentage (0-100)
   estimatedHours?: number;                                      // Estimated hours to complete
   actualHours?: number;                                          // Actual hours spent
   budgetAmount?: number;                                         // Project budget amount
@@ -360,6 +361,7 @@ export interface CreateProjectRequest {
   timelineDate?: string;
   priority?: Project['priority'];
   category?: Project['category'];
+  progress?: number;
   estimatedHours?: number;
   budgetAmount?: number;
   budgetCurrency?: string;

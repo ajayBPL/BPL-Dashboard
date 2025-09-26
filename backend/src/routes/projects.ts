@@ -206,9 +206,7 @@ async function handleCreateProject(req: Request, res: Response, projectData: Cre
 }
 
 async function handleUpdateProject(req: Request, res: Response, projectId: string, projectData: UpdateProjectRequest): Promise<void> {
-  const existingProject = await prisma.project.findUnique({
-    where: { id: projectId }
-  });
+  const existingProject = await db.getProjectById(projectId);
 
   if (!existingProject) {
     throw new NotFoundError('Project not found');
@@ -225,64 +223,52 @@ async function handleUpdateProject(req: Request, res: Response, projectId: strin
   }
 
   // Create version snapshot before update
-  await prisma.projectVersion.create({
-    data: {
-      projectId: projectId,
-      version: existingProject.version,
-      snapshot: existingProject as any,
-      changedBy: req.user!.id,
-      changeType: 'UPDATE'
-    }
-  });
-
-  const project = await prisma.project.update({
-    where: { id: projectId },
-    data: {
-      ...(projectData.title && { title: projectData.title }),
-      ...(projectData.description !== undefined && { description: projectData.description }),
-      ...(projectData.status && { status: projectData.status.toUpperCase() as any }),
-      ...(projectData.priority && { priority: projectData.priority.toUpperCase() as any }),
-      ...(projectData.estimatedHours !== undefined && { estimatedHours: projectData.estimatedHours }),
-      ...(projectData.budgetAmount !== undefined && { budgetAmount: projectData.budgetAmount }),
-      ...(projectData.budgetCurrency && { budgetCurrency: projectData.budgetCurrency }),
-      ...(projectData.timeline !== undefined && { timeline: projectData.timeline }),
-      ...(projectData.tags && { tags: projectData.tags }),
-      version: { increment: 1 }
-    },
-    include: {
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true
-        }
+  if (!db.isUsingMock()) {
+    await prisma.projectVersion.create({
+      data: {
+        projectId: projectId,
+        version: existingProject.version,
+        snapshot: existingProject as any,
+        changedBy: req.user!.id,
+        changeType: 'UPDATE'
       }
-    }
+    });
+  }
+
+  const project = await db.updateProject(projectId, {
+    ...(projectData.title && { title: projectData.title }),
+    ...(projectData.description !== undefined && { description: projectData.description }),
+    ...(projectData.status && { status: projectData.status.toUpperCase() }),
+    ...(projectData.priority && { priority: projectData.priority.toUpperCase() }),
+    ...(projectData.progress !== undefined && { progress: projectData.progress }),
+    ...(projectData.estimatedHours !== undefined && { estimatedHours: projectData.estimatedHours }),
+    ...(projectData.budgetAmount !== undefined && { budgetAmount: projectData.budgetAmount }),
+    ...(projectData.budgetCurrency && { budgetCurrency: projectData.budgetCurrency }),
+    ...(projectData.timeline !== undefined && { timeline: projectData.timeline }),
+    ...(projectData.tags && { tags: projectData.tags }),
+    version: existingProject.version + 1
   });
 
   // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: req.user!.id,
-      action: 'PROJECT_UPDATED',
-      entityType: 'PROJECT',
-      entityId: project.id,
-      projectId: project.id,
-      details: `Updated project: ${project.title}`
-    }
+  await db.createActivityLog({
+    userId: req.user!.id,
+    action: 'PROJECT_UPDATED',
+    entityType: 'PROJECT',
+    entityId: project.id,
+    projectId: project.id,
+    details: `Updated project: ${project.title}`
   });
 
   res.json({
     success: true,
     data: {
       ...project,
-      status: project.status.toLowerCase(),
-      priority: project.priority.toLowerCase(),
+      status: project.status?.toLowerCase() || 'pending',
+      priority: project.priority?.toLowerCase() || 'medium',
       budgetAmount: project.budgetAmount ? Number(project.budgetAmount) : undefined,
       timeline: project.timeline || undefined,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt
     },
     message: 'Project updated successfully',
     meta: {

@@ -48,7 +48,7 @@ interface ProjectDetailsProps {
 }
 
 export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsProps) {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, loading: authLoading } = useAuth()
   const [project, setProject] = useState<CentralizedProject | null>(null)
   const [loading, setLoading] = useState(false)
   const [showAssignEmployee, setShowAssignEmployee] = useState(false)
@@ -226,11 +226,11 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
   const comments: any[] = []
 
   useEffect(() => {
-    if (projectId && isOpen) {
+    if (!authLoading && projectId && isOpen) {
       fetchProjectDetails()
       fetchEmployeesAndProjects() // Fetch employees and projects when opening project details
     }
-  }, [projectId, isOpen])
+  }, [authLoading, projectId, isOpen])
 
   const fetchProjectDetails = async () => {
     if (!projectId) return
@@ -575,7 +575,7 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
 
   const completedMilestones = project?.milestones.filter(m => m.completed).length || 0
   const totalMilestones = project?.milestones.length || 0
-  const progressPercentage = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0
+  const progressPercentage = project?.progress || 0
 
   const totalInvolvement = assignedEmployees.reduce((sum, emp) => sum + emp.involvementPercentage, 0)
   const canManageProject = currentUser && (

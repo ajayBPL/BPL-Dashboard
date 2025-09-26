@@ -167,9 +167,7 @@ export function EmployeeDashboard() {
   }
 
   const calculateProjectProgress = (project: CentralizedProject) => {
-    if (project.milestones.length === 0) return 0
-    const completedMilestones = project.milestones.filter(m => m.completed).length
-    return (completedMilestones / project.milestones.length) * 100
+    return project.progress || 0
   }
 
   const getWorkloadStatus = () => {

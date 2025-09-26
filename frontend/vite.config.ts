@@ -54,7 +54,7 @@
     },
     server: {
       port: 3000,
-      host: '192.168.10.205',
+      host: 'localhost',
       open: true,
     },
   });

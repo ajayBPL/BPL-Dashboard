@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { apiService } from '../services/api'
 import { centralizedDb, CentralizedUser } from '../utils/centralizedDb'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { DashboardAnalytics } from './DashboardAnalytics'
@@ -102,25 +103,14 @@ export function AdminDashboard() {
   // Load custom roles and departments from API
   const loadCustomRoles = async () => {
     try {
-      const token = localStorage.getItem('bpl-token');
-      const user = localStorage.getItem('bpl-user');
-      console.log('Loading custom roles with token:', token ? 'Token exists' : 'No token');
-      console.log('User in localStorage:', user ? 'User exists' : 'No user');
-      console.log('Token value:', token);
-      const response = await fetch('http://localhost:3001/api/roles', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log('Roles API response:', response.status, response.statusText);
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('Roles data:', responseData);
-        setCustomRoles(responseData.data || []);
+      console.log('Loading custom roles...');
+      const response = await apiService.request('/roles');
+      console.log('Roles API response:', response);
+      if (response.success) {
+        console.log('Roles data:', response.data);
+        setCustomRoles(Array.isArray(response.data) ? response.data : []);
       } else {
-        const errorData = await response.json();
-        console.error('Failed to load roles:', response.status, response.statusText, errorData);
+        console.error('Failed to load roles:', response.error);
       }
     } catch (error) {
       console.error('Error loading custom roles:', error);
@@ -129,18 +119,14 @@ export function AdminDashboard() {
 
   const loadCustomDepartments = async () => {
     try {
-      const token = localStorage.getItem('bpl-token');
-      const response = await fetch('http://localhost:3001/api/departments', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const responseData = await response.json();
-        setCustomDepartments(responseData.data || []);
+      console.log('Loading custom departments...');
+      const response = await apiService.request('/departments');
+      console.log('Departments API response:', response);
+      if (response.success) {
+        console.log('Departments data:', response.data);
+        setCustomDepartments(Array.isArray(response.data) ? response.data : []);
       } else {
-        console.error('Failed to load departments:', response.status, response.statusText);
+        console.error('Failed to load departments:', response.error);
       }
     } catch (error) {
       console.error('Error loading custom departments:', error);
@@ -277,21 +263,14 @@ export function AdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('bpl-token');
-      console.log('Creating role with token:', token ? 'Token exists' : 'No token');
-      console.log('Role data:', newRole);
-      const response = await fetch('http://localhost:3001/api/roles', {
+      console.log('Creating role:', newRole);
+      const response = await apiService.request('/roles', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify(newRole)
       });
-      console.log('Create role API response:', response.status, response.statusText);
+      console.log('Create role API response:', response);
 
-      if (response.ok) {
-        await response.json(); // Consume response
+      if (response.success) {
         toast.success(`Role "${newRole.name}" created successfully!`)
         
         // Reload custom roles
@@ -303,8 +282,7 @@ export function AdminDashboard() {
         setNewRole({ name: '', description: '', permissions: [] })
         setShowRoleManagement(false)
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to create role')
+        toast.error(response.error || 'Failed to create role')
       }
     } catch (error) {
       console.error('Error creating role:', error)
@@ -319,18 +297,14 @@ export function AdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('bpl-token');
-      const response = await fetch('http://localhost:3001/api/departments', {
+      console.log('Creating department:', newDepartment);
+      const response = await apiService.request('/departments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify(newDepartment)
       });
+      console.log('Create department API response:', response);
 
-      if (response.ok) {
-        await response.json(); // Consume response
+      if (response.success) {
         toast.success(`Department "${newDepartment.name}" created successfully!`)
         
         // Reload custom departments
@@ -342,8 +316,7 @@ export function AdminDashboard() {
         setNewDepartment({ name: '', description: '', headId: '' })
         setShowDepartmentManagement(false)
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Failed to create department')
+        toast.error(response.error || 'Failed to create department')
       }
     } catch (error) {
       console.error('Error creating department:', error)

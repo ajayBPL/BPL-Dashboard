@@ -50,6 +50,7 @@ model Project {
   managerId      String              @map("manager_id")
   status         Status              @default(PENDING)
   priority       Priority            @default(MEDIUM)
+  progress       Int                 @default(0) // Project progress percentage (0-100)
   estimatedHours Int?                @map("estimated_hours")
   actualHours    Int?                @map("actual_hours")
   budgetAmount   Decimal?            @map("budget_amount")

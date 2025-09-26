@@ -53,7 +53,7 @@ interface EmployeeWithProjects {
 }
 
 export function EmployeeOverview() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, loading: authLoading } = useAuth()
   const [employees, setEmployees] = useState<EmployeeWithProjects[]>([])
   const [filteredEmployees, setFilteredEmployees] = useState<EmployeeWithProjects[]>([])
   const [loading, setLoading] = useState(true)
@@ -75,10 +75,10 @@ export function EmployeeOverview() {
   )
 
   useEffect(() => {
-    if (canViewEmployees) {
+    if (!authLoading && canViewEmployees) {
       loadEmployeeData()
     }
-  }, [canViewEmployees])
+  }, [authLoading, canViewEmployees])
 
   useEffect(() => {
     filterAndSortEmployees()
@@ -266,6 +266,20 @@ export function EmployeeOverview() {
   }
 
   // Removed unused functions and variables to fix linting issues
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-muted-foreground">Loading...</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (!canViewEmployees) {
     return (

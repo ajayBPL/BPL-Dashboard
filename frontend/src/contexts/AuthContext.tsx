@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { centralizedDb } from '../utils/centralizedDb'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
+import { apiService } from '../services/api'
 
 interface User {
   id: string
@@ -73,6 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setUser(userData)
         setAccessToken(storedToken)
+        
+        // Update apiService with the stored token
+        apiService.setToken(storedToken)
       } catch (error) {
         console.error('Error parsing stored user data:', error)
         localStorage.removeItem('bpl-user')
@@ -158,6 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(token);
       localStorage.setItem('bpl-user', JSON.stringify(userData));
       localStorage.setItem('bpl-token', token);
+      
+      // Update apiService with the new token
+      apiService.setToken(token);
 
       return { success: true };
     } catch (error) {
@@ -171,6 +178,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessToken(null)
     localStorage.removeItem('bpl-user')
     localStorage.removeItem('bpl-token')
+    
+    // Clear token from apiService
+    apiService.clearToken()
   }
 
   const updateProfile = async (updates: Partial<User>): Promise<{ success: boolean; error?: string }> => {

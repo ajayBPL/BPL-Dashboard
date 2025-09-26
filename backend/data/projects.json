@@ -6,6 +6,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "ECR",
+    "progress": 44,
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
     "timeline": "30",
@@ -13,7 +14,7 @@
     "status": "PENDING",
     "deadline": "2025-12-15T18:30:00.000Z",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-24T15:16:51.038Z",
+    "updatedAt": "2025-09-26T10:51:35.500Z",
     "assignedEmployees": [
       {
         "id": "assignment-1758132939114",
@@ -105,7 +106,8 @@
         "assignedAt": "2025-09-24T15:16:51.037Z",
         "updatedAt": "2025-09-24T15:16:51.037Z"
       }
-    ]
+    ],
+    "version": 3
   },
   {
     "id": "project-1757938579123",
@@ -114,6 +116,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "ECN",
+    "progress": 15,
     "estimatedHours": 500,
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
@@ -166,6 +169,7 @@
     "managerId": "user-1757932070077",
     "priority": "CRITICAL",
     "category": "NPD",
+    "progress": 60,
     "budgetCurrency": "USD",
     "timeline": "1 month ",
     "tags": [],
@@ -215,6 +219,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "SUST",
+    "progress": 40,
     "budgetCurrency": "USD",
     "timeline": "2",
     "tags": [],
@@ -251,6 +256,7 @@
     "managerId": "admin-001",
     "priority": "MEDIUM",
     "category": "ECR",
+    "progress": 25,
     "budgetCurrency": "USD",
     "timelineDate": "2025-12-31T00:00:00.000Z",
     "tags": [
@@ -311,6 +317,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "ECN",
+    "progress": 20,
     "budgetCurrency": "USD",
     "timelineDate": "2025-12-30T18:30:00.000Z",
     "tags": [],
@@ -386,6 +393,7 @@
     "description": "Defibrillator DefibrillatorDefibrillatorDefibrillatorDefibrillatorDefibrillatorDefibrillator",
     "managerId": "user-1757932070077",
     "priority": "HIGH",
+    "progress": 35,
     "budgetCurrency": "USD",
     "timelineDate": "2026-02-09T18:30:00.000Z",
     "tags": [],
@@ -425,6 +433,7 @@
     "description": "Test Description",
     "managerId": "admin-001",
     "priority": "MEDIUM",
+    "progress": 10,
     "budgetCurrency": "USD",
     "tags": [],
     "status": "PENDING",
@@ -437,10 +446,28 @@
     "description": "Testing database connectivity",
     "managerId": "admin-001",
     "priority": "HIGH",
+    "progress": 35,
     "budgetCurrency": "USD",
     "tags": [],
     "status": "PENDING",
     "createdAt": "2025-09-26T06:58:52.423Z",
     "updatedAt": "2025-09-26T06:58:52.423Z"
+  },
+  {
+    "id": "project-1758879932209",
+    "title": "API Test Project",
+    "description": "Testing project creation via API",
+    "managerId": "admin-001",
+    "priority": "MEDIUM",
+    "estimatedHours": 100,
+    "budgetAmount": 50000,
+    "budgetCurrency": "USD",
+    "tags": [
+      "test",
+      "api"
+    ],
+    "status": "PENDING",
+    "createdAt": "2025-09-26T09:45:32.209Z",
+    "updatedAt": "2025-09-26T09:45:32.209Z"
   }
 ]

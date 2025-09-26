@@ -32,7 +32,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
-  const progress = calculateProjectProgress(project)
+  const progress = project.progress || 0
   const assignedCount = project.assignedEmployees.length
   const totalInvolvement = calculateTotalInvolvement(project)
   const health = getProjectHealth(project)

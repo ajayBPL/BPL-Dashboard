@@ -203,6 +203,39 @@ class DatabaseService {
     };
   }
 
+  async updateProject(projectId: string, updateData: any) {
+    console.log('DatabaseService.updateProject called with:', { projectId, updateData, useMock: this.useMock });
+    
+    if (this.useMock) {
+      console.log('Using mock database for updateProject');
+      const result = await fileBasedMockDb.updateProject(projectId, updateData);
+      console.log('Mock database updateProject result:', result);
+      return result;
+    }
+    
+    console.log('Using Prisma for updateProject');
+    const project = await this.prisma.project.update({
+      where: { id: projectId },
+      data: updateData,
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      }
+    });
+    
+    return {
+      ...project,
+      createdAt: project.createdAt.toISOString(),
+      updatedAt: project.updatedAt.toISOString()
+    };
+  }
+
   async getAllProjects() {
     if (this.useMock) {
       return await fileBasedMockDb.getAllProjects();

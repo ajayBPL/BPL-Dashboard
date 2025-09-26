@@ -40,7 +40,7 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
   // Calculate current progress
   const completedMilestones = project.milestones.filter(m => m.completed).length
   const totalMilestones = project.milestones.length
-  const currentProgress = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0
+  const currentProgress = project.progress || 0
 
   // Check if user can edit progress (Program Manager only)
   const canEditProgress = currentUser && (
@@ -68,69 +68,25 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
 
     setLoading(true)
     try {
-      // Create a snapshot for version tracking
-      const progressSnapshot = {
-        timestamp: new Date().toISOString(),
-        previousProgress: currentProgress,
-        newProgress: newProgress,
-        updatedBy: currentUser.id,
-        reason: reason.trim(),
-        version: project.version + 1
-      }
-
-      // Update milestones based on new progress percentage
-      const updatedMilestones = project.milestones.map((milestone, index) => {
-        const milestoneThreshold = ((index + 1) / totalMilestones) * 100
-        const shouldBeCompleted = newProgress >= milestoneThreshold
-        
-        if (shouldBeCompleted && !milestone.completed) {
-          return {
-            ...milestone,
-            completed: true,
-            completedAt: new Date().toISOString()
+      // Update project progress directly via API
+      const response = await apiService.request('/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'update',
+          id: project.id,
+          data: {
+            progress: newProgress
           }
-        } else if (!shouldBeCompleted && milestone.completed) {
-          return {
-            ...milestone,
-            completed: false,
-            completedAt: undefined
-          }
-        }
-        return milestone
+        })
       })
 
-      // Update milestones individually via API
-      let allUpdatesSuccessful = true
-      
-      for (const milestone of updatedMilestones) {
-        if (milestone.completed && !project.milestones.find(m => m.id === milestone.id)?.completed) {
-          // Mark milestone as completed
-          const response = await apiService.request('/projects', {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'milestone',
-              id: project.id,
-              data: {
-                action: 'complete',
-                milestoneId: milestone.id
-              }
-            })
-          })
-          
-          if (!response.success) {
-            allUpdatesSuccessful = false
-            console.error('Failed to complete milestone:', milestone.title, response.error)
-          }
-        }
-      }
-
-      if (allUpdatesSuccessful) {
+      if (response.success) {
         toast.success(`Project progress updated to ${newProgress}%!`)
         
-        // Create updated project object with new milestone states
+        // Create updated project object with new progress
         const updatedProject = {
           ...project,
-          milestones: updatedMilestones,
+          progress: newProgress,
           lastActivity: new Date().toISOString()
         }
         
@@ -139,7 +95,7 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
         setNewProgress(0)
         onClose()
       } else {
-        toast.error('Some milestone updates failed. Please try again.')
+        toast.error('Failed to update project progress: ' + (response.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error updating progress:', error)

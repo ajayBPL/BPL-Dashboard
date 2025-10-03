@@ -102,10 +102,12 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',      // Local development
       'http://localhost:3002',      // Alternative local port
+      'http://localhost:3003',      // Current frontend port
       'http://192.168.29.213:3000', // Network IP variations
       'http://192.168.29.213:3002',
       'http://192.168.10.205:3000', // Current network IP
       'http://192.168.10.205:3002',
+      'http://192.168.10.205:3003', // Current frontend on network
       'http://192.168.10.11:3000',  // Additional network IPs
       'http://192.168.10.11:3002',
       'http://192.168.29.213:5173', // Vite dev server ports

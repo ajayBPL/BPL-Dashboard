@@ -6,7 +6,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "ECR",
-    "progress": 44,
+    "progress": 55,
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
     "timeline": "30",
@@ -14,7 +14,7 @@
     "status": "PENDING",
     "deadline": "2025-12-15T18:30:00.000Z",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-09-26T10:51:35.500Z",
+    "updatedAt": "2025-10-01T05:07:21.275Z",
     "assignedEmployees": [
       {
         "id": "assignment-1758132939114",
@@ -107,7 +107,7 @@
         "updatedAt": "2025-09-24T15:16:51.037Z"
       }
     ],
-    "version": 3
+    "version": 4
   },
   {
     "id": "project-1757938579123",

@@ -118,7 +118,9 @@ export function EmployeeOverview() {
       const employeeData: EmployeeWithProjects[] = users
         .filter((user: any) => {
           const role = user.role?.toLowerCase()
-          return role === 'employee' || role === 'manager' || role === 'program_manager' || role === 'rd_manager'
+          return role === 'employee' || role === 'manager' || role === 'program_manager' || role === 'rd_manager' ||
+                 role === 'EMPLOYEE' || role === 'MANAGER' || role === 'PROGRAM_MANAGER' || role === 'RD_MANAGER' ||
+                 role === 'intern' || role === 'INTERN' || role === 'lab in charge' || role === 'LAB IN CHARGE'
         })
         .map((user: any) => {
           // Find all projects assigned to this employee

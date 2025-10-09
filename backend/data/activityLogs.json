@@ -644,5 +644,24 @@
     "projectId": "project-1757937356657",
     "details": "Updated project: Dynatrac Ultra",
     "timestamp": "2025-10-01T05:07:21.277Z"
+  },
+  {
+    "id": "activity-1759811681095",
+    "userId": "user-1759811681087",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1759811681087",
+    "details": "User registered: Harshitha J Y (harshitha.jy@bpl.in)",
+    "timestamp": "2025-10-07T04:34:41.095Z"
+  },
+  {
+    "id": "activity-1759819798602",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1759819798601",
+    "projectId": "project-1759819798601",
+    "details": "Created project: test project 1",
+    "timestamp": "2025-10-07T06:49:58.602Z"
   }
 ]

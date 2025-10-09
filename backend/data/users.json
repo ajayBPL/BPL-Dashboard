@@ -24,8 +24,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-10-06T06:49:20.185Z",
-    "lastLoginAt": "2025-10-06T06:49:20.183Z"
+    "updatedAt": "2025-10-08T04:45:00.753Z",
+    "lastLoginAt": "2025-10-08T04:45:00.752Z"
   },
   {
     "id": "program-manager-001",
@@ -51,7 +51,7 @@
     },
     "isActive": true,
     "createdAt": "2024-01-01T00:00:00Z",
-    "updatedAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2025-10-08T04:45:29.196Z",
     "lastLoginAt": null
   },
   {
@@ -188,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-10-06T06:49:34.678Z",
-    "lastLoginAt": "2025-10-06T06:49:34.676Z"
+    "updatedAt": "2025-10-07T06:29:55.502Z",
+    "lastLoginAt": "2025-10-07T06:29:55.502Z"
   },
   {
     "id": "user-1757932094744",
@@ -736,5 +736,29 @@
     "isActive": true,
     "createdAt": "2025-09-26T07:11:24.639Z",
     "updatedAt": "2025-09-26T07:11:24.639Z"
+  },
+  {
+    "id": "user-1759811681087",
+    "email": "harshitha.jy@bpl.in",
+    "name": "Harshitha J Y",
+    "password": "$2b$12$oCxOnMM8pwPiQEbiycblOudc86POEGW2SJJ/ar/Sys9VdVaeKQQMu",
+    "role": "EMPLOYEE",
+    "designation": "Engineer Regulatory",
+    "managerId": "program-manager-001",
+    "department": "R&D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-10-07T04:34:41.087Z",
+    "updatedAt": "2025-10-07T04:34:41.087Z"
   }
 ]

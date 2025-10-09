@@ -69,27 +69,32 @@ export function NotificationSystem() {
       i.createdBy === user.id || i.assignedTo === user.id
     )
 
-    // Check for overdue milestones
-    projects.forEach(project => {
-      project.milestones.forEach(milestone => {
-        if (!milestone.completed && new Date(milestone.dueDate) < now) {
-          newNotifications.push({
-            id: `overdue-${project.id}-${milestone.id}`,
-            type: 'deadline',
-            title: 'Overdue Milestone',
-            message: `"${milestone.title}" in project "${project.title}" is overdue`,
-            entityId: project.id,
-            entityType: 'project',
-            priority: 'high',
-            read: false,
-            createdAt: new Date().toISOString()
-          })
-        }
+    const isAdmin = user.role === 'admin'
+
+    // Admins should not receive project-related notifications; they'll only get credential notices below
+    if (!isAdmin) {
+      // Check for overdue milestones
+      projects.forEach(project => {
+        project.milestones.forEach(milestone => {
+          if (!milestone.completed && new Date(milestone.dueDate) < now) {
+            newNotifications.push({
+              id: `overdue-${project.id}-${milestone.id}`,
+              type: 'deadline',
+              title: 'Overdue Milestone',
+              message: `"${milestone.title}" in project "${project.title}" is overdue`,
+              entityId: project.id,
+              entityType: 'project',
+              priority: 'high',
+              read: false,
+              createdAt: new Date().toISOString()
+            })
+          }
+        })
       })
-    })
+    }
 
     // Check for workload issues
-    if (user.role === 'employee' || user.role === 'manager') {
+    if (!isAdmin && (user.role === 'employee' || user.role === 'manager')) {
       const workload = centralizedDb.getEmployeeWorkload(user.id)
       if (workload.totalWorkload > 100) {
         newNotifications.push({
@@ -121,46 +126,50 @@ export function NotificationSystem() {
     // Check for upcoming deadlines (next 7 days)
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
     
-    projects.forEach(project => {
-      project.milestones.forEach(milestone => {
-        const dueDate = new Date(milestone.dueDate)
-        if (!milestone.completed && dueDate <= sevenDaysFromNow && dueDate > now) {
-          newNotifications.push({
-            id: `upcoming-${project.id}-${milestone.id}`,
-            type: 'deadline',
-            title: 'Upcoming Deadline',
-            message: `"${milestone.title}" in project "${project.title}" is due on ${formatDate(milestone.dueDate)}`,
-            entityId: project.id,
-            entityType: 'project',
-            priority: 'medium',
-            read: false,
-            createdAt: new Date().toISOString()
-          })
+    if (!isAdmin) {
+      projects.forEach(project => {
+        project.milestones.forEach(milestone => {
+          const dueDate = new Date(milestone.dueDate)
+          if (!milestone.completed && dueDate <= sevenDaysFromNow && dueDate > now) {
+            newNotifications.push({
+              id: `upcoming-${project.id}-${milestone.id}`,
+              type: 'deadline',
+              title: 'Upcoming Deadline',
+              message: `"${milestone.title}" in project "${project.title}" is due on ${formatDate(milestone.dueDate)}`,
+              entityId: project.id,
+              entityType: 'project',
+              priority: 'medium',
+              read: false,
+              createdAt: new Date().toISOString()
+            })
+          }
+        })
+      })
+    }
+
+    if (!isAdmin) {
+      initiatives.forEach(initiative => {
+        if (initiative.dueDate) {
+          const dueDate = new Date(initiative.dueDate)
+          if (initiative.status !== 'completed' && dueDate <= sevenDaysFromNow && dueDate > now) {
+            newNotifications.push({
+              id: `initiative-due-${initiative.id}`,
+              type: 'deadline',
+              title: 'Initiative Deadline Approaching',
+              message: `Initiative "${initiative.title}" is due on ${formatDate(initiative.dueDate)}`,
+              entityId: initiative.id,
+              entityType: 'initiative',
+              priority: 'medium',
+              read: false,
+              createdAt: new Date().toISOString()
+            })
+          }
         }
       })
-    })
-
-    initiatives.forEach(initiative => {
-      if (initiative.dueDate) {
-        const dueDate = new Date(initiative.dueDate)
-        if (initiative.status !== 'completed' && dueDate <= sevenDaysFromNow && dueDate > now) {
-          newNotifications.push({
-            id: `initiative-due-${initiative.id}`,
-            type: 'deadline',
-            title: 'Initiative Deadline Approaching',
-            message: `Initiative "${initiative.title}" is due on ${formatDate(initiative.dueDate)}`,
-            entityId: initiative.id,
-            entityType: 'initiative',
-            priority: 'medium',
-            read: false,
-            createdAt: new Date().toISOString()
-          })
-        }
-      }
-    })
+    }
 
     // Check for projects without team members (for managers)
-    if (['admin', 'program_manager', 'manager'].includes(user.role)) {
+    if (!isAdmin && ['admin', 'program_manager', 'manager'].includes(user.role)) {
       projects.filter(p => p.managerId === user.id || user.role === 'admin').forEach(project => {
         if (project.status === 'active' && project.assignedEmployees.length === 0) {
           newNotifications.push({
@@ -179,7 +188,7 @@ export function NotificationSystem() {
     }
 
     // Check for budget alerts (if budget is consumed over 80%)
-    projects.forEach(project => {
+    if (!isAdmin) projects.forEach(project => {
       if (project.budget && project.actualHours && project.estimatedHours) {
         const budgetUtilization = (project.actualHours / project.estimatedHours) * 100
         if (budgetUtilization > 80) {
@@ -197,6 +206,27 @@ export function NotificationSystem() {
         }
       }
     })
+
+    // Admin-only: show newly created credential notifications stored locally
+    if (isAdmin) {
+      try {
+        const adminNoticeStoreKey = 'bpl-admin-notifications'
+        const stored = JSON.parse(localStorage.getItem(adminNoticeStoreKey) || '[]')
+        stored.forEach((n: any) => {
+          newNotifications.push({
+            id: n.id,
+            type: 'status',
+            title: n.title,
+            message: n.message,
+            entityId: '',
+            entityType: 'user',
+            priority: 'high',
+            read: !!n.read,
+            createdAt: n.createdAt
+          })
+        })
+      } catch {}
+    }
 
     // Remove notifications that are no longer relevant
     setNotifications(prev => {

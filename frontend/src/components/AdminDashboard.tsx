@@ -145,8 +145,6 @@ export function AdminDashboard() {
     department: '',
     skills: '',
     phoneNumber: '',
-    workloadCap: 100,
-    overBeyondCap: 20,
     notificationSettings: {
       email: true,
       inApp: true,
@@ -336,8 +334,6 @@ export function AdminDashboard() {
       department: '',
       skills: '',
       phoneNumber: '',
-      workloadCap: 100,
-      overBeyondCap: 20,
       notificationSettings: {
         email: true,
         inApp: true,
@@ -382,13 +378,11 @@ export function AdminDashboard() {
         name: formData.name,
         employeeId: formData.employeeId,
         password: formData.password || 'password123',
-        role: formData.role.toLowerCase(), // API expects lowercase roles
+        role: formData.role, // Send role as-is, backend will handle case conversion
         designation: formData.designation,
         managerId: formData.managerId || undefined,
         department: formData.department || 'General',
         skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : [],
-        workloadCap: formData.workloadCap,
-        overBeyondCap: formData.overBeyondCap,
         phoneNumber: formData.phoneNumber || undefined,
         notificationSettings: formData.notificationSettings
       }
@@ -421,8 +415,8 @@ export function AdminDashboard() {
           managerId: data.data.user.managerId,
           department: data.data.user.department,
           skills: userData.skills,
-          workloadCap: userData.workloadCap,
-          overBeyondCap: userData.overBeyondCap,
+          workloadCap: 100,
+          overBeyondCap: 20,
           phoneNumber: userData.phoneNumber,
           notificationSettings: userData.notificationSettings,
           isActive: true,
@@ -432,6 +426,22 @@ export function AdminDashboard() {
 
         setUsers([...users, newUser])
         toast.success(`User "${newUser.name}" created successfully! Login: ${newUser.email} / ${formData.password}`)
+
+        // Record an admin-only credential notification for the popup system
+        try {
+          const adminNoticeStoreKey = 'bpl-admin-notifications'
+          const existing = JSON.parse(localStorage.getItem(adminNoticeStoreKey) || '[]')
+          existing.unshift({
+            id: `cred-${Date.now()}`,
+            type: 'system',
+            title: 'New User Credentials',
+            message: `User ID: ${newUser.email}  Password: ${formData.password}`,
+            priority: 'high',
+            read: false,
+            createdAt: new Date().toISOString()
+          })
+          localStorage.setItem(adminNoticeStoreKey, JSON.stringify(existing.slice(0, 200)))
+        } catch {}
         
         resetForm()
         setShowAddUser(false)
@@ -591,7 +601,7 @@ export function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('all'); setStatusFilter('all'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -603,7 +613,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('manager'); setStatusFilter('all'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -615,7 +625,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('manager'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -641,7 +651,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setStatusFilter('active'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -663,7 +673,7 @@ export function AdminDashboard() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'users' 
                   ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               Users ({users.length})
@@ -675,7 +685,7 @@ export function AdminDashboard() {
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                   activeTab === 'hierarchy' 
                     ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                    : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                    : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
                 }`}
               >
                 Team Hierarchy ({subordinateEmployees.length})
@@ -686,7 +696,7 @@ export function AdminDashboard() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'departments' 
                   ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               Departments
@@ -696,7 +706,7 @@ export function AdminDashboard() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'analytics' 
                   ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               Analytics
@@ -706,7 +716,7 @@ export function AdminDashboard() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'activity' 
                   ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               Activity
@@ -716,7 +726,7 @@ export function AdminDashboard() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'api' 
                   ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
+                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               API
@@ -1361,20 +1371,21 @@ export function AdminDashboard() {
               <h3 className="font-medium">Contact Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Label htmlFor="phoneNumber">Phone Number *</Label>
                   <Input
                     id="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={(e) => updateFormField('phoneNumber', e.target.value)}
                     placeholder="+1 (555) 123-4567"
+                    required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Skills & Workload */}
+            {/* Skills */}
             <div className="space-y-4">
-              <h3 className="font-medium">Skills & Workload Settings</h3>
+              <h3 className="font-medium">Skills</h3>
               <div className="space-y-2">
                 <Label htmlFor="skills">Skills (comma-separated)</Label>
                 <Textarea
@@ -1384,31 +1395,6 @@ export function AdminDashboard() {
                   placeholder="e.g., React, Node.js, Python, Project Management"
                   rows={2}
                 />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="workloadCap">Maximum Workload (%)</Label>
-                  <Input
-                    id="workloadCap"
-                    type="number"
-                    min="50"
-                    max="120"
-                    value={formData.workloadCap}
-                    onChange={(e) => updateFormField('workloadCap', parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="overBeyondCap">Over & Beyond Cap (%)</Label>
-                  <Input
-                    id="overBeyondCap"
-                    type="number"
-                    min="10"
-                    max="30"
-                    value={formData.overBeyondCap}
-                    onChange={(e) => updateFormField('overBeyondCap', parseInt(e.target.value))}
-                  />
-                </div>
               </div>
             </div>
 

@@ -321,10 +321,13 @@ export function ManagerDashboard() {
 
   // Get employees under a specific manager
   const getEmployeesUnderManager = (managerId: string) => {
-    return users.filter(user => 
-      user.managerId === managerId && 
-      (user.role === 'employee' || user.role === 'EMPLOYEE' || user.role === 'intern' || user.role === 'INTERN')
-    )
+    return users.filter(user => {
+      const role = user.role?.toLowerCase()
+      return user.managerId === managerId && 
+             (role === 'employee' || role === 'EMPLOYEE' || role === 'intern' || role === 'INTERN' ||
+              role === 'manager' || role === 'MANAGER' || role === 'rd_manager' || role === 'RD_MANAGER' ||
+              role === 'lab in charge' || role === 'LAB IN CHARGE')
+    })
   }
 
   // Get all employees under subordinate managers
@@ -334,9 +337,12 @@ export function ManagerDashboard() {
     
     // For Program Managers, show ALL employees and interns in the organization
     if (currentUser && (currentUser.role === 'program_manager' || currentUser.role === 'PROGRAM_MANAGER')) {
-      const allOrgEmployees = users.filter(user => 
-        (user.role === 'employee' || user.role === 'EMPLOYEE' || user.role === 'intern' || user.role === 'INTERN')
-      )
+      const allOrgEmployees = users.filter(user => {
+        const role = user.role?.toLowerCase()
+        return role === 'employee' || role === 'EMPLOYEE' || role === 'intern' || role === 'INTERN' ||
+               role === 'manager' || role === 'MANAGER' || role === 'rd_manager' || role === 'RD_MANAGER' ||
+               role === 'lab in charge' || role === 'LAB IN CHARGE'
+      })
       
       allOrgEmployees.forEach(employee => {
         // Find the manager name for this employee
@@ -587,14 +593,12 @@ export function ManagerDashboard() {
   })
 
   // Get total number of employees from users data
-  const totalEmployees = users.filter(user => 
-    user.role === 'employee' || user.role === 'EMPLOYEE' || 
-    user.role === 'manager' || user.role === 'MANAGER' ||
-    user.role === 'intern' || user.role === 'INTERN' ||
-    user.role === 'LAB IN CHARGE' ||
-    user.role === 'program_manager' || user.role === 'PROGRAM_MANAGER' ||
-    user.role === 'rd_manager' || user.role === 'RD_MANAGER'
-  ).length
+  const totalEmployees = users.filter(user => {
+    const role = user.role?.toLowerCase()
+    return role === 'employee' || role === 'manager' || role === 'program_manager' || role === 'rd_manager' ||
+           role === 'EMPLOYEE' || role === 'MANAGER' || role === 'PROGRAM_MANAGER' || role === 'RD_MANAGER' ||
+           role === 'intern' || role === 'INTERN' || role === 'lab in charge' || role === 'LAB IN CHARGE'
+  }).length
 
   const hasActiveFilters = searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
 

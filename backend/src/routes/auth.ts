@@ -56,7 +56,7 @@ router.post('/register', [
   
   // Role validation: checks against built-in and custom roles
   body('role').custom(async (value) => {
-    const builtInRoles = ['admin', 'program_manager', 'rd_manager', 'manager', 'employee'];
+    const builtInRoles = ['admin', 'program_manager', 'rd_manager', 'manager', 'employee', 'intern', 'lab in charge'];
     const customRoles = await db.getCustomRoles();
     const customRoleNames = customRoles.map((role: any) => role.name.toLowerCase());
     const allValidRoles = [...builtInRoles, ...customRoleNames];

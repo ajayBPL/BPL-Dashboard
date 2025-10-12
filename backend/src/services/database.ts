@@ -44,7 +44,52 @@ class DatabaseService {
         console.warn('⚠️  WARNING: Using mock database - data will not persist across restarts');
         console.warn('⚠️  WARNING: Multiple instances will have isolated data');
         console.warn('⚠️  Please configure PostgreSQL database for production use');
+        
+        // Store notification for frontend to display
+        this.storeDatabaseFallbackNotification();
       }
+    }
+  }
+
+  // Store database fallback notification for frontend
+  private storeDatabaseFallbackNotification(): void {
+    try {
+      const notification = {
+        id: `db-fallback-${Date.now()}`,
+        type: 'system',
+        title: 'Database Unavailable',
+        message: '⚠️ Using temporary storage - data will not persist across restarts. Please configure PostgreSQL database.',
+        priority: 'critical',
+        read: false,
+        createdAt: new Date().toISOString(),
+        persistent: true // This notification should persist until database is restored
+      };
+
+      // Store in a file that frontend can read
+      const fs = require('fs');
+      const path = require('path');
+      const notificationFile = path.join(__dirname, '../../data/database-notifications.json');
+      
+      let notifications = [];
+      try {
+        const existing = fs.readFileSync(notificationFile, 'utf8');
+        notifications = JSON.parse(existing);
+      } catch {
+        // File doesn't exist, start fresh
+      }
+
+      // Remove any existing database fallback notifications
+      notifications = notifications.filter((n: any) => !n.id.startsWith('db-fallback-'));
+      
+      // Add new notification
+      notifications.unshift(notification);
+      
+      // Keep only the latest 10 notifications
+      notifications = notifications.slice(0, 10);
+      
+      fs.writeFileSync(notificationFile, JSON.stringify(notifications, null, 2));
+    } catch (error) {
+      console.error('Failed to store database fallback notification:', error);
     }
   }
 
@@ -699,10 +744,101 @@ class DatabaseService {
 
   // Notification methods
   async getUserNotifications(userId: string, options: any) {
+    // Always include system notifications (like database fallback warnings)
+    const systemNotifications = await this.getSystemNotifications();
+    
     if (this.useMock) {
-      return { data: [], total: 0, unreadCount: 0 };
+      // Mock notifications
+      const mockNotifications = [
+        {
+          id: 'mock-1',
+          type: 'project',
+          title: 'Project Update',
+          message: 'Your project "Website Redesign" has been updated',
+          priority: 'medium',
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: 'mock-2',
+          type: 'deadline',
+          title: 'Deadline Reminder',
+          message: 'Task "User Research" is due tomorrow',
+          priority: 'high',
+          read: false,
+          createdAt: new Date(Date.now() - 7200000).toISOString()
+        }
+      ];
+      
+      const allNotifications = [...systemNotifications, ...mockNotifications];
+      
+      return {
+        data: allNotifications,
+        total: allNotifications.length,
+        unreadCount: allNotifications.filter(n => !n.read).length
+      };
     }
-    return { data: [], total: 0, unreadCount: 0 };
+    
+    try {
+      // Try to get notifications from database
+      const notifications = await this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+
+      const formattedNotifications = notifications.map((notification: any) => ({
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        priority: notification.priority,
+        read: notification.read,
+        createdAt: notification.createdAt.toISOString(),
+        persistent: notification.persistent || false
+      }));
+
+      const allNotifications = [...systemNotifications, ...formattedNotifications];
+
+      return {
+        data: allNotifications,
+        total: allNotifications.length,
+        unreadCount: allNotifications.filter(n => !n.read).length
+      };
+    } catch (error) {
+      console.error('Database error, falling back to mock notifications:', error);
+      this.useMock = true;
+      
+      // Return mock notifications with system notifications
+      const mockNotifications = [
+        {
+          id: 'mock-1',
+          type: 'project',
+          title: 'Project Update',
+          message: 'Your project "Website Redesign" has been updated',
+          priority: 'medium',
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: 'mock-2',
+          type: 'deadline',
+          title: 'Deadline Reminder',
+          message: 'Task "User Research" is due tomorrow',
+          priority: 'high',
+          read: false,
+          createdAt: new Date(Date.now() - 7200000).toISOString()
+        }
+      ];
+      
+      const allNotifications = [...systemNotifications, ...mockNotifications];
+      
+      return {
+        data: allNotifications,
+        total: allNotifications.length,
+        unreadCount: allNotifications.filter(n => !n.read).length
+      };
+    }
   }
 
   async getNotificationById(id: string) {

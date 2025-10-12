@@ -3,6 +3,18 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { centralizedDb, CentralizedUser } from '../utils/centralizedDb'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
+import { 
+  normalizeRole, 
+  isAdmin, 
+  isManager, 
+  isProgramManager, 
+  isRdManager,
+  canManageUsers,
+  canAccessAnalytics,
+  getRoleDisplayName,
+  getRoleColorClasses,
+  UserRole
+} from '../utils/roleUtils'
 import { DashboardAnalytics } from './DashboardAnalytics'
 import { ActivityFeed } from './ActivityFeed'
 import { ExportSystem } from './ExportSystem'
@@ -63,11 +75,10 @@ export function AdminDashboard() {
     if (!currentUser) return []
     
     // For admins, program managers, and R&D managers, get all managers who report to them
-    if (currentUser.role === 'admin' || currentUser.role === 'program_manager' || currentUser.role === 'rd_manager' || 
-        currentUser.role === 'PROGRAM_MANAGER' || currentUser.role === 'RD_MANAGER') {
+    if (isAdmin(currentUser) || isProgramManager(currentUser) || isRdManager(currentUser)) {
       return users.filter(user => 
         user.managerId === currentUser.id && 
-        (user.role === 'manager' || user.role === 'rd_manager' || user.role === 'MANAGER' || user.role === 'RD_MANAGER')
+        isManager(user)
       )
     }
     return []
@@ -77,7 +88,7 @@ export function AdminDashboard() {
   const getEmployeesUnderManager = (managerId: string) => {
     return users.filter(user => 
       user.managerId === managerId && 
-      (user.role === 'employee' || user.role === 'EMPLOYEE')
+      normalizeRole(user.role) === 'employee'
     )
   }
 
@@ -351,6 +362,27 @@ export function AdminDashboard() {
     if (!currentUser) return
 
     try {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address')
+        return
+      }
+
+      // Validate phone number format
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+      if (!phoneRegex.test(formData.phoneNumber)) {
+        toast.error('Please enter a valid phone number (e.g., +1234567890 or 1234567890)')
+        return
+      }
+
+      // Validate employee ID format
+      const employeeIdRegex = /^[A-Z0-9]{3,10}$/
+      if (!employeeIdRegex.test(formData.employeeId)) {
+        toast.error('Employee ID must be 3-10 alphanumeric characters (uppercase letters and numbers only)')
+        return
+      }
+
       // Check if user with email already exists
       const existingUser = users.find(u => u.email === formData.email)
       if (existingUser) {
@@ -526,40 +558,10 @@ export function AdminDashboard() {
     }
   }
 
-  const managers = users.filter(user => 
-    user.role === 'manager' || user.role === 'program_manager' || user.role === 'rd_manager' ||
-    user.role === 'MANAGER' || user.role === 'PROGRAM_MANAGER' || user.role === 'RD_MANAGER'
-  )
-
-  const roleColors = {
-    admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    program_manager: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-    PROGRAM_MANAGER: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-    rd_manager: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-    RD_MANAGER: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-    manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    MANAGER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    employee: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    EMPLOYEE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-  }
+  const managers = users.filter(user => isManager(user))
 
   const getRoleDisplay = (role: string) => {
-    switch (role) {
-      case 'program_manager':
-      case 'PROGRAM_MANAGER':
-        return 'Program Manager'
-      case 'rd_manager':
-      case 'RD_MANAGER':
-        return 'R&D Manager'
-      case 'EMPLOYEE':
-        return 'Employee'
-      case 'MANAGER':
-        return 'Manager'
-      case 'admin':
-        return 'Admin'
-      default:
-        return role.charAt(0).toUpperCase() + role.slice(1)
-    }
+    return getRoleDisplayName(role)
   }
 
   const hasActiveFilters = searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
@@ -678,8 +680,7 @@ export function AdminDashboard() {
             >
               Users ({users.length})
             </button>
-            {(currentUser?.role === 'admin' || currentUser?.role === 'program_manager' || currentUser?.role === 'rd_manager' || 
-              currentUser?.role === 'PROGRAM_MANAGER' || currentUser?.role === 'RD_MANAGER') && (
+            {(isAdmin(currentUser) || isProgramManager(currentUser) || isRdManager(currentUser)) && (
               <button
                 onClick={() => setActiveTab('hierarchy')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -816,7 +817,7 @@ export function AdminDashboard() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold">{user.name}</p>
-                            <Badge className={roleColors[user.role]}>
+                            <Badge className={getRoleColorClasses(user.role)}>
                               {getRoleDisplay(user.role)}
                             </Badge>
                           </div>
@@ -1100,9 +1101,9 @@ export function AdminDashboard() {
                               <SelectValue placeholder="Select department head" />
                             </SelectTrigger>
                             <SelectContent>
-                              {users.filter(u => ['admin', 'program_manager', 'rd_manager', 'manager'].includes(u.role)).map((user) => (
+                              {managers.map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
-                                  {user.name} ({user.role.replace('_', ' ')})
+                                  {user.name} ({getRoleDisplay(user.role)})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1355,7 +1356,7 @@ export function AdminDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-                {(formData.role === 'employee' || formData.role === 'manager' || formData.role === 'rd_manager') && (
+                {(normalizeRole(formData.role) === 'employee' || normalizeRole(formData.role) === 'manager' || normalizeRole(formData.role) === 'rd_manager') && (
                   <div className="space-y-2">
                     <Label htmlFor="manager">Manager</Label>
                     <Select value={formData.managerId} onValueChange={(value) => updateFormField('managerId', value)}>

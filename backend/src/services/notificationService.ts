@@ -1,6 +1,6 @@
 import { db } from './database';
 import { emailService } from './emailService';
-import { User, Notification, Project, Initiative, Milestone } from '@prisma/client';
+import { User, Project, Initiative } from '../../../shared/types';
 import { prisma } from '../index';
 
 interface NotificationTrigger {
@@ -51,7 +51,7 @@ class NotificationService {
       const overdueMilestones: any[] = [];
       
       // Filter milestones from projects
-      allProjects.forEach(project => {
+      allProjects.forEach((project: any) => {
         if (project.milestones) {
           project.milestones.forEach((milestone: any) => {
             if (!milestone.completed && new Date(milestone.dueDate) < now) {
@@ -111,11 +111,11 @@ class NotificationService {
       const allProjects = await db.getAllProjects();
       
       // Filter active users and enrich with project data
-      const activeUsers = users.filter(user => user.isActive).map(user => ({
+      const activeUsers = users.filter((user: any) => user.isActive).map((user: any) => ({
         ...user,
         assignments: allProjects
-          .filter(project => project.assignments?.some((assignment: any) => assignment.employeeId === user.id))
-          .map(project => ({
+          .filter((project: any) => project.assignments?.some((assignment: any) => assignment.employeeId === user.id))
+          .map((project: any) => ({
             project: {
               status: project.status,
               title: project.title
@@ -127,8 +127,8 @@ class NotificationService {
 
       for (const user of activeUsers) {
         const activeProjectWorkload = user.assignments
-          .filter(a => a.project.status === 'ACTIVE')
-          .reduce((sum, a) => sum + a.involvementPercentage, 0);
+          .filter((a: any) => a.project.status === 'ACTIVE')
+          .reduce((sum: number, a: any) => sum + a.involvementPercentage, 0);
 
         const overBeyondWorkload = 0; // Initiatives not implemented in mock database yet
 
@@ -173,7 +173,7 @@ class NotificationService {
       const allProjects = await db.getAllProjects();
       
       // Check for projects without team members
-      const projectsWithoutTeam = allProjects.filter(project => 
+      const projectsWithoutTeam = allProjects.filter((project: any) => 
         project.status === 'ACTIVE' && 
         (!project.assignments || project.assignments.length === 0)
       );

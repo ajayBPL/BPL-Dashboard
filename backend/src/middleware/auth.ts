@@ -40,7 +40,12 @@ export const authenticateToken = async (
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      throw new Error('JWT_SECRET not configured');
+      console.error('CRITICAL: JWT_SECRET not configured in environment variables');
+      res.status(500).json({
+        success: false,
+        error: 'Server configuration error'
+      });
+      return;
     }
 
     // Verify token
@@ -191,25 +196,30 @@ export const optionalAuth = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token && process.env.JWT_SECRET) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
-      const user = await db.findUserById(decoded.userId);
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+        const user = await db.findUserById(decoded.userId);
 
-      if (user && user.isActive) {
-        req.user = {
-          ...user,
-          role: (user.role as string).toLowerCase() as any,
-          employeeId: (user as any).employeeId ?? undefined,
-          managerId: user.managerId || undefined,
-          department: user.department || undefined,
-          avatar: user.avatar || undefined,
-          phoneNumber: user.phoneNumber || undefined,
-          timezone: user.timezone || undefined,
-          preferredCurrency: user.preferredCurrency || undefined,
-          createdAt: (user.createdAt as Date).toISOString(),
-          updatedAt: (user.updatedAt as Date).toISOString(),
-          lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
-          notificationSettings: user.notificationSettings as any
-        };
+        if (user && user.isActive) {
+          req.user = {
+            ...user,
+            role: (user.role as string).toLowerCase() as any,
+            employeeId: (user as any).employeeId ?? undefined,
+            managerId: user.managerId || undefined,
+            department: user.department || undefined,
+            avatar: user.avatar || undefined,
+            phoneNumber: user.phoneNumber || undefined,
+            timezone: user.timezone || undefined,
+            preferredCurrency: user.preferredCurrency || undefined,
+            createdAt: (user.createdAt as Date).toISOString(),
+            updatedAt: (user.updatedAt as Date).toISOString(),
+            lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
+            notificationSettings: user.notificationSettings as any
+          };
+        }
+      } catch (jwtError) {
+        // Invalid token, but don't throw error for optional auth
+        console.log('Optional auth: Invalid token provided');
       }
     }
 

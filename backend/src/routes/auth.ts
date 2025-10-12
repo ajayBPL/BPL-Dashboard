@@ -16,12 +16,13 @@
  */
 
 import express, { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import { db } from '../services/database';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
+import { sanitizeEmail, sanitizeText, validatePassword } from '../utils/sanitization';
 
 const router = express.Router();
 
@@ -81,11 +82,39 @@ router.post('/register', [
     return;
   }
 
-  // Extract user data from request body
+  // Extract and sanitize user data from request body
   const { email, password, name, employeeId, role, designation, managerId, department } = req.body;
+  
+  // Sanitize inputs
+  const sanitizedEmail = sanitizeEmail(email);
+  const sanitizedName = sanitizeText(name);
+  const sanitizedEmployeeId = sanitizeText(employeeId);
+  const sanitizedRole = sanitizeText(role);
+  const sanitizedDesignation = sanitizeText(designation);
+  const sanitizedDepartment = sanitizeText(department);
+  
+  // Validate email
+  if (!sanitizedEmail) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid email format'
+    });
+    return;
+  }
+  
+  // Validate password strength
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.isValid) {
+    res.status(400).json({
+      success: false,
+      error: 'Password does not meet security requirements',
+      details: passwordValidation.suggestions
+    });
+    return;
+  }
 
   // Check for duplicate email addresses
-  const existingUser = await db.findUserByEmail(email);
+  const existingUser = await db.findUserByEmail(sanitizedEmail);
   if (existingUser) {
     res.status(409).json({
       success: false,
@@ -95,7 +124,7 @@ router.post('/register', [
   }
 
   // Check for duplicate employee IDs
-  const existingEmployeeId = await db.findUserByEmployeeId(employeeId);
+  const existingEmployeeId = await db.findUserByEmployeeId(sanitizedEmployeeId);
   if (existingEmployeeId) {
     res.status(409).json({
       success: false,
@@ -120,16 +149,16 @@ router.post('/register', [
   const saltRounds = 12;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  // Create new user with default settings
+  // Create new user with default settings using sanitized data
   const user = await db.createUser({
-    email,
+    email: sanitizedEmail,
     password: hashedPassword,
-    name,
-    employeeId,
-    role: role.toUpperCase(), // Store role in uppercase for consistency
-    designation,
+    name: sanitizedName,
+    employeeId: sanitizedEmployeeId,
+    role: sanitizedRole.toUpperCase(), // Store role in uppercase for consistency
+    designation: sanitizedDesignation,
     managerId,
-    department,
+    department: sanitizedDepartment,
     skills: [], // Initialize empty skills array
     workloadCap: 100, // Default workload capacity
     overBeyondCap: 20, // Default over-capacity allowance
@@ -232,11 +261,21 @@ router.post('/login', [
     return;
   }
 
-  // Extract credentials from request body
+  // Extract and sanitize credentials from request body
   const { email, password } = req.body;
+  
+  // Sanitize email
+  const sanitizedEmail = sanitizeEmail(email);
+  if (!sanitizedEmail) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid email format'
+    });
+    return;
+  }
 
-  // Find user by email address
-  const user = await db.findUserByEmail(email);
+  // Find user by email address using sanitized email
+  const user = await db.findUserByEmail(sanitizedEmail);
 
   // Check if user exists and is active
   if (!user || !user.isActive) {
@@ -247,18 +286,20 @@ router.post('/login', [
     return;
   }
 
-  // Verify password with support for both bcrypt hashed and plain text passwords
-  let isPasswordValid = false;
+  // Verify password using bcrypt only - no plain text support for security
   const storedPassword = (user as any).password;
   
-  // Check if stored password is bcrypt hashed (starts with $2b$)
-  if (storedPassword.startsWith('$2b$')) {
-    // Password is bcrypt hashed, use bcrypt comparison for security
-    isPasswordValid = await bcrypt.compare(password, storedPassword);
-  } else {
-    // Password is stored as plain text (legacy support), compare directly
-    isPasswordValid = password === storedPassword;
+  // Ensure password is properly hashed
+  if (!storedPassword.startsWith('$2b$')) {
+    res.status(500).json({
+      success: false,
+      error: 'Account security issue detected. Please contact administrator.'
+    });
+    return;
   }
+  
+  // Use bcrypt comparison for secure password verification
+  const isPasswordValid = await bcrypt.compare(password, storedPassword);
   
   // Return error if password doesn't match
   if (!isPasswordValid) {
@@ -468,18 +509,20 @@ router.post('/change-password', [
     return;
   }
 
-  // Verify current password
+  // Verify current password using bcrypt only
   const storedPassword = (user as any).password;
-  let isCurrentPasswordValid = false;
   
-  // Check if the stored password is bcrypt hashed (starts with $2b$)
-  if (storedPassword.startsWith('$2b$')) {
-    // Password is bcrypt hashed, use bcrypt comparison
-    isCurrentPasswordValid = await bcrypt.compare(currentPassword, storedPassword);
-  } else {
-    // Password is plain text, compare directly
-    isCurrentPasswordValid = currentPassword === storedPassword;
+  // Ensure password is properly hashed
+  if (!storedPassword.startsWith('$2b$')) {
+    res.status(500).json({
+      success: false,
+      error: 'Account security issue detected. Please contact administrator.'
+    });
+    return;
   }
+  
+  // Use bcrypt comparison for secure password verification
+  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, storedPassword);
   
   if (!isCurrentPasswordValid) {
     res.status(400).json({

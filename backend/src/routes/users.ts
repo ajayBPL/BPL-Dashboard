@@ -23,11 +23,11 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
   const allUsers = await db.getAllUsers();
   
   // Apply basic filtering
-  let filteredUsers = allUsers.filter(user => user.isActive !== false);
+  let filteredUsers = allUsers.filter((user: any) => user.isActive !== false);
   
   // Apply additional filters if needed
   if (filters && Object.keys(filters).length > 0) {
-    filteredUsers = filteredUsers.filter(user => {
+    filteredUsers = filteredUsers.filter((user: any) => {
       return Object.entries(filters).every(([key, value]) => {
         if (key === 'role') {
           return user.role.toLowerCase() === (value as string).toLowerCase();
@@ -51,7 +51,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
   // Convert to shared User type
-  const convertedUsers = paginatedUsers.map(user => ({
+  const convertedUsers = paginatedUsers.map((user: any) => ({
     ...user,
     role: user.role.toLowerCase() as any,
     managerId: user.managerId || undefined,

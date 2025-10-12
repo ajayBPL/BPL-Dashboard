@@ -23,6 +23,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
+import { validateEnvironmentOrExit } from './utils/envValidation';
 
 // Import all API route modules
 import authRoutes from './routes/auth';           // Authentication endpoints (login, register, logout)
@@ -51,9 +52,12 @@ import { db } from './services/database';                     // Database servic
 // Load environment variables from .env file
 dotenv.config();
 
+// Validate environment variables and exit if validation fails
+const envConfig = validateEnvironmentOrExit();
+
 // Initialize Express application instance
 const app = express();
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = envConfig.PORT;
 
 /**
  * Initialize Prisma ORM client for database operations
@@ -61,7 +65,7 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
  * - Only logs errors in production for performance
  */
 export const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  log: envConfig.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 /**
@@ -116,8 +120,11 @@ app.use(cors({
       process.env.CORS_ORIGIN || 'http://localhost:3000' // Environment-specific origin
     ];
     
-    // Allow any localhost or 192.168.x.x origin for development flexibility
-    if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/)) {
+    // Allow specific localhost and development IPs only
+    const isLocalhost = origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
+    const isDevNetwork = origin.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11)(:\d+)?$/);
+    
+    if (isLocalhost || isDevNetwork) {
       return callback(null, true);
     }
     
@@ -140,8 +147,8 @@ app.use(cors({
  * Limits the number of requests per IP address within a time window
  */
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes default
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // 100 requests per window
+  windowMs: envConfig.RATE_LIMIT_WINDOW_MS,
+  max: envConfig.RATE_LIMIT_MAX_REQUESTS,
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.'
@@ -166,7 +173,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
  * Uses Morgan to log all HTTP requests in combined format
  * Disabled in test environment to reduce noise
  */
-if (process.env.NODE_ENV !== 'test') {
+if (envConfig.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
@@ -240,8 +247,9 @@ process.on('SIGTERM', async () => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${envConfig.NODE_ENV}`);
   console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
+  console.log(`✅ Environment validation passed`);
 });
 
 /**

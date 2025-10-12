@@ -136,7 +136,7 @@ export function AdminDashboard() {
   // Enhanced form state
   const [formData, setFormData] = useState({
     email: '',
-    password: 'defaultpass123',
+    password: '', // Remove hardcoded password - require user to set it
     name: '',
     employeeId: '',
     role: '',
@@ -1232,6 +1232,8 @@ export function AdminDashboard() {
                     value={formData.password}
                     onChange={(e) => updateFormField('password', e.target.value)}
                     required
+                    minLength={8}
+                    pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
                   />
                   <Button
                     type="button"
@@ -1243,9 +1245,16 @@ export function AdminDashboard() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  User can change this password after first login
-                </p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Password must contain:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>At least 8 characters</li>
+                    <li>One uppercase letter</li>
+                    <li>One lowercase letter</li>
+                    <li>One number</li>
+                    <li>One special character (@$!%*?&)</li>
+                  </ul>
+                </div>
               </div>
             </div>
 

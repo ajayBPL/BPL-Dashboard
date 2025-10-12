@@ -37,7 +37,13 @@ class DatabaseService {
         await this.prisma.$queryRaw`SELECT 1`;
       } catch (error) {
         console.error('❌ Database connection failed, falling back to mock data');
+        console.error('Database error details:', error);
         this.useMock = true;
+        
+        // Log warning about data persistence
+        console.warn('⚠️  WARNING: Using mock database - data will not persist across restarts');
+        console.warn('⚠️  WARNING: Multiple instances will have isolated data');
+        console.warn('⚠️  Please configure PostgreSQL database for production use');
       }
     }
   }
@@ -188,7 +194,7 @@ class DatabaseService {
       }
       });
       
-      return users.map(user => ({
+      return users.map((user: any) => ({
         ...user,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
@@ -318,17 +324,17 @@ class DatabaseService {
       orderBy: { updatedAt: 'desc' }
     });
     
-    return projects.map(project => ({
+    return projects.map((project: any) => ({
       ...project,
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
-      assignments: project.assignments?.map(assignment => ({
+      assignments: project.assignments?.map((assignment: any) => ({
         ...assignment,
         assignedAt: assignment.assignedAt.toISOString(),
         updatedAt: assignment.updatedAt.toISOString(),
         employee: assignment.employee
       })),
-      milestones: project.milestones?.map(milestone => ({
+      milestones: project.milestones?.map((milestone: any) => ({
         ...milestone,
         dueDate: milestone.dueDate.toISOString(),
         completedAt: milestone.completedAt?.toISOString(),
@@ -397,25 +403,25 @@ class DatabaseService {
       ...project,
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
-      assignments: project.assignments?.map(assignment => ({
+      assignments: project.assignments?.map((assignment: any) => ({
         ...assignment,
         assignedAt: assignment.assignedAt.toISOString(),
         updatedAt: assignment.updatedAt.toISOString(),
         employee: assignment.employee
       })),
-      milestones: project.milestones?.map(milestone => ({
+      milestones: project.milestones?.map((milestone: any) => ({
         ...milestone,
         dueDate: milestone.dueDate.toISOString(),
         completedAt: milestone.completedAt?.toISOString(),
         createdAt: milestone.createdAt.toISOString(),
         updatedAt: milestone.updatedAt.toISOString()
       })),
-      comments: project.comments?.map(comment => ({
+      comments: project.comments?.map((comment: any) => ({
         ...comment,
         createdAt: comment.createdAt.toISOString(),
         updatedAt: comment.updatedAt.toISOString()
       })),
-      versions: project.versions?.map(version => ({
+      versions: project.versions?.map((version: any) => ({
         ...version,
         createdAt: version.createdAt.toISOString()
       }))
@@ -471,8 +477,8 @@ class DatabaseService {
     });
 
     const currentWorkload = currentAssignments
-      .filter(a => a.project.status === 'ACTIVE')
-      .reduce((sum, a) => sum + a.involvementPercentage, 0);
+      .filter((a: any) => a.project.status === 'ACTIVE')
+      .reduce((sum: number, a: any) => sum + a.involvementPercentage, 0);
 
     if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
       throw new Error(`Assignment would exceed employee's workload capacity (${employee.workloadCap}%)`);

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { User } from '@prisma/client';
+import { User } from '../../../shared/types';
 
 interface EmailTemplate {
   subject: string;

@@ -23,13 +23,13 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
     let filteredProjects = projects;
     if (req.user!.role === 'manager') {
       // Managers can only see their own projects and projects they're assigned to
-      filteredProjects = projects.filter(project => 
+      filteredProjects = projects.filter((project: any) => 
         project.managerId === req.user!.id || 
         (project.assignments && project.assignments.some((assignment: any) => assignment.employeeId === req.user!.id))
       );
     } else if (req.user!.role === 'employee') {
       // Employees can only see projects they're assigned to
-      filteredProjects = projects.filter(project => 
+      filteredProjects = projects.filter((project: any) => 
         project.assignments && project.assignments.some((assignment: any) => assignment.employeeId === req.user!.id)
       );
     }
@@ -37,7 +37,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
     const total = filteredProjects.length;
 
     // Convert to shared Project type format
-    const convertedProjects = filteredProjects.map(project => ({
+    const convertedProjects = filteredProjects.map((project: any) => ({
       ...project,
       status: project.status?.toLowerCase() || 'pending',
       priority: project.priority?.toLowerCase() || 'medium',
@@ -516,11 +516,11 @@ async function calculateProjectAnalytics(where: any) {
   ]);
 
   return {
-    projectsByStatus: statusCounts.reduce((acc, item) => {
+    projectsByStatus: statusCounts.reduce((acc: any, item: any) => {
       acc[item.status.toLowerCase()] = item._count.status;
       return acc;
     }, {} as Record<string, number>),
-    projectsByPriority: priorityCounts.reduce((acc, item) => {
+    projectsByPriority: priorityCounts.reduce((acc: any, item: any) => {
       acc[item.priority.toLowerCase()] = item._count.priority;
       return acc;
     }, {} as Record<string, number>),

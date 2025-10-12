@@ -7,7 +7,7 @@ import { WorkloadCalculationService } from './workloadCalculationService';
 class DatabaseService {
   private prisma: PrismaClient;
   private useMock: boolean = false;
-  private workloadService: WorkloadCalculationService;
+  private workloadService!: WorkloadCalculationService;
 
   constructor() {
     this.prisma = new PrismaClient({

@@ -370,9 +370,25 @@ class FileBasedMockDatabase {
     return updatedProject;
   }
 
-  private calculateEmployeeWorkload(employeeId: string): number {
+  // ✅ PUBLIC METHOD: Calculate employee workload for external access
+  public calculateEmployeeWorkload(employeeId: string): {
+    projectWorkload: number;
+    initiativeWorkload: number;
+    totalWorkload: number;
+    availableCapacity: number;
+    overBeyondAvailable: number;
+    workloadCap: number;
+    overBeyondCap: number;
+    isOverloaded: boolean;
+    warnings: string[];
+  } {
     const projects = this.readFromFile(this.projectsFile);
     const initiatives = this.readFromFile(this.initiativesFile);
+    const users = this.readFromFile(this.usersFile);
+    
+    const user = users.find(u => u.id === employeeId);
+    const workloadCap = user?.workloadCap || 100;
+    const overBeyondCap = user?.overBeyondCap || 20;
     
     // Calculate project workload
     const projectWorkload = projects
@@ -387,7 +403,29 @@ class FileBasedMockDatabase {
       .filter(i => i.assignedTo === employeeId && (i.status === 'active' || i.status === 'ACTIVE'))
       .reduce((total, initiative) => total + (initiative.workloadPercentage || 0), 0);
 
-    return projectWorkload + initiativeWorkload;
+    const totalWorkload = projectWorkload + initiativeWorkload;
+    const availableCapacity = Math.max(0, workloadCap - projectWorkload);
+    const overBeyondAvailable = Math.max(0, overBeyondCap - initiativeWorkload);
+    
+    const warnings: string[] = [];
+    if (totalWorkload > workloadCap) {
+      warnings.push(`Total workload (${totalWorkload.toFixed(1)}%) exceeds capacity (${workloadCap}%)`);
+    }
+    if (initiativeWorkload > overBeyondCap) {
+      warnings.push(`Over & Beyond workload (${initiativeWorkload.toFixed(1)}%) exceeds capacity (${overBeyondCap}%)`);
+    }
+
+    return {
+      projectWorkload,
+      initiativeWorkload,
+      totalWorkload,
+      availableCapacity,
+      overBeyondAvailable,
+      workloadCap,
+      overBeyondCap,
+      isOverloaded: totalWorkload > workloadCap || initiativeWorkload > overBeyondCap,
+      warnings
+    };
   }
 
   async unassignEmployeeFromProject(projectId: string, employeeId: string, managerId: string): Promise<any> {

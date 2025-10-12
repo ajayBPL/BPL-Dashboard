@@ -60,9 +60,9 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
     phoneNumber: user.phoneNumber || undefined,
     timezone: user.timezone || undefined,
     preferredCurrency: user.preferredCurrency || undefined,
-    createdAt: user.createdAt as string,
-    updatedAt: user.updatedAt as string,
-    lastLoginAt: user.lastLoginAt as string | undefined,
+    createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
+    updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
+    lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
     notificationSettings: user.notificationSettings || {}
   }));
 
@@ -97,9 +97,9 @@ router.get('/:id', canAccessUser, asyncHandler(async (req: Request, res: Respons
     phoneNumber: user.phoneNumber || undefined,
     timezone: user.timezone || undefined,
     preferredCurrency: user.preferredCurrency || undefined,
-    createdAt: user.createdAt as string,
-    updatedAt: user.updatedAt as string,
-    lastLoginAt: user.lastLoginAt as string | undefined,
+    createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
+    updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
+    lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
     notificationSettings: user.notificationSettings || {}
   };
 

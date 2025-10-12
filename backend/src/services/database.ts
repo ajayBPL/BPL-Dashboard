@@ -24,8 +24,7 @@ class DatabaseService {
       console.log('✅ Database connection successful');
       return true;
     } catch (error) {
-      console.log('❌ Database connection failed, falling back to mock data');
-      console.log('Error:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Database connection failed, falling back to mock data');
       this.useMock = true;
       return false;
     }
@@ -37,7 +36,7 @@ class DatabaseService {
       try {
         await this.prisma.$queryRaw`SELECT 1`;
       } catch (error) {
-        console.log('Database connection lost, switching to mock data');
+        console.error('❌ Database connection failed, falling back to mock data');
         this.useMock = true;
       }
     }
@@ -46,9 +45,6 @@ class DatabaseService {
   // User operations
   async findUserByEmail(email: string) {
     await this.checkConnection();
-    if (this.useMock) {
-      return await fileBasedMockDb.findUserByEmail(email);
-    }
     
     try {
       return await this.prisma.user.findUnique({
@@ -66,33 +62,70 @@ class DatabaseService {
   }
 
   async findUserById(id: string) {
-    // Always use mock data for now since database connection is failing
-    return await fileBasedMockDb.findUserById(id);
+    await this.checkConnection();
+    
+    if (this.useMock) {
+      return await fileBasedMockDb.findUserById(id);
+    }
+    
+    try {
+      return await this.prisma.user.findUnique({ where: { id } });
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.findUserById(id);
+    }
   }
 
   async findUserByEmployeeId(employeeId: string) {
-    // Always use mock data for now since database connection is failing
-    return await fileBasedMockDb.findUserByEmployeeId(employeeId);
+    await this.checkConnection();
+    
+    if (this.useMock) {
+      return await fileBasedMockDb.findUserByEmployeeId(employeeId);
+    }
+    
+    try {
+      return await this.prisma.user.findUnique({ where: { employeeId } });
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.findUserByEmployeeId(employeeId);
+    }
   }
 
   async createUser(userData: any) {
-    // Always use mock data for now since database connection is failing
-    return await fileBasedMockDb.createUser(userData);
+    await this.checkConnection();
+    
+    if (this.useMock) {
+      return await fileBasedMockDb.createUser(userData);
+    }
+    
+    try {
+      return await this.prisma.user.create({ data: userData });
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.createUser(userData);
+    }
   }
 
   async updateUser(id: string, userData: any) {
+    await this.checkConnection();
+    
     if (this.useMock) {
       return await fileBasedMockDb.updateUser(id, userData);
     }
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: userData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        designation: true,
+    
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: userData,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          designation: true,
         managerId: true,
         department: true,
         skills: true,
@@ -108,21 +141,30 @@ class DatabaseService {
         updatedAt: true,
         lastLoginAt: true
       }
-    });
-    
-    return {
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      lastLoginAt: user.lastLoginAt?.toISOString() || null
-    };
+      });
+      
+      return {
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        lastLoginAt: user.lastLoginAt?.toISOString() || null
+      };
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.updateUser(id, userData);
+    }
   }
 
   async getAllUsers() {
+    await this.checkConnection();
+    
     if (this.useMock) {
       return await fileBasedMockDb.getAllUsers();
     }
-    const users = await this.prisma.user.findMany({
+    
+    try {
+      const users = await this.prisma.user.findMany({
       select: {
         id: true,
         email: true,
@@ -144,14 +186,19 @@ class DatabaseService {
         updatedAt: true,
         lastLoginAt: true
       }
-    });
-    
-    return users.map(user => ({
-      ...user,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      lastLoginAt: user.lastLoginAt?.toISOString() || null
-    }));
+      });
+      
+      return users.map(user => ({
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+        lastLoginAt: user.lastLoginAt?.toISOString() || null
+      }));
+    } catch (error) {
+      console.log('Database error, falling back to mock data:', error);
+      this.useMock = true;
+      return await fileBasedMockDb.getAllUsers();
+    }
   }
 
   // Initialize database connection

@@ -60,16 +60,17 @@ export const authenticateToken = async (
     // Convert Prisma user to shared User type
     req.user = {
       ...user,
-      role: user.role.toLowerCase() as any,
+      role: (user.role as string).toLowerCase() as any,
+      employeeId: (user as any).employeeId ?? undefined,
       managerId: user.managerId || undefined,
       department: user.department || undefined,
       avatar: user.avatar || undefined,
       phoneNumber: user.phoneNumber || undefined,
       timezone: user.timezone || undefined,
       preferredCurrency: user.preferredCurrency || undefined,
-      createdAt: user.createdAt as string,
-      updatedAt: user.updatedAt as string,
-      lastLoginAt: user.lastLoginAt as string | undefined,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
+      updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
+      lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
       notificationSettings: user.notificationSettings as any
     };
 
@@ -196,16 +197,17 @@ export const optionalAuth = async (
       if (user && user.isActive) {
         req.user = {
           ...user,
-          role: user.role.toLowerCase() as any,
+          role: (user.role as string).toLowerCase() as any,
+          employeeId: (user as any).employeeId ?? undefined,
           managerId: user.managerId || undefined,
           department: user.department || undefined,
           avatar: user.avatar || undefined,
           phoneNumber: user.phoneNumber || undefined,
           timezone: user.timezone || undefined,
           preferredCurrency: user.preferredCurrency || undefined,
-          createdAt: user.createdAt as string,
-          updatedAt: user.updatedAt as string,
-          lastLoginAt: user.lastLoginAt as string | undefined,
+          createdAt: (user.createdAt as Date).toISOString(),
+          updatedAt: (user.updatedAt as Date).toISOString(),
+          lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
           notificationSettings: user.notificationSettings as any
         };
       }

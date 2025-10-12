@@ -366,6 +366,9 @@ async function handleMilestoneAction(req: Request, res: Response, projectId: str
       }
     });
 
+    // ✅ CRITICAL FIX: Automatically update project progress when milestone is completed
+    await updateProjectProgressFromMilestones(projectId);
+
     await prisma.activityLog.create({
       data: {
         userId: req.user!.id,
@@ -381,6 +384,39 @@ async function handleMilestoneAction(req: Request, res: Response, projectId: str
       success: true,
       message: 'Milestone completed successfully'
     });
+  }
+}
+
+// ✅ NEW FUNCTION: Automatically update project progress based on milestone completion
+async function updateProjectProgressFromMilestones(projectId: string): Promise<void> {
+  try {
+    // Get all milestones for the project
+    const milestones = await prisma.milestone.findMany({
+      where: { projectId: projectId }
+    });
+
+    if (milestones.length === 0) {
+      return; // No milestones to calculate progress from
+    }
+
+    // Calculate progress based on completed milestones
+    const completedMilestones = milestones.filter(m => m.completed).length;
+    const newProgress = Math.round((completedMilestones / milestones.length) * 100);
+
+    // Update project progress
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { 
+        progress: newProgress,
+        lastActivity: new Date()
+      }
+    });
+
+    console.log(`✅ Auto-updated project ${projectId} progress to ${newProgress}% based on ${completedMilestones}/${milestones.length} completed milestones`);
+
+  } catch (error) {
+    console.error('Error updating project progress from milestones:', error);
+    // Don't throw error to avoid breaking milestone completion
   }
 }
 

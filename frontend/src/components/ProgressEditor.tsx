@@ -23,6 +23,7 @@ import {
   History
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ProgressCalculationService, ProgressData } from '../utils/progressCalculationService'
 
 interface ProgressEditorProps {
   project: CentralizedProject
@@ -37,10 +38,11 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Calculate current progress
+  // ✅ CRITICAL FIX: Use unified progress calculation service
+  const progressData: ProgressData = ProgressCalculationService.calculateProjectProgress(project)
+  const currentProgress = progressData.finalProgress
   const completedMilestones = project.milestones.filter(m => m.completed).length
   const totalMilestones = project.milestones.length
-  const currentProgress = project.progress || 0
 
   // Check if user can edit progress (Program Manager only)
   const canEditProgress = currentUser && (
@@ -63,6 +65,13 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
 
     if (newProgress < 0 || newProgress > 100) {
       toast.error('Progress must be between 0% and 100%')
+      return
+    }
+
+    // ✅ CRITICAL FIX: Validate progress consistency
+    const validation = ProgressCalculationService.validateProgressConsistency(project)
+    if (!validation.isValid) {
+      toast.error('Progress validation failed: ' + validation.issues.join(', '))
       return
     }
 

@@ -1,16 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 import { mockDb } from './mockDb';
 import { fileBasedMockDb } from './fileBasedMockDb';
+import { WorkloadCalculationService } from './workloadCalculationService';
 
 // Database service that can fallback to mock data
 class DatabaseService {
   private prisma: PrismaClient;
   private useMock: boolean = false;
+  private workloadService: WorkloadCalculationService;
 
   constructor() {
     this.prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
+    this.workloadService = new WorkloadCalculationService(this.prisma);
     // Try real database connection first
     this.useMock = false;
   }
@@ -511,22 +514,14 @@ class DatabaseService {
       throw new Error('Employee is already assigned to this project');
     }
 
-    // Check workload capacity
-    const currentAssignments = await this.prisma.projectAssignment.findMany({
-      where: { employeeId: assignmentData.employeeId },
-      include: {
-        project: {
-          select: { status: true }
-        }
-      }
-    });
+    // ✅ CRITICAL FIX: Use unified workload validation
+    const validation = await this.validateAssignmentCapacity(
+      assignmentData.employeeId, 
+      assignmentData.involvementPercentage
+    );
 
-    const currentWorkload = currentAssignments
-      .filter((a: any) => a.project.status === 'ACTIVE')
-      .reduce((sum: number, a: any) => sum + a.involvementPercentage, 0);
-
-    if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
-      throw new Error(`Assignment would exceed employee's workload capacity (${employee.workloadCap}%)`);
+    if (!validation.canAssign) {
+      throw new Error(`Assignment would exceed employee's workload capacity. ${validation.warnings.join(', ')}`);
     }
 
     // Create assignment
@@ -786,7 +781,7 @@ class DatabaseService {
         orderBy: { createdAt: 'desc' },
         take: 50
       });
-
+  
       const formattedNotifications = notifications.map((notification: any) => ({
         id: notification.id,
         type: notification.type,
@@ -797,9 +792,9 @@ class DatabaseService {
         createdAt: notification.createdAt.toISOString(),
         persistent: notification.persistent || false
       }));
-
+  
       const allNotifications = [...systemNotifications, ...formattedNotifications];
-
+  
       return {
         data: allNotifications,
         total: allNotifications.length,
@@ -837,6 +832,53 @@ class DatabaseService {
         data: allNotifications,
         total: allNotifications.length,
         unreadCount: allNotifications.filter(n => !n.read).length
+      };
+    }
+  }
+
+  // ✅ NEW METHOD: Get employee workload using unified calculation service
+  async getEmployeeWorkload(employeeId: string) {
+    await this.checkConnection();
+    
+    if (this.useMock) {
+      // Fallback to mock calculation for mock data
+      return fileBasedMockDb.calculateEmployeeWorkload(employeeId);
+    }
+    
+    try {
+      return await this.workloadService.calculateEmployeeWorkload(employeeId);
+    } catch (error) {
+      console.error('Error calculating employee workload:', error);
+      // Fallback to mock calculation
+      return fileBasedMockDb.calculateEmployeeWorkload(employeeId);
+    }
+  }
+
+  // ✅ NEW METHOD: Validate assignment capacity
+  async validateAssignmentCapacity(employeeId: string, newInvolvementPercentage: number, excludeProjectId?: string) {
+    await this.checkConnection();
+    
+    if (this.useMock) {
+      // Simple validation for mock data
+      return {
+        canAssign: newInvolvementPercentage <= 100,
+        currentWorkload: 0,
+        newTotalWorkload: newInvolvementPercentage,
+        availableCapacity: 100,
+        warnings: []
+      };
+    }
+    
+    try {
+      return await this.workloadService.validateAssignmentCapacity(employeeId, newInvolvementPercentage, excludeProjectId);
+    } catch (error) {
+      console.error('Error validating assignment capacity:', error);
+      return {
+        canAssign: false,
+        currentWorkload: 0,
+        newTotalWorkload: newInvolvementPercentage,
+        availableCapacity: 0,
+        warnings: [`Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
       };
     }
   }

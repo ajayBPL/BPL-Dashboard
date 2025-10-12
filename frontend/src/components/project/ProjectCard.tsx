@@ -15,7 +15,6 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { 
-  calculateProjectProgress, 
   calculateTotalInvolvement, 
   getStatusColor, 
   getPriorityColor,
@@ -26,6 +25,7 @@ import {
   getProjectRisk
 } from '../../utils/projectHelpers'
 import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
+import { ProgressCalculationService } from '../../utils/progressCalculationService'
 
 interface ProjectCardProps {
   project: CentralizedProject
@@ -42,7 +42,9 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   
-  const progress = project.progress || 0
+  // ✅ CRITICAL FIX: Use unified progress calculation
+  const progressData = ProgressCalculationService.calculateProjectProgress(project)
+  const progress = progressData.finalProgress
   const assignedCount = project.assignedEmployees.length
   const totalInvolvement = calculateTotalInvolvement(project)
   const health = getProjectHealth(project)

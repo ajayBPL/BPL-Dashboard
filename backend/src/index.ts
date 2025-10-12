@@ -31,7 +31,7 @@ import userRoutes from './routes/users';          // User management endpoints
 import projectRoutes from './routes/projects';    // Project CRUD operations
 import initiativeRoutes from './routes/initiatives'; // Initiative management
 import workloadRoutes from './routes/workload';   // Employee workload tracking
-import analyticsRoutes from './routes/analytics'; // Dashboard analytics and reports
+import analyticsRoutes from './routes/analytics'; // Advanced analytics and business intelligence
 import notificationRoutes from './routes/notifications'; // Notification system
 import commentRoutes from './routes/comments';    // Project/initiative comments
 import fileRoutes from './routes/files';          // File upload/download
@@ -48,6 +48,7 @@ import departmentRoutes from './routes/departments'; // Department management
 import { errorHandler } from './middleware/errorHandler';     // Global error handling
 import { notFoundHandler } from './middleware/notFoundHandler'; // 404 handler
 import { db } from './services/database';                     // Database service abstraction
+import WebSocketService from './services/websocketService';    // Real-time WebSocket service
 
 // Load environment variables from .env file
 dotenv.config();
@@ -251,6 +252,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
   console.log(`✅ Environment validation passed`);
 });
+
+/**
+ * Initialize WebSocket server for real-time communication
+ * - Enables live progress updates
+ * - Real-time notifications
+ * - Collaborative editing features
+ */
+let wsService: WebSocketService;
+try {
+  wsService = new WebSocketService(server);
+  console.log('🔌 WebSocket server initialized for real-time features');
+} catch (error) {
+  console.error('❌ Failed to initialize WebSocket server:', error);
+}
+
+// Export WebSocket service for use in other modules
+export { wsService };
 
 /**
  * Handle unhandled promise rejections

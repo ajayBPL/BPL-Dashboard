@@ -7,6 +7,7 @@ import { prisma } from '../index';
 import { db } from '../services/database';
 import { Project, CreateProjectRequest, UpdateProjectRequest, ActionRequest, AssignEmployeeRequest } from '../../../shared/types';
 import { notificationService } from '../services/notificationService';
+import cacheService from '../services/cacheService';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.use(authenticateToken);
 router.use(parseQuery);
 
 // GET /projects - List projects with filtering, pagination, and includes
-router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+router.get('/', cacheService.middleware(300), asyncHandler(async (req: Request, res: Response): Promise<void> => {
   try {
     // Use the database service to get all projects
     const projects = await db.getAllProjects();
@@ -413,6 +414,26 @@ async function updateProjectProgressFromMilestones(projectId: string): Promise<v
     });
 
     console.log(`✅ Auto-updated project ${projectId} progress to ${newProgress}% based on ${completedMilestones}/${milestones.length} completed milestones`);
+
+    // ✅ BROADCAST REAL-TIME UPDATE via WebSocket
+    try {
+      const { wsService } = await import('../index');
+      if (wsService) {
+        wsService.broadcastProgressUpdate(projectId, {
+          projectId,
+          progress: newProgress,
+          completedMilestones,
+          totalMilestones: milestones.length,
+          updatedAt: new Date().toISOString()
+        });
+        console.log(`📡 Broadcasted progress update for project ${projectId}`);
+      }
+    } catch (wsError) {
+      console.log('WebSocket service not available for progress broadcast');
+    }
+
+    // ✅ INVALIDATE CACHE
+    await cacheService.invalidateByTags(['project', projectId]);
 
   } catch (error) {
     console.error('Error updating project progress from milestones:', error);

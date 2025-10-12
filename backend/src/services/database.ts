@@ -848,6 +848,24 @@ class DatabaseService {
     return null;
   }
 
+  // Get system notifications (like database fallback warnings)
+  private async getSystemNotifications(): Promise<any[]> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const notificationFile = path.join(__dirname, '../../data/database-notifications.json');
+      
+      if (fs.existsSync(notificationFile)) {
+        const data = fs.readFileSync(notificationFile, 'utf8');
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      console.error('Error reading system notifications:', error);
+    }
+    
+    return [];
+  }
+
   async markNotificationAsRead(id: string, userId: string) {
     if (this.useMock) {
       return true;

@@ -663,5 +663,44 @@
     "projectId": "project-1759819798601",
     "details": "Created project: test project 1",
     "timestamp": "2025-10-07T06:49:58.602Z"
+  },
+  {
+    "id": "activity-1760292226032",
+    "userId": "user-1760292226021",
+    "action": "USER_REGISTERED",
+    "entityType": "USER",
+    "entityId": "user-1760292226021",
+    "details": "User registered: test data employee (testrd@bpl.in)",
+    "timestamp": "2025-10-12T18:03:46.033Z"
+  },
+  {
+    "id": "activity-1760294198044",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_CREATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1760294198042",
+    "projectId": "project-1760294198042",
+    "details": "Created project: data bindin",
+    "timestamp": "2025-10-12T18:36:38.044Z"
+  },
+  {
+    "id": "activity-1760294378489",
+    "userId": "user-1757932070077",
+    "action": "USER_ASSIGNED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Assigned Deeksha P to project with 25% involvement",
+    "timestamp": "2025-10-12T18:39:38.489Z"
+  },
+  {
+    "id": "activity-1760294590899",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_UPDATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Updated project: Dynatrac Ultra",
+    "timestamp": "2025-10-12T18:43:10.899Z"
   }
 ]

@@ -242,3 +242,4 @@ export function getSecurityConfigForEnvironment(environment: string) {
 
   return config;
 }
+

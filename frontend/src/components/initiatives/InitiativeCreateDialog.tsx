@@ -40,6 +40,7 @@ export function InitiativeCreateDialog({
   loading = false
 }: InitiativeCreateDialogProps) {
   const [employees, setEmployees] = useState<CentralizedUser[]>([])
+  const [error, setError] = useState<string>('')
 
   // Fetch employees from backend API
   const fetchEmployees = async () => {
@@ -90,6 +91,7 @@ export function InitiativeCreateDialog({
       }
     } catch (error) {
       console.error('Error fetching employees:', error)
+      setError('Failed to load employees. Please try again.')
       // Fallback to centralizedDb if API fails
       const fallbackEmployees = centralizedDb.getUsers().filter(user => 
         user.role === 'employee' || user.role === 'manager'
@@ -101,12 +103,17 @@ export function InitiativeCreateDialog({
   // Fetch employees when dialog opens
   useEffect(() => {
     if (isOpen) {
+      setError('') // Clear any previous errors
       fetchEmployees()
     }
   }, [isOpen])
 
   const updateField = (field: keyof InitiativeForm, value: string | number) => {
     setFormData({ ...formData, [field]: value })
+    // Clear error when user makes changes
+    if (error) {
+      setError('')
+    }
   }
 
   const selectedEmployeeWorkload = formData.assignedTo 
@@ -128,6 +135,16 @@ export function InitiativeCreateDialog({
         </DialogHeader>
         
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Error Display */}
+          {error && (
+            <Alert className="border-destructive bg-destructive/10">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-destructive font-medium">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="initiative-title">Title</Label>

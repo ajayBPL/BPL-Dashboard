@@ -6,7 +6,7 @@
     "managerId": "user-1757932070077",
     "priority": "MEDIUM",
     "category": "ECR",
-    "progress": 55,
+    "progress": 25,
     "budgetAmount": 2500000,
     "budgetCurrency": "INR",
     "timeline": "30",
@@ -14,7 +14,7 @@
     "status": "PENDING",
     "deadline": "2025-12-15T18:30:00.000Z",
     "createdAt": "2025-09-15T11:55:56.657Z",
-    "updatedAt": "2025-10-01T05:07:21.275Z",
+    "updatedAt": "2025-10-12T18:43:10.896Z",
     "assignedEmployees": [
       {
         "id": "assignment-1758132939114",
@@ -59,6 +59,17 @@
         "endDate": "2025-09-25T18:30:00.000Z",
         "assignedAt": "2025-09-24T15:16:51.037Z",
         "updatedAt": "2025-09-24T15:16:51.037Z"
+      },
+      {
+        "id": "assignment-1760294378483",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758266395637",
+        "involvementPercentage": 25,
+        "role": "data analyst",
+        "startDate": "2025-10-22T18:30:00.000Z",
+        "endDate": "2025-10-30T18:30:00.000Z",
+        "assignedAt": "2025-10-12T18:39:38.483Z",
+        "updatedAt": "2025-10-12T18:39:38.483Z"
       }
     ],
     "assignments": [
@@ -105,9 +116,20 @@
         "endDate": "2025-09-25T18:30:00.000Z",
         "assignedAt": "2025-09-24T15:16:51.037Z",
         "updatedAt": "2025-09-24T15:16:51.037Z"
+      },
+      {
+        "id": "assignment-1760294378483",
+        "projectId": "project-1757937356657",
+        "employeeId": "user-1758266395637",
+        "involvementPercentage": 25,
+        "role": "data analyst",
+        "startDate": "2025-10-22T18:30:00.000Z",
+        "endDate": "2025-10-30T18:30:00.000Z",
+        "assignedAt": "2025-10-12T18:39:38.483Z",
+        "updatedAt": "2025-10-12T18:39:38.483Z"
       }
     ],
-    "version": 4
+    "version": 5
   },
   {
     "id": "project-1757938579123",
@@ -485,5 +507,18 @@
     "status": "PENDING",
     "createdAt": "2025-10-07T06:49:58.601Z",
     "updatedAt": "2025-10-07T06:49:58.601Z"
+  },
+  {
+    "id": "project-1760294198042",
+    "title": "data bindin",
+    "description": "asdasf adf fad adf adf f f sa",
+    "managerId": "user-1757932070077",
+    "priority": "MEDIUM",
+    "budgetCurrency": "USD",
+    "timelineDate": "2026-02-24T18:30:00.000Z",
+    "tags": [],
+    "status": "PENDING",
+    "createdAt": "2025-10-12T18:36:38.042Z",
+    "updatedAt": "2025-10-12T18:36:38.042Z"
   }
 ]

@@ -3,7 +3,7 @@
     "id": "admin-001",
     "email": "admin@bplcommander.com",
     "name": "System Admin",
-    "password": "admin123",
+    "password": "$2b$12$.C7Xbe9mpEXJkUa7Q3P8N.AFSldUL5cNI8Q7cVgFQifgJoe8OePeK",
     "role": "admin",
     "designation": "System Administrator",
     "department": "IT",
@@ -24,8 +24,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-10-10T05:01:09.770Z",
-    "lastLoginAt": "2025-10-10T05:01:09.768Z"
+    "updatedAt": "2025-10-12T18:34:56.299Z",
+    "lastLoginAt": "2025-10-12T18:34:56.297Z"
   },
   {
     "id": "program-manager-001",
@@ -188,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-10-12T17:39:25.499Z",
-    "lastLoginAt": "2025-10-12T17:39:25.498Z"
+    "updatedAt": "2025-10-12T18:35:24.566Z",
+    "lastLoginAt": "2025-10-12T18:35:24.565Z"
   },
   {
     "id": "user-1757932094744",
@@ -760,5 +760,29 @@
     "isActive": true,
     "createdAt": "2025-10-07T04:34:41.087Z",
     "updatedAt": "2025-10-07T04:34:41.087Z"
+  },
+  {
+    "id": "user-1760292226021",
+    "email": "testrd@bpl.in",
+    "name": "test data employee",
+    "password": "$2b$12$xCSxXHyNJHE1bI7g.vJ5VuaTCSvPGlvOnV0QX664kXMB72XWeu7rS",
+    "role": "RD_MANAGER",
+    "designation": "Sr.Engineer-R&amp;D",
+    "managerId": "user-1758005074568",
+    "department": "R&amp;D",
+    "skills": [],
+    "workloadCap": 100,
+    "overBeyondCap": 20,
+    "preferredCurrency": "USD",
+    "notificationSettings": {
+      "email": true,
+      "inApp": true,
+      "projectUpdates": true,
+      "deadlineReminders": true,
+      "weeklyReports": false
+    },
+    "isActive": true,
+    "createdAt": "2025-10-12T18:03:46.021Z",
+    "updatedAt": "2025-10-12T18:03:46.021Z"
   }
 ]

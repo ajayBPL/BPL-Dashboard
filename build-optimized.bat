@@ -38,3 +38,4 @@ echo - Frontend uses Vite with optimized chunking
 echo - Consider using 'npm run build:backend' or 'npm run build:frontend' for individual builds
 
 pause
+

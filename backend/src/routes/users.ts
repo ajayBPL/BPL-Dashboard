@@ -62,7 +62,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
     preferredCurrency: user.preferredCurrency || undefined,
     createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
     updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
-    lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
+    lastLoginAt: typeof user.lastLoginAt === 'string' ? user.lastLoginAt : (user.lastLoginAt as Date | null)?.toISOString() || undefined,
     notificationSettings: user.notificationSettings || {}
   }));
 
@@ -99,7 +99,7 @@ router.get('/:id', canAccessUser, asyncHandler(async (req: Request, res: Respons
     preferredCurrency: user.preferredCurrency || undefined,
     createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
     updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
-    lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
+    lastLoginAt: typeof user.lastLoginAt === 'string' ? user.lastLoginAt : (user.lastLoginAt as Date | null)?.toISOString() || undefined,
     notificationSettings: user.notificationSettings || {}
   };
 

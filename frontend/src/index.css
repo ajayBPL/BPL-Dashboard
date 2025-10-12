@@ -4900,6 +4900,7 @@ input:not(:disabled), textarea:not(:disabled), select:not(:disabled) {
 
 .toaster {
   pointer-events: none;
+  z-index: 9999 !important; /* Ensure toasts appear above dialogs */
 }
 
 .toaster > * {

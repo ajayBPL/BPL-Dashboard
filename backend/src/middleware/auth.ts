@@ -75,7 +75,7 @@ export const authenticateToken = async (
       preferredCurrency: user.preferredCurrency || undefined,
       createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
       updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
-      lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
+      lastLoginAt: typeof user.lastLoginAt === 'string' ? user.lastLoginAt : (user.lastLoginAt as Date | null)?.toISOString() || undefined,
       notificationSettings: user.notificationSettings as any
     };
 
@@ -211,9 +211,9 @@ export const optionalAuth = async (
             phoneNumber: user.phoneNumber || undefined,
             timezone: user.timezone || undefined,
             preferredCurrency: user.preferredCurrency || undefined,
-            createdAt: (user.createdAt as Date).toISOString(),
-            updatedAt: (user.updatedAt as Date).toISOString(),
-            lastLoginAt: (user.lastLoginAt as Date | null)?.toISOString() || undefined,
+            createdAt: typeof user.createdAt === 'string' ? user.createdAt : (user.createdAt as Date).toISOString(),
+            updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : (user.updatedAt as Date).toISOString(),
+            lastLoginAt: typeof user.lastLoginAt === 'string' ? user.lastLoginAt : (user.lastLoginAt as Date | null)?.toISOString() || undefined,
             notificationSettings: user.notificationSettings as any
           };
         }

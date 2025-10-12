@@ -551,7 +551,8 @@ export function ManagerDashboard() {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorData = await response.json()
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
       }
 
       const result = await response.json()
@@ -568,7 +569,8 @@ export function ManagerDashboard() {
       setShowCreateInitiative(false)
     } catch (error) {
       console.error('Error creating initiative:', error)
-      toast.error('Failed to create initiative')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create initiative'
+      toast.error(errorMessage)
     }
   }
 

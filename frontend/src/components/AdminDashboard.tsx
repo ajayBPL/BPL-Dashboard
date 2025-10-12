@@ -672,7 +672,7 @@ export function AdminDashboard() {
               onClick={() => setActiveTab('users')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'users' 
-                  ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
@@ -684,7 +684,7 @@ export function AdminDashboard() {
                 onClick={() => setActiveTab('hierarchy')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                   activeTab === 'hierarchy' 
-                    ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                    ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                     : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
                 }`}
               >
@@ -695,7 +695,7 @@ export function AdminDashboard() {
               onClick={() => setActiveTab('departments')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'departments' 
-                  ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
@@ -705,7 +705,7 @@ export function AdminDashboard() {
               onClick={() => setActiveTab('analytics')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'analytics' 
-                  ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
@@ -715,7 +715,7 @@ export function AdminDashboard() {
               onClick={() => setActiveTab('activity')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'activity' 
-                  ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
@@ -725,7 +725,7 @@ export function AdminDashboard() {
               onClick={() => setActiveTab('api')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'api' 
-                  ? 'bg-blue-600 text-white shadow-lg font-semibold border-2 border-blue-700' 
+                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >

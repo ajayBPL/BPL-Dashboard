@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { CentralizedProject, centralizedDb } from '../../utils/centralizedDb'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -25,18 +25,58 @@ import {
   getProjectHealth,
   getProjectRisk
 } from '../../utils/projectHelpers'
+import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
 
 interface ProjectCardProps {
   project: CentralizedProject
   onViewDetails: (projectId: string) => void
 }
 
+interface User {
+  id: string
+  name: string
+  email: string
+}
+
 export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
+  const [users, setUsers] = useState<User[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  
   const progress = project.progress || 0
   const assignedCount = project.assignedEmployees.length
   const totalInvolvement = calculateTotalInvolvement(project)
   const health = getProjectHealth(project)
   const risks = getProjectRisk(project)
+  
+  // Fetch users from API to get proper names for avatars
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (project.assignedEmployees.length === 0) return
+      
+      try {
+        setLoadingUsers(true)
+        const token = localStorage.getItem('bpl-token')
+        if (!token) return
+
+        const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
+          headers: getDefaultHeaders(token)
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setUsers(data.data)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching users for avatars:', error)
+      } finally {
+        setLoadingUsers(false)
+      }
+    }
+
+    fetchUsers()
+  }, [project.assignedEmployees])
   
   const getHealthColor = (health: string) => {
     switch (health) {
@@ -54,6 +94,24 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
       case 'healthy': return <TrendingUp className="h-4 w-4" />
       default: return null
     }
+  }
+
+  // Helper function to get user initials
+  const getUserInitials = (employeeId: string): string => {
+    // First try to find in API users
+    const apiUser = users.find(user => user.id === employeeId)
+    if (apiUser?.name) {
+      return apiUser.name.charAt(0).toUpperCase()
+    }
+    
+    // Then try centralized database
+    const centralizedUser = centralizedDb.getUserById(employeeId)
+    if (centralizedUser?.name) {
+      return centralizedUser.name.charAt(0).toUpperCase()
+    }
+    
+    // Fallback to first character of employeeId
+    return employeeId.charAt(0).toUpperCase()
   }
 
   return (
@@ -200,14 +258,14 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
               {project.assignedEmployees.length > 0 && (
                 <div className="flex items-center -space-x-2">
                   {project.assignedEmployees.slice(0, 3).map((emp) => {
-                    const user = centralizedDb.getUserById(emp.employeeId)
+                    const initials = getUserInitials(emp.employeeId)
                     return (
                       <Avatar 
                         key={emp.employeeId} 
                         className="h-6 w-6 border-2 border-background"
                       >
                         <AvatarFallback className="text-xs">
-                          {user?.name.charAt(0).toUpperCase() || '?'}
+                          {initials}
                         </AvatarFallback>
                       </Avatar>
                     )
@@ -220,10 +278,10 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
                 </div>
               )}
               
-              {/* Last Activity */}
-              {project.lastActivity && (
+              {/* Creation Date */}
+              {project.createdAt && (
                 <span className="text-xs text-muted-foreground">
-                  {formatRelativeTime(project.lastActivity)}
+                  Created: {formatDate(project.createdAt)}
                 </span>
               )}
             </div>

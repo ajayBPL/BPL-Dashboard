@@ -166,3 +166,4 @@ export function validateEnvironmentOrExit(): EnvConfig {
     process.exit(1);
   }
 }
+

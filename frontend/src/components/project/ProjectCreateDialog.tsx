@@ -42,6 +42,7 @@ export function ProjectCreateDialog({
   loading = false
 }: ProjectCreateDialogProps) {
   const [newTag, setNewTag] = useState('')
+  const [newSkill, setNewSkill] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [customCategory, setCustomCategory] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
@@ -111,9 +112,9 @@ export function ProjectCreateDialog({
   }
 
   const addSkill = () => {
-    if (newTag.trim() && !formData.requiredSkills.includes(newTag.trim()) && formData.requiredSkills.length < 15) {
-      updateField('requiredSkills', [...formData.requiredSkills, newTag.trim()])
-      setNewTag('')
+    if (newSkill.trim() && !formData.requiredSkills.includes(newSkill.trim()) && formData.requiredSkills.length < 15) {
+      updateField('requiredSkills', [...formData.requiredSkills, newSkill.trim()])
+      setNewSkill('')
     }
   }
 
@@ -433,8 +434,8 @@ export function ProjectCreateDialog({
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
@@ -449,7 +450,7 @@ export function ProjectCreateDialog({
                   type="button" 
                   variant="outline" 
                   onClick={addSkill}
-                  disabled={!newTag.trim() || formData.requiredSkills.length >= 15}
+                  disabled={!newSkill.trim() || formData.requiredSkills.length >= 15}
                 >
                   Add Skill
                 </Button>

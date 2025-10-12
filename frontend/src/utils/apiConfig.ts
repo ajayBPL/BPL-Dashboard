@@ -1,8 +1,8 @@
 // API Configuration Utility
 // Centralized configuration for all API endpoints
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://192.168.10.205:3001/api';
-const API_HEALTH_URL = (import.meta as any).env?.VITE_API_HEALTH_URL || 'http://192.168.10.205:3001/health';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://192.168.29.213:3001/api';
+const API_HEALTH_URL = (import.meta as any).env?.VITE_API_HEALTH_URL || 'http://192.168.29.213:3001/health';
 
 // API Endpoints
 export const API_ENDPOINTS = {

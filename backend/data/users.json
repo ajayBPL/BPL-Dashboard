@@ -171,7 +171,7 @@
     "id": "user-1757932070077",
     "email": "inderjot.singh@bpl.in",
     "name": "Inderjot Singh",
-    "password": "inderjot123",
+    "password": "$2b$12$xbn6HHGfBwn3R1FsbAh0U.hRIoa09425z/ucuaqWmnGqSDjHIsqci",
     "role": "PROGRAM_MANAGER",
     "designation": "PM",
     "department": "R&D",
@@ -188,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-10-10T08:59:54.395Z",
-    "lastLoginAt": "2025-10-10T08:59:54.395Z"
+    "updatedAt": "2025-10-12T17:39:25.499Z",
+    "lastLoginAt": "2025-10-12T17:39:25.498Z"
   },
   {
     "id": "user-1757932094744",

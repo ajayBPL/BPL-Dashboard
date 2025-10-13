@@ -115,15 +115,19 @@ app.use(cors({
       'http://192.168.10.205:3003', // Current frontend on network
       'http://192.168.10.11:3000',  // Additional network IPs
       'http://192.168.10.11:3002',
+      'http://192.168.9.91:3000',    // New system IP
+      'http://192.168.9.91:3002',
+      'http://192.168.9.91:3003',
       'http://192.168.29.213:5173', // Vite dev server ports
       'http://192.168.10.205:5173',
       'http://192.168.10.11:5173',
+      'http://192.168.9.91:5173',   // New system Vite port
       process.env.CORS_ORIGIN || 'http://localhost:3000' // Environment-specific origin
     ];
     
     // Allow specific localhost and development IPs only
     const isLocalhost = origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
-    const isDevNetwork = origin.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11)(:\d+)?$/);
+    const isDevNetwork = origin.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11|9\.91)(:\d+)?$/);
     
     if (isLocalhost || isDevNetwork) {
       return callback(null, true);

@@ -2,6 +2,7 @@ import React from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { UsersProvider } from './contexts/UsersContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { LoginForm } from './components/LoginForm'
 import { Navigation } from './components/Navigation'
 import { AdminDashboard } from './components/AdminDashboard'
@@ -51,7 +52,9 @@ function AppContent() {
     <div className="min-h-screen bg-background transition-colors duration-300">
       <Navigation />
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {renderDashboard()}
+        <ErrorBoundary>
+          {renderDashboard()}
+        </ErrorBoundary>
       </main>
       <Toaster />
     </div>

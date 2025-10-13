@@ -55,8 +55,12 @@ Make sure Windows Firewall allows:
 ### Login Credentials
 
 **Working Credentials:**
-- Email: `admin@bplcommander.com`
-- Password: `admin123`
+- Email: `admin@bpl.com`
+- Password: `password123`
 
-**Note:** The user `inderjot.singh@bpl.in` exists in the database but the password hash doesn't match `defaultpass123`. You may need to reset the password or use the admin credentials above.
+**Alternative Credentials:**
+- Email: `sarah.wilson@bpl.com`
+- Password: `password123`
+
+**Note:** These are the default users created in the mock database. The passwords are bcrypt hashed for security.
 

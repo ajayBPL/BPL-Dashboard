@@ -220,7 +220,28 @@ class NotificationService {
         });
 
         for (const user of users) {
-          await emailService.sendNotification(user, {
+          const userForEmail = {
+            ...user,
+            employeeId: user.employeeId || undefined,
+            managerId: user.managerId || undefined,
+            department: user.department || undefined,
+            avatar: user.avatar || undefined,
+            phoneNumber: user.phoneNumber || undefined,
+            timezone: user.timezone || undefined,
+            preferredCurrency: user.preferredCurrency || undefined,
+            lastLoginAt: user.lastLoginAt?.toISOString() || undefined,
+            notificationSettings: user.notificationSettings as any || {
+              email: true,
+              inApp: true,
+              projectUpdates: true,
+              deadlineReminders: true,
+              weeklyReports: false
+            },
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            role: user.role.toLowerCase() as any
+          }
+          await emailService.sendNotification(userForEmail, {
             type: trigger.type,
             title: trigger.title,
             message: trigger.message,
@@ -305,7 +326,28 @@ class NotificationService {
     try {
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (user) {
-        return await emailService.sendTestEmail(user);
+        const userForEmail = {
+          ...user,
+          employeeId: user.employeeId || undefined,
+          managerId: user.managerId || undefined,
+          department: user.department || undefined,
+          avatar: user.avatar || undefined,
+          phoneNumber: user.phoneNumber || undefined,
+          timezone: user.timezone || undefined,
+          preferredCurrency: user.preferredCurrency || undefined,
+          lastLoginAt: user.lastLoginAt?.toISOString() || undefined,
+          notificationSettings: user.notificationSettings as any || {
+            email: true,
+            inApp: true,
+            projectUpdates: true,
+            deadlineReminders: true,
+            weeklyReports: false
+          },
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+          role: user.role.toLowerCase() as any
+        }
+        return await emailService.sendTestEmail(userForEmail);
       }
       return false;
     } catch (error) {

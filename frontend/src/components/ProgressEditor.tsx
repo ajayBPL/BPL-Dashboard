@@ -68,11 +68,28 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
       return
     }
 
-    // ✅ CRITICAL FIX: Validate progress consistency
+    // ✅ CRITICAL FIX: Allow all progress updates - team involvement doesn't block project progress
     const validation = ProgressCalculationService.validateProgressConsistency(project)
-    if (!validation.isValid) {
-      toast.error('Progress validation failed: ' + validation.issues.join(', '))
+    
+    // Only block progress updates for critical data integrity issues
+    const criticalIssues = validation.issues.filter(issue => 
+      issue.includes('outside valid range') ||
+      issue.includes('milestone progress') ||
+      issue.includes('All milestones completed')
+    )
+    
+    if (criticalIssues.length > 0) {
+      toast.error('Progress validation failed: ' + criticalIssues.join(', '))
       return
+    }
+    
+    // Show info about team involvement but always allow progress updates
+    const teamInvolvementIssues = validation.issues.filter(issue => 
+      issue.includes('team involvement') || issue.includes('involvement')
+    )
+    
+    if (teamInvolvementIssues.length > 0) {
+      toast.info('Note: ' + teamInvolvementIssues.join(', ') + '. Progress update allowed.')
     }
 
     setLoading(true)
@@ -100,6 +117,65 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
         }
         
         onProjectUpdate(updatedProject)
+        setReason('')
+        setNewProgress(0)
+        onClose()
+      } else {
+        toast.error('Failed to update project progress: ' + (response.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error updating progress:', error)
+      toast.error('Failed to update project progress')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForceProgressUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!currentUser || !canEditProgress) {
+      toast.error('You do not have permission to edit project progress')
+      return
+    }
+
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for the progress update')
+      return
+    }
+
+    if (newProgress < 0 || newProgress > 100) {
+      toast.error('Progress must be between 0% and 100%')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Use force update method that bypasses validation
+      const forceUpdate = ProgressCalculationService.forceProgressUpdate(project, newProgress)
+      
+      if (!forceUpdate.success) {
+        toast.error(forceUpdate.message)
+        return
+      }
+
+      // Update project progress directly via API
+      const response = await apiService.request('/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'update',
+          id: project.id,
+          data: {
+            progress: newProgress,
+            manualProgress: newProgress
+          }
+        })
+      })
+
+      if (response.success) {
+        toast.success(`Project progress force updated to ${newProgress}%!`)
+        
+        onProjectUpdate(forceUpdate.updatedProject)
         setReason('')
         setNewProgress(0)
         onClose()
@@ -254,6 +330,29 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
                   </p>
                 </div>
 
+                {/* Show over-allocation warning */}
+                {(() => {
+                  const totalInvolvement = project.assignedEmployees?.reduce((sum, emp) => sum + emp.involvementPercentage, 0) || 0
+                  if (totalInvolvement > 150) {
+                    return (
+                      <Alert className="border-yellow-200 bg-yellow-50">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <AlertDescription>
+                          <div className="space-y-1">
+                            <p className="text-yellow-800">
+                              <strong>⚠️ Over-allocation Warning:</strong> This project has {totalInvolvement}% total team involvement.
+                            </p>
+                            <p className="text-yellow-700 text-sm">
+                              This may prevent automatic progress updates. Use "Force Update" if needed.
+                            </p>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )
+                  }
+                  return null
+                })()}
+
                 {newProgress !== currentProgress && newProgress > 0 && (
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
@@ -287,6 +386,29 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
+              
+              {/* Force Update button for projects stuck at 0% */}
+              {currentProgress === 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleForceProgressUpdate}
+                  disabled={loading || !reason.trim() || newProgress === currentProgress}
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Force Updating...
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Force Update
+                    </>
+                  )}
+                </Button>
+              )}
+              
               <Button
                 type="submit"
                 disabled={loading || !reason.trim() || newProgress === currentProgress}

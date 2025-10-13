@@ -43,6 +43,10 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
   const health = getProjectHealth(project)
   const risks = getProjectRisk(project)
   
+  // Check if project has high team involvement (but this doesn't block progress)
+  const hasHighTeamInvolvement = totalInvolvement > 200
+  const progressStuck = progress === 0 && hasHighTeamInvolvement
+  
   const getHealthColor = (health: string) => {
     switch (health) {
       case 'critical': return 'text-red-600 dark:text-red-400'
@@ -177,18 +181,33 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">{progress.toFixed(1)}%</span>
+              <span className="text-sm text-muted-foreground">
+                {progress.toFixed(1)}%
+              </span>
             </div>
             <Progress value={progress} className="h-2" />
+            
+            {/* Show info for high team involvement (but not blocking) */}
+            {hasHighTeamInvolvement && (
+              <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                <AlertTriangle className="h-3 w-3" />
+                <span>High team involvement ({totalInvolvement}%) - Progress updates allowed</span>
+              </div>
+            )}
           </div>
           
           {/* Risk Indicators */}
-          {risks.length > 0 && (
+          {(risks.length > 0 || hasHighTeamInvolvement) && (
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
               <div className="text-sm">
                 <span className="text-yellow-600 dark:text-yellow-400 font-medium">Risks: </span>
-                <span className="text-muted-foreground">{risks.join(', ')}</span>
+                <span className="text-muted-foreground">
+                  {[
+                    ...risks,
+                    ...(hasHighTeamInvolvement ? [`High team involvement (${totalInvolvement}%)`] : [])
+                  ].join(', ')}
+                </span>
               </div>
             </div>
           )}

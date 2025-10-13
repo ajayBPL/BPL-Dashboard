@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
+import { useAPICache } from '../hooks/useAPICache'
 
 interface User {
   id: string
@@ -25,65 +26,42 @@ interface UsersProviderProps {
 }
 
 export function UsersProvider({ children }: UsersProviderProps) {
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
   const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const token = localStorage.getItem('bpl-token')
-      if (!token) {
-        setError('No authentication token found')
-        return
-      }
-
-      const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
-        headers: getDefaultHeaders(token)
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          setUsers(data.data)
-        } else {
-          setError('Failed to load users data')
-        }
-      } else {
-        setError(`HTTP ${response.status}: ${response.statusText}`)
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error)
-      setError('Failed to fetch users')
-    } finally {
-      setLoading(false)
+    const token = localStorage.getItem('bpl-token')
+    if (!token) {
+      throw new Error('No authentication token found')
     }
+
+    const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
+      headers: getDefaultHeaders(token)
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    if (!data.success || !data.data) {
+      throw new Error('Failed to load users data')
+    }
+
+    return data.data
   }
 
-  const refreshUsers = async () => {
-    await fetchUsers()
-  }
+  const { data: users, loading, error, refresh: refreshUsers } = useAPICache(
+    'users',
+    fetchUsers,
+    { ttl: 10 * 60 * 1000 } // 10 minutes cache
+  )
 
   const getUserById = (id: string): User | undefined => {
-    return users.find(user => user.id === id)
+    return users?.find(user => user.id === id)
   }
 
-  useEffect(() => {
-    fetchUsers()
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      setUsers([])
-      setError(null)
-    }
-  }, [])
-
   const value: UsersContextType = {
-    users,
+    users: users || [],
     loading,
-    error,
+    error: error?.message || null,
     refreshUsers,
     getUserById
   }

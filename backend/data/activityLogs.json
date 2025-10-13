@@ -702,5 +702,15 @@
     "projectId": "project-1757937356657",
     "details": "Updated project: Dynatrac Ultra",
     "timestamp": "2025-10-12T18:43:10.899Z"
+  },
+  {
+    "id": "activity-1760346482773",
+    "userId": "user-1757932070077",
+    "action": "PROJECT_UPDATED",
+    "entityType": "PROJECT",
+    "entityId": "project-1757937356657",
+    "projectId": "project-1757937356657",
+    "details": "Updated project: Dynatrac Ultra",
+    "timestamp": "2025-10-13T09:08:02.773Z"
   }
 ]

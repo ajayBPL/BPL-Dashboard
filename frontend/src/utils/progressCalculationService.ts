@@ -40,8 +40,17 @@ export class ProgressCalculationService {
     // Get manual progress (if set)
     const manualProgress = project.manualProgress !== undefined ? project.manualProgress : null
     
+    // Debug logging for troubleshooting
+    console.log(`[ProgressCalculation] Project: ${project.name}`, {
+      milestones: project.milestones?.length || 0,
+      milestoneProgress,
+      manualProgress,
+      defaultProgress: project.progress,
+      assignedEmployees: project.assignedEmployees?.length || 0
+    })
+    
     // Determine final progress and source
-    let finalProgress: number
+    let finalProgress: number = 0
     let progressSource: 'manual' | 'milestone' | 'default'
     
     if (manualProgress !== null && manualProgress !== undefined) {
@@ -52,18 +61,38 @@ export class ProgressCalculationService {
       if (Math.abs(manualProgress - milestoneProgress) > 10) {
         warnings.push(`Manual progress (${manualProgress}%) differs significantly from milestone progress (${milestoneProgress.toFixed(1)}%)`)
       }
-    } else if (project.milestones.length > 0) {
+    } else if (project.milestones && project.milestones.length > 0) {
       finalProgress = milestoneProgress
       progressSource = 'milestone'
     } else {
-      finalProgress = project.progress || 0
-      progressSource = 'default'
+      // Use project.progress if it exists and is valid, otherwise calculate a default
+      if (project.progress !== null && project.progress !== undefined && project.progress >= 0) {
+        finalProgress = project.progress
+        progressSource = 'default'
+      } else {
+        // Calculate default progress based on project age and status
+        finalProgress = this.calculateDefaultProgress(project)
+        progressSource = 'default'
+      }
+    }
+    
+    // Ensure progress is a valid number
+    if (isNaN(finalProgress) || !isFinite(finalProgress)) {
+      finalProgress = 0
+      warnings.push('Progress value was invalid, reset to 0%')
     }
     
     // Validate progress range
     if (finalProgress < 0 || finalProgress > 100) {
-      warnings.push(`Progress value ${finalProgress}% is outside valid range (0-100%)`)
+      finalProgress = Math.max(0, Math.min(100, finalProgress))
+      warnings.push(`Progress value was outside valid range, clamped to ${finalProgress}%`)
     }
+    
+    console.log(`[ProgressCalculation] Final result for ${project.name}:`, {
+      finalProgress,
+      progressSource,
+      warnings: warnings.length
+    })
     
     return {
       calculatedProgress: finalProgress,
@@ -87,6 +116,69 @@ export class ProgressCalculationService {
     
     const completedMilestones = project.milestones.filter(m => m.completed).length
     return (completedMilestones / project.milestones.length) * 100
+  }
+
+  /**
+   * Calculate default progress based on project age and status
+   */
+  private static calculateDefaultProgress(project: CentralizedProject): number {
+    const now = new Date()
+    const startDate = new Date(project.startDate)
+    const endDate = new Date(project.endDate)
+    
+    // If project hasn't started yet
+    if (now < startDate) {
+      return 0
+    }
+    
+    // If project is completed
+    if (project.status === 'completed' || project.status === 'Completed') {
+      return 100
+    }
+    
+    // If project is cancelled
+    if (project.status === 'cancelled' || project.status === 'Cancelled') {
+      return 0
+    }
+    
+    // Calculate progress based on time elapsed
+    const totalDuration = endDate.getTime() - startDate.getTime()
+    const elapsedTime = now.getTime() - startDate.getTime()
+    
+    if (totalDuration <= 0) {
+      return 0
+    }
+    
+    const timeBasedProgress = Math.min(95, (elapsedTime / totalDuration) * 100)
+    
+    // Adjust based on project status
+    let statusMultiplier = 1
+    switch (project.status?.toLowerCase()) {
+      case 'pending':
+      case 'not started':
+        statusMultiplier = 0.1
+        break
+      case 'in progress':
+      case 'active':
+        statusMultiplier = 0.8
+        break
+      case 'on hold':
+        statusMultiplier = 0.3
+        break
+      default:
+        statusMultiplier = 0.5
+    }
+    
+    const finalProgress = Math.max(5, timeBasedProgress * statusMultiplier)
+    
+    console.log(`[ProgressCalculation] Default progress for ${project.name}:`, {
+      timeBasedProgress,
+      statusMultiplier,
+      finalProgress,
+      status: project.status
+    })
+    
+    return Math.round(finalProgress)
   }
   
   /**
@@ -163,11 +255,15 @@ export class ProgressCalculationService {
       issues.push(...progressData.warnings)
     }
     
-    // Check total involvement percentage - Allow over 100% for team projects
+    // Check total involvement percentage - Employee workload can be anything, but warn if extremely high
     const totalInvolvement = project.assignedEmployees?.reduce((sum, emp) => sum + emp.involvementPercentage, 0) || 0
-    if (totalInvolvement > 200) { // Increased threshold to 200% to allow team projects
-      issues.push(`Total project involvement (${totalInvolvement}%) is extremely high`)
+    if (totalInvolvement > 500) { // Only warn for extremely high team involvement
+      issues.push(`Total team involvement (${totalInvolvement}%) is extremely high`)
       recommendations.push('Consider if this level of team involvement is necessary')
+    } else if (totalInvolvement > 200) {
+      // Add as warning for high team involvement (but not blocking)
+      issues.push(`Total team involvement (${totalInvolvement}%) is high`)
+      recommendations.push('Monitor team workload distribution')
     }
     
     // Check for employees with excessive workload
@@ -198,6 +294,39 @@ export class ProgressCalculationService {
     }
   }
   
+  /**
+   * Force progress update for projects stuck at 0%
+   * This bypasses validation for manual progress updates
+   */
+  static forceProgressUpdate(project: CentralizedProject, newProgress: number): {
+    success: boolean
+    message: string
+    updatedProject: CentralizedProject
+  } {
+    // Basic validation only
+    if (newProgress < 0 || newProgress > 100) {
+      return {
+        success: false,
+        message: 'Progress must be between 0% and 100%',
+        updatedProject: project
+      }
+    }
+
+    // Create updated project with new progress
+    const updatedProject = {
+      ...project,
+      progress: newProgress,
+      manualProgress: newProgress, // Set as manual progress
+      lastActivity: new Date().toISOString()
+    }
+
+    return {
+      success: true,
+      message: `Progress updated to ${newProgress}%`,
+      updatedProject
+    }
+  }
+
   /**
    * Get progress color based on progress value
    */

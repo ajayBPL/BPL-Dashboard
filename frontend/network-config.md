@@ -54,6 +54,9 @@ Make sure Windows Firewall allows:
 
 ### Login Credentials
 
-- Email: `inderjot.singh@bpl.in`
-- Password: `defaultpass123`
+**Working Credentials:**
+- Email: `admin@bplcommander.com`
+- Password: `admin123`
+
+**Note:** The user `inderjot.singh@bpl.in` exists in the database but the password hash doesn't match `defaultpass123`. You may need to reset the password or use the admin credentials above.
 

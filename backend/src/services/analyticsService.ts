@@ -208,8 +208,9 @@ class AnalyticsService {
    */
   private async calculateVelocity(projectId: string): Promise<number> {
     // Calculate story points or tasks completed per sprint/week
-    const milestones = await db.getProjectMilestones(projectId)
-    const completedMilestones = milestones.filter(m => m.completed)
+    const project = await db.getProjectById(projectId)
+    const milestones = project?.milestones || []
+    const completedMilestones = milestones.filter((m: any) => m.completed)
     
     if (milestones.length === 0) return 0
     
@@ -222,7 +223,7 @@ class AnalyticsService {
     const project = await db.getProjectById(projectId)
     if (!project) return []
 
-    const milestones = await db.getProjectMilestones(projectId)
+    const milestones = project.milestones || []
     const totalMilestones = milestones.length
     
     if (totalMilestones === 0) return []
@@ -234,7 +235,7 @@ class AnalyticsService {
 
     for (let i = 0; i <= totalDays; i += 7) { // Weekly data points
       const currentDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000)
-      const completedByDate = milestones.filter(m => 
+      const completedByDate = milestones.filter((m: any) => 
         m.completed && new Date(m.completedAt!) <= currentDate
       ).length
       
@@ -254,14 +255,14 @@ class AnalyticsService {
   }
 
   private async calculateRiskScore(projectId: string): Promise<number> {
-    const project = await db.getProjectById(projectId)
-    if (!project) return 0
+    const projectData = await db.getProjectById(projectId)
+    if (!projectData) return 0
 
     let riskScore = 0
 
     // Timeline risk
     const now = new Date()
-    const endDate = new Date(project.endDate)
+    const endDate = new Date(projectData.endDate)
     const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     
     if (daysRemaining < 30) riskScore += 30
@@ -269,8 +270,8 @@ class AnalyticsService {
     else if (daysRemaining < 90) riskScore += 10
 
     // Progress risk
-    const milestones = await db.getProjectMilestones(projectId)
-    const completedMilestones = milestones.filter(m => m.completed).length
+    const milestones = projectData?.milestones || []
+    const completedMilestones = milestones.filter((m: any) => m.completed).length
     const progressRate = milestones.length > 0 ? completedMilestones / milestones.length : 0
     
     if (progressRate < 0.3) riskScore += 25
@@ -278,7 +279,7 @@ class AnalyticsService {
     else if (progressRate < 0.7) riskScore += 10
 
     // Resource risk
-    const assignments = project.assignedEmployees || []
+    const assignments = projectData.assignedEmployees || []
     if (assignments.length === 0) riskScore += 20
     else if (assignments.length < 3) riskScore += 10
 
@@ -292,7 +293,7 @@ class AnalyticsService {
     const assignments = project.assignedEmployees || []
     if (assignments.length === 0) return 0
 
-    const totalInvolvement = assignments.reduce((sum, assignment) => 
+    const totalInvolvement = assignments.reduce((sum: number, assignment: any) => 
       sum + (assignment.involvementPercentage || 0), 0
     )
 
@@ -300,8 +301,8 @@ class AnalyticsService {
   }
 
   private async generatePredictions(projectId: string): Promise<ProjectPredictions> {
-    const project = await db.getProjectById(projectId)
-    if (!project) {
+    const projectData = await db.getProjectById(projectId)
+    if (!projectData) {
       return {
         estimatedCompletion: '',
         confidence: 0,
@@ -310,23 +311,23 @@ class AnalyticsService {
       }
     }
 
-    const milestones = await db.getProjectMilestones(projectId)
-    const completedMilestones = milestones.filter(m => m.completed).length
+    const milestones = projectData?.milestones || []
+    const completedMilestones = milestones.filter((m: any) => m.completed).length
     const totalMilestones = milestones.length
 
-    let estimatedCompletion = project.endDate
+    let estimatedCompletion = projectData.endDate
     let confidence = 50
     const riskFactors: string[] = []
     const recommendedActions: string[] = []
 
     if (totalMilestones > 0) {
       const completionRate = completedMilestones / totalMilestones
-      const progressRate = project.progress || 0
+      const progressRate = projectData.progress || 0
 
       // Adjust completion date based on progress
       if (completionRate < 0.5) {
         const delayDays = Math.ceil((0.5 - completionRate) * 30)
-        const newEndDate = new Date(project.endDate)
+        const newEndDate = new Date(projectData.endDate)
         newEndDate.setDate(newEndDate.getDate() + delayDays)
         estimatedCompletion = newEndDate.toISOString()
         confidence = Math.max(20, 50 - delayDays)
@@ -338,7 +339,7 @@ class AnalyticsService {
     }
 
     // Add risk factors based on project characteristics
-    if (project.budget && project.budget > 100000) {
+    if (projectData.budget && projectData.budget > 100000) {
       riskFactors.push('High budget project')
       recommendedActions.push('Implement strict budget monitoring')
     }
@@ -414,8 +415,9 @@ class AnalyticsService {
 
     let totalProductivity = 0
     for (const project of teamProjects) {
-      const milestones = await db.getProjectMilestones(project.id)
-      const completedMilestones = milestones.filter(m => m.completed).length
+      const projectData = await db.getProjectById(project.id)
+      const milestones = projectData?.milestones || []
+      const completedMilestones = milestones.filter((m: any) => m.completed).length
       const productivity = milestones.length > 0 ? (completedMilestones / milestones.length) * 100 : 0
       totalProductivity += productivity
     }

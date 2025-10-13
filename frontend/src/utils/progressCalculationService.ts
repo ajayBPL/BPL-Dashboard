@@ -163,11 +163,11 @@ export class ProgressCalculationService {
       issues.push(...progressData.warnings)
     }
     
-    // Check total involvement percentage
+    // Check total involvement percentage - Allow over 100% for team projects
     const totalInvolvement = project.assignedEmployees?.reduce((sum, emp) => sum + emp.involvementPercentage, 0) || 0
-    if (totalInvolvement > 100) {
-      issues.push(`Total project involvement (${totalInvolvement}%) exceeds 100%`)
-      recommendations.push('Reduce individual involvement percentages or remove some assignments')
+    if (totalInvolvement > 200) { // Increased threshold to 200% to allow team projects
+      issues.push(`Total project involvement (${totalInvolvement}%) is extremely high`)
+      recommendations.push('Consider if this level of team involvement is necessary')
     }
     
     // Check for employees with excessive workload

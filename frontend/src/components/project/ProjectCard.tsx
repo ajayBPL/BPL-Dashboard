@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { CentralizedProject, centralizedDb } from '../../utils/centralizedDb'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -24,23 +24,16 @@ import {
   getProjectHealth,
   getProjectRisk
 } from '../../utils/projectHelpers'
-import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
 import { ProgressCalculationService } from '../../utils/progressCalculationService'
+import { useUsers } from '../../contexts/UsersContext'
 
 interface ProjectCardProps {
   project: CentralizedProject
   onViewDetails: (projectId: string) => void
 }
 
-interface User {
-  id: string
-  name: string
-  email: string
-}
-
 export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
-  const [users, setUsers] = useState<User[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
+  const { users, getUserById } = useUsers()
   
   // ✅ CRITICAL FIX: Use unified progress calculation
   const progressData = ProgressCalculationService.calculateProjectProgress(project)
@@ -49,36 +42,6 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
   const totalInvolvement = calculateTotalInvolvement(project)
   const health = getProjectHealth(project)
   const risks = getProjectRisk(project)
-  
-  // Fetch users from API to get proper names for avatars
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (project.assignedEmployees.length === 0) return
-      
-      try {
-        setLoadingUsers(true)
-        const token = localStorage.getItem('bpl-token')
-        if (!token) return
-
-        const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
-          headers: getDefaultHeaders(token)
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setUsers(data.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching users for avatars:', error)
-      } finally {
-        setLoadingUsers(false)
-      }
-    }
-
-    fetchUsers()
-  }, [project.assignedEmployees])
   
   const getHealthColor = (health: string) => {
     switch (health) {
@@ -101,7 +64,7 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
   // Helper function to get user initials
   const getUserInitials = (employeeId: string): string => {
     // First try to find in API users
-    const apiUser = users.find(user => user.id === employeeId)
+    const apiUser = getUserById(employeeId)
     if (apiUser?.name) {
       return apiUser.name.charAt(0).toUpperCase()
     }

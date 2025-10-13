@@ -1,5 +1,6 @@
 import React from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { UsersProvider } from './contexts/UsersContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LoginForm } from './components/LoginForm'
 import { Navigation } from './components/Navigation'
@@ -61,7 +62,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppContent />
+        <UsersProvider>
+          <AppContent />
+        </UsersProvider>
       </AuthProvider>
     </ThemeProvider>
   )

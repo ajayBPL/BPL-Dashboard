@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { useAPICache } from '../hooks/useAPICache'
 
@@ -26,7 +26,7 @@ interface UsersProviderProps {
 }
 
 export function UsersProvider({ children }: UsersProviderProps) {
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem('bpl-token')
     if (!token) {
       throw new Error('No authentication token found')
@@ -46,7 +46,7 @@ export function UsersProvider({ children }: UsersProviderProps) {
     }
 
     return data.data
-  }
+  }, []) // Empty dependency array since fetchUsers doesn't depend on any props/state
 
   const { data: users, loading, error, refresh: refreshUsers } = useAPICache(
     'users',

@@ -25,7 +25,7 @@
  * - Error handling and user feedback via toast notifications
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { CentralizedProject, CentralizedInitiative, BudgetInfo } from '../utils/centralizedDb'
 import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
@@ -145,7 +145,7 @@ export function ManagerDashboard() {
    * @function fetchData
    * @returns {Promise<void>}
    */
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     // Early return if no authenticated user
     if (!currentUser) return
     
@@ -302,7 +302,7 @@ export function ManagerDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentUser]) // Add dependency array to prevent infinite loops
 
   // Get subordinate managers (managers who report to current user)
   const getSubordinateManagers = () => {
@@ -396,7 +396,7 @@ export function ManagerDashboard() {
     }
   }
 
-  const filterProjects = () => {
+  const filterProjects = useCallback(() => {
     let filtered = [...projects]
 
     // Apply search filter
@@ -420,7 +420,7 @@ export function ManagerDashboard() {
     }
 
     setFilteredProjects(filtered)
-  }
+  }, [projects, searchQuery, statusFilter, priorityFilter]) // Add dependencies
 
   const resetProjectForm = () => {
     setProjectForm({

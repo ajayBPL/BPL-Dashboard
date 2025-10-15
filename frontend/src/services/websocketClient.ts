@@ -172,10 +172,10 @@ class WebSocketClient {
    */
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.hostname === 'localhost' 
-      ? '192.168.29.213:3001' 
-      : window.location.hostname + ':3001'
-    
+    const host = window.location.hostname === 'localhost'
+      ? 'localhost:3000'
+      : window.location.hostname + ':3000'
+
     return `${protocol}//${host}/ws`
   }
 

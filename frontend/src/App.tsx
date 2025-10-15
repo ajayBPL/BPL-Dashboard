@@ -1,5 +1,6 @@
 import React from 'react'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthContext'
+import { useAuth } from './contexts/AuthContext'
 import { UsersProvider } from './contexts/UsersContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ErrorBoundary } from './components/ErrorBoundary'

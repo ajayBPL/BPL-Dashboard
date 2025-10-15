@@ -5,7 +5,6 @@ import { authenticateToken, authorize, canAccessUser } from '../middleware/auth'
 import { parseQuery, buildWhereClause, buildIncludeClause, getPaginationMeta } from '../middleware/queryParser';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { db } from '../services/database';
-import { prisma } from '../index';
 import { User, CreateUserRequest, UpdateUserRequest, ActionRequest } from '../../../shared/types';
 // import { notificationService } from '../services/notificationService';
 
@@ -113,7 +112,14 @@ router.get('/:id', canAccessUser, asyncHandler(async (req: Request, res: Respons
 }));
 
 // POST /users - Handle user actions (create, update, delete, etc.)
-router.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+router.post('/', [
+  body('action').notEmpty().withMessage('Action is required'),
+  body('data').isObject().withMessage('Data must be an object'),
+  body('data.email').isEmail().withMessage('Valid email is required'),
+  body('data.name').notEmpty().withMessage('Name is required'),
+  body('data.password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('data.role').notEmpty().withMessage('Role is required'),
+], asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { action, id, data }: ActionRequest = req.body;
 
   switch (action) {

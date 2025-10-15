@@ -101,6 +101,12 @@ export function useAPICache<T>(
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const fetcherRef = useRef(fetcher)
+  
+  // Update fetcher ref when it changes
+  useEffect(() => {
+    fetcherRef.current = fetcher
+  }, [fetcher])
 
   const fetchData = useCallback(async () => {
     if (!enabled) return
@@ -122,7 +128,7 @@ export function useAPICache<T>(
     setError(null)
 
     try {
-      const result = await fetcher()
+      const result = await fetcherRef.current()
       
       // Only update if request wasn't aborted
       if (!abortControllerRef.current.signal.aborted) {
@@ -138,7 +144,7 @@ export function useAPICache<T>(
         setLoading(false)
       }
     }
-  }, [key, fetcher, enabled, ttl])
+  }, [key, enabled, ttl]) // Removed fetcher from dependencies to prevent infinite loops
 
   useEffect(() => {
     fetchData()

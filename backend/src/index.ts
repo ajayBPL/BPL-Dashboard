@@ -22,17 +22,16 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { PrismaClient } from '@prisma/client';
 import { validateEnvironmentOrExit } from './utils/envValidation';
 
 // Import all API route modules
 import authRoutes from './routes/auth';           // Authentication endpoints (login, register, logout)
 import userRoutes from './routes/users';          // User management endpoints
-import projectRoutes from './routes/projects';    // Project CRUD operations
-import initiativeRoutes from './routes/initiatives'; // Initiative management
+// import projectRoutes from './routes/projects';    // Project CRUD operations - temporarily disabled
+// import initiativeRoutes from './routes/initiatives'; // Initiative management - temporarily disabled
 import workloadRoutes from './routes/workload';   // Employee workload tracking
-import analyticsRoutes from './routes/analytics'; // Advanced analytics and business intelligence
-import notificationRoutes from './routes/notifications'; // Notification system
+// import analyticsRoutes from './routes/analytics'; // Advanced analytics and business intelligence - temporarily disabled
+// import notificationRoutes from './routes/notifications'; // Notification system - temporarily disabled
 import commentRoutes from './routes/comments';    // Project/initiative comments
 import fileRoutes from './routes/files';          // File upload/download
 import exportRoutes from './routes/export';       // Data export functionality
@@ -61,28 +60,19 @@ const app = express();
 const PORT = envConfig.PORT;
 
 /**
- * Initialize Prisma ORM client for database operations
- * - Enables query logging in development mode
- * - Only logs errors in production for performance
+ * Initialize Supabase database service
+ * This ensures the application uses Supabase PostgreSQL
  */
-export const prisma = new PrismaClient({
-  log: envConfig.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-/**
- * Initialize database service with fallback to mock data
- * This allows the application to run without PostgreSQL installation
- * for development and testing purposes
- */
-db.initialize().then(() => {
-  console.log('Database service initialized');
-  if (db.isUsingMock()) {
-    console.log('⚠️  Using mock database - install PostgreSQL for full functionality');
+db.testConnection().then((connected) => {
+  if (connected) {
+    console.log('✅ Supabase database service initialized successfully');
   } else {
-    console.log('✅ Connected to PostgreSQL database');
+    console.error('❌ Supabase database connection failed');
+    process.exit(1); // Exit if database connection fails
   }
 }).catch((error) => {
-  console.error('Database initialization failed:', error);
+  console.error('❌ Supabase database initialization failed:', error);
+  process.exit(1); // Exit if database connection fails
 });
 
 /**
@@ -203,11 +193,11 @@ app.get('/health', (req, res) => {
  */
 app.use('/api/auth', authRoutes);           // Authentication & authorization
 app.use('/api/users', userRoutes);          // User management & profiles
-app.use('/api/projects', projectRoutes);    // Project CRUD operations
-app.use('/api/initiatives', initiativeRoutes); // Initiative management
+// app.use('/api/projects', projectRoutes);    // Project CRUD operations - temporarily disabled
+// app.use('/api/initiatives', initiativeRoutes); // Initiative management - temporarily disabled
 app.use('/api/workload', workloadRoutes);   // Employee workload tracking
-app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports
-app.use('/api/notifications', notificationRoutes); // Notification system
+// app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports - temporarily disabled
+// app.use('/api/notifications', notificationRoutes); // Notification system - temporarily disabled
 app.use('/api/comments', commentRoutes);    // Comments on projects/initiatives
 app.use('/api/files', fileRoutes);          // File upload/download
 app.use('/api/export', exportRoutes);       // Data export functionality
@@ -234,13 +224,13 @@ app.use(errorHandler);
  */
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, shutting down gracefully...');
-  await prisma.$disconnect();
+  await db.disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('Received SIGTERM, shutting down gracefully...');
-  await prisma.$disconnect();
+  await db.disconnect();
   process.exit(0);
 });
 

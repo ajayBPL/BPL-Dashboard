@@ -1,9 +1,9 @@
 // Advanced Analytics Service for Business Intelligence
 // Provides data-driven insights, predictive analytics, and performance metrics
 
-import { PrismaClient } from '@prisma/client'
-import { db } from './database'
-import cacheService from './cacheService'
+import { SupabaseClient } from '@supabase/supabase-js';
+import { db } from './database';
+import cacheService from './cacheService';
 
 interface ProjectInsights {
   velocity: number
@@ -68,10 +68,19 @@ interface BusinessMetrics {
 }
 
 class AnalyticsService {
-  private prisma: PrismaClient
+  private prisma: PrismaClient | null
 
   constructor() {
-    this.prisma = new PrismaClient()
+    try {
+      this.prisma = new PrismaClient()
+    } catch (error) {
+      console.error('Failed to initialize Prisma client in AnalyticsService:', error)
+      this.prisma = null
+    }
+  }
+
+  private isPrismaAvailable(): boolean {
+    return this.prisma !== null
   }
 
   /**

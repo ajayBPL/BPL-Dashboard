@@ -1,7 +1,6 @@
 import { db } from './database';
 import { emailService } from './emailService';
 import { User, Project, Initiative } from '../../../shared/types';
-import { prisma } from '../index';
 
 interface NotificationTrigger {
   type: 'deadline' | 'workload' | 'assignment' | 'milestone' | 'project_update';

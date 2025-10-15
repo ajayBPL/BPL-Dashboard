@@ -3,7 +3,6 @@ import { body, validationResult } from 'express-validator';
 import { authenticateToken, canManageProjects } from '../middleware/auth';
 import { parseQuery, buildWhereClause, buildIncludeClause, getPaginationMeta } from '../middleware/queryParser';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { prisma } from '../index';
 import { db } from '../services/database';
 import { Project, CreateProjectRequest, UpdateProjectRequest, ActionRequest, AssignEmployeeRequest } from '../../../shared/types';
 import { notificationService } from '../services/notificationService';

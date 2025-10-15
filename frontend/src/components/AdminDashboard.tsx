@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { centralizedDb, CentralizedUser } from '../utils/centralizedDb'
@@ -182,7 +182,7 @@ export function AdminDashboard() {
     filterUsers()
   }, [users, searchQuery, roleFilter, statusFilter])
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       // Get the access token from localStorage
       const token = localStorage.getItem('bpl-token')
@@ -233,9 +233,9 @@ export function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, []) // Empty dependency array since fetchUsers doesn't depend on any props/state
 
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
     let filtered = [...users]
 
     // Apply search filter
@@ -263,7 +263,7 @@ export function AdminDashboard() {
     }
 
     setFilteredUsers(filtered)
-  }
+  }, [users, searchQuery, roleFilter, statusFilter]) // Add dependencies
 
   const handleCreateRole = async () => {
     if (!newRole.name.trim()) {
@@ -422,10 +422,13 @@ export function AdminDashboard() {
       console.log('🌐 Creating user via API:', userData)
 
       // Make API call to create user
-      const response = await fetch(API_ENDPOINTS.REGISTER, {
+      const response = await fetch(API_ENDPOINTS.USERS, {
         method: 'POST',
         headers: getDefaultHeaders(token),
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+          action: 'create',
+          data: userData
+        })
       })
 
       const data = await response.json()

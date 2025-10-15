@@ -63,16 +63,41 @@ const PORT = envConfig.PORT;
  * Initialize Supabase database service
  * This ensures the application uses Supabase PostgreSQL
  */
-db.testConnection().then((connected) => {
-  if (connected) {
-    console.log('✅ Supabase database service initialized successfully');
-  } else {
-    console.error('❌ Supabase database connection failed');
-    process.exit(1); // Exit if database connection fails
+async function initializeDatabase() {
+  try {
+    console.log('🔄 Initializing Supabase database connection...');
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<boolean>((_, reject) => {
+      setTimeout(() => reject(new Error('Database connection timeout')), 10000); // 10 second timeout
+    });
+    
+    const connectionPromise = db.testConnection();
+    const connected = await Promise.race([connectionPromise, timeoutPromise]);
+    
+    if (connected) {
+      console.log('✅ Supabase database service initialized successfully');
+      return true;
+    } else {
+      console.error('❌ Supabase database connection failed');
+      console.error('📝 Please check your Supabase configuration in .env file');
+      console.error('📝 Required variables: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Supabase database initialization failed:', error);
+    console.error('📝 Please check your Supabase configuration in .env file');
+    return false;
   }
-}).catch((error) => {
-  console.error('❌ Supabase database initialization failed:', error);
-  process.exit(1); // Exit if database connection fails
+}
+
+// Initialize database connection
+initializeDatabase().then((success) => {
+  if (!success) {
+    console.error('💥 Application startup failed due to database connection issues');
+    console.error('💥 Please fix the Supabase configuration and restart the application');
+    process.exit(1);
+  }
 });
 
 /**

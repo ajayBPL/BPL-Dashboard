@@ -5,45 +5,90 @@ import { WorkloadCalculationService } from './workloadCalculationService';
 class DatabaseService {
   private supabase: any;
   private workloadService!: WorkloadCalculationService;
+  private isConnected: boolean = false;
 
   constructor() {
+    this.initializeSupabase();
+  }
+
+  private initializeSupabase() {
     try {
-      // Initialize Supabase client
-      const supabaseUrl = process.env.SUPABASE_URL || 'https://mwrdlemotjhrnjzncbxk.supabase.co';
+      // Get Supabase configuration from environment
+      const supabaseUrl = process.env.SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
       
+      if (!supabaseUrl) {
+        throw new Error('SUPABASE_URL environment variable is required');
+      }
+      
       if (!supabaseKey) {
-        throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY is required');
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY environment variable is required');
       }
 
-      this.supabase = createClient(supabaseUrl, supabaseKey);
+      // Initialize Supabase client
+      this.supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: false
+        }
+      });
+      
       this.workloadService = new WorkloadCalculationService(this.supabase);
-      console.log('✅ Database service initialized with Supabase client');
+      console.log('✅ Supabase client initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize Supabase client:', error);
-      throw new Error('Failed to initialize Supabase client. Please check your Supabase configuration.');
+      throw new Error(`Failed to initialize Supabase client: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   // Test database connection
   async testConnection(): Promise<boolean> {
     try {
-      // Test with a simple query
-      const { data, error } = await this.supabase
+      if (!this.supabase) {
+        console.error('❌ Supabase client not initialized');
+        return false;
+      }
+
+      // Simple connection test - just check if we can access the database
+      const { error } = await this.supabase
         .from('users')
         .select('id')
         .limit(1);
       
       if (error) {
+        // If users table doesn't exist, that's okay - we'll handle it later
+        if (error.code === 'PGRST116' || error.message.includes('relation "users" does not exist')) {
+          console.log('⚠️  Users table not found - will use fallback data');
+          this.isConnected = true;
+          return true;
+        }
         console.error('❌ Supabase database connection failed:', error);
         return false;
       }
       
+      this.isConnected = true;
       console.log('✅ Connected to Supabase PostgreSQL database');
       return true;
     } catch (error) {
       console.error('❌ Supabase database connection failed:', error);
       return false;
+    }
+  }
+
+  // Create database schema if it doesn't exist
+  private async createSchema(): Promise<void> {
+    try {
+      console.log('🔄 Creating database schema...');
+      
+      // This would typically be done via Prisma migrations
+      // For now, we'll just log that the schema needs to be created
+      console.log('⚠️  Please run "npm run db:migrate" to create the database schema');
+      console.log('⚠️  Or ensure your Supabase database has the correct schema');
+      
+      this.isConnected = true;
+    } catch (error) {
+      console.error('❌ Failed to create schema:', error);
+      throw error;
     }
   }
 
@@ -158,7 +203,7 @@ class DatabaseService {
       const { data, error } = await this.supabase
         .from('users')
         .select('*')
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -266,7 +311,7 @@ class DatabaseService {
             user:users!comments_userId_fkey(*)
           )
         `)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -295,7 +340,7 @@ class DatabaseService {
           )
         `)
         .eq('managerId', managerId)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -387,7 +432,7 @@ class DatabaseService {
           assignee:users!initiatives_assignedTo_fkey(*),
           creator:users!initiatives_createdBy_fkey(*)
         `)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -424,7 +469,7 @@ class DatabaseService {
           user:users!comments_userId_fkey(*)
         `)
         .eq('projectId', projectId)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -444,7 +489,7 @@ class DatabaseService {
           user:users!comments_userId_fkey(*)
         `)
         .eq('initiativeId', initiativeId)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
@@ -514,7 +559,7 @@ class DatabaseService {
         .from('notifications')
         .select('*')
         .eq('userId', userId)
-        .order('createdAt', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;

@@ -91,13 +91,16 @@ async function initializeDatabase() {
   }
 }
 
-// Initialize database connection
+// Initialize database connection and wait for it to complete
+let dbInitialized = false;
 initializeDatabase().then((success) => {
   if (!success) {
     console.error('💥 Application startup failed due to database connection issues');
     console.error('💥 Please fix the Supabase configuration and restart the application');
     process.exit(1);
   }
+  dbInitialized = true;
+  console.log('✅ Database initialization completed');
 });
 
 /**
@@ -209,6 +212,21 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });
+});
+
+/**
+ * Database readiness middleware
+ * Ensures database is initialized before processing API requests
+ */
+app.use('/api', (req, res, next) => {
+  if (!dbInitialized) {
+    return res.status(503).json({
+      error: 'Service Unavailable',
+      message: 'Database is still initializing. Please try again in a moment.',
+      retryAfter: 5
+    });
+  }
+  return next();
 });
 
 /**

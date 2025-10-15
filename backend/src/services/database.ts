@@ -200,17 +200,27 @@ class DatabaseService {
 
   async getAllUsers(limit: number = 100, offset: number = 0) {
     try {
+      // Check if Supabase client is initialized
+      if (!this.supabase) {
+        console.error('❌ Supabase client not initialized');
+        throw new Error('Database client not initialized');
+      }
+
       const { data, error } = await this.supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+      
       return data || [];
     } catch (error) {
-      console.error('Database error:', error);
-      throw new Error('Failed to get all users');
+      console.error('Database error in getAllUsers:', error);
+      throw new Error(`Failed to get all users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

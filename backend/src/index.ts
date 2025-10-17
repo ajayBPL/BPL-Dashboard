@@ -24,11 +24,14 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import { validateEnvironmentOrExit } from './utils/envValidation';
 
+// Import security middleware
+import { securityMiddleware } from './middleware/security';
+
 // Import all API route modules
 import authRoutes from './routes/auth';           // Authentication endpoints (login, register, logout)
 import userRoutes from './routes/users';          // User management endpoints
-// import projectRoutes from './routes/projects';    // Project CRUD operations - temporarily disabled
-// import initiativeRoutes from './routes/initiatives'; // Initiative management - temporarily disabled
+import projectRoutes from './routes/projects-supabase';    // Project CRUD operations - Supabase compatible
+import initiativeRoutes from './routes/initiatives-supabase'; // Initiative management - Supabase compatible
 import workloadRoutes from './routes/workload';   // Employee workload tracking
 // import analyticsRoutes from './routes/analytics'; // Advanced analytics and business intelligence - temporarily disabled
 // import notificationRoutes from './routes/notifications'; // Notification system - temporarily disabled
@@ -107,89 +110,36 @@ initializeDatabase().then((success) => {
  * Security middleware configuration
  * Helmet provides security headers to protect against common vulnerabilities
  */
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// Enhanced Security middleware configuration
+app.use(securityMiddleware.securityHeaders);
 
 /**
  * CORS (Cross-Origin Resource Sharing) configuration
  * Allows frontend applications from different origins to access the API
  * Supports both localhost development and network access scenarios
  */
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Define allowed origins for different environments
-    const allowedOrigins = [
-      'http://localhost:3000',      // Local development
-      'http://localhost:3002',      // Alternative local port
-      'http://localhost:3003',      // Current frontend port
-      'http://192.168.29.213:3000', // Network IP variations
-      'http://192.168.29.213:3002',
-      'http://192.168.10.205:3000', // Current network IP
-      'http://192.168.10.205:3002',
-      'http://192.168.10.205:3003', // Current frontend on network
-      'http://192.168.10.11:3000',  // Additional network IPs
-      'http://192.168.10.11:3002',
-      'http://192.168.9.91:3000',    // New system IP
-      'http://192.168.9.91:3002',
-      'http://192.168.9.91:3003',
-      'http://192.168.29.213:5173', // Vite dev server ports
-      'http://192.168.10.205:5173',
-      'http://192.168.10.11:5173',
-      'http://192.168.9.91:5173',   // New system Vite port
-      process.env.CORS_ORIGIN || 'http://localhost:3000' // Environment-specific origin
-    ];
-    
-    // Allow specific localhost and development IPs only
-    const isLocalhost = origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
-    const isDevNetwork = origin.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11|9\.91)(:\d+)?$/);
-    
-    if (isLocalhost || isDevNetwork) {
-      return callback(null, true);
-    }
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log(`CORS: Blocked origin: ${origin}`);
-      // Return proper CORS error response instead of throwing
-      callback(null, false);
-    }
-  },
-  credentials: true, // Allow cookies and authorization headers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed request headers
-}));
+app.use(securityMiddleware.corsConfig);
 
 /**
  * Rate limiting middleware to prevent abuse
  * Limits the number of requests per IP address within a time window
  */
-const limiter = rateLimit({
-  windowMs: envConfig.RATE_LIMIT_WINDOW_MS,
-  max: envConfig.RATE_LIMIT_MAX_REQUESTS,
-  message: {
-    success: false,
-    error: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,  // Return rate limit info in headers
-  legacyHeaders: false,   // Disable X-RateLimit-* headers
-});
-
-// Apply rate limiting to all API routes
-app.use('/api/', limiter);
+// Enhanced rate limiting with different limits for different operations
+app.use('/api/auth', securityMiddleware.authRateLimit);
+app.use('/api/auth/reset-password', securityMiddleware.passwordResetRateLimit);
+app.use('/api/files', securityMiddleware.uploadRateLimit);
+app.use('/api', securityMiddleware.generalRateLimit);
 
 /**
- * Body parsing middleware
- * - JSON parsing with 10MB limit for large file uploads
- * - URL-encoded form parsing for form submissions
+ * Additional security middleware
  */
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(securityMiddleware.requestSizeLimit);
+app.use(securityMiddleware.sanitizeInput);
+app.use(securityMiddleware.securityLogger);
+app.use(securityMiddleware.sqlInjectionProtection);
+app.use(securityMiddleware.xssProtection);
+app.use(securityMiddleware.bruteForceProtection);
+app.use(securityMiddleware.trackLoginAttempt);
 
 /**
  * HTTP request logging middleware
@@ -236,8 +186,8 @@ app.use('/api', (req, res, next) => {
  */
 app.use('/api/auth', authRoutes);           // Authentication & authorization
 app.use('/api/users', userRoutes);          // User management & profiles
-// app.use('/api/projects', projectRoutes);    // Project CRUD operations - temporarily disabled
-// app.use('/api/initiatives', initiativeRoutes); // Initiative management - temporarily disabled
+app.use('/api/projects', projectRoutes);    // Project CRUD operations - Supabase compatible
+app.use('/api/initiatives', initiativeRoutes); // Initiative management - Supabase compatible
 app.use('/api/workload', workloadRoutes);   // Employee workload tracking
 // app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports - temporarily disabled
 // app.use('/api/notifications', notificationRoutes); // Notification system - temporarily disabled

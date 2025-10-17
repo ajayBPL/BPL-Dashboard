@@ -105,6 +105,24 @@ class DatabaseService {
         throw error;
       }
       
+      // Map database column names to expected camelCase
+      if (data) {
+        return {
+          ...data,
+          employeeId: data.employeeid,
+          managerId: data.managerid,
+          workloadCap: data.workloadcap,
+          overBeyondCap: data.overbeyondcap,
+          phoneNumber: data.phonenumber,
+          preferredCurrency: data.preferredcurrency,
+          notificationSettings: data.notificationsettings,
+          isActive: data.isactive,
+          createdAt: data.createdat,
+          updatedAt: data.updatedat,
+          lastLoginAt: data.lastloginat
+        };
+      }
+      
       return data;
     } catch (error) {
       console.error('Database error:', error);
@@ -122,6 +140,24 @@ class DatabaseService {
       
       if (error && error.code !== 'PGRST116') {
         throw error;
+      }
+      
+      // Map database column names to expected camelCase
+      if (data) {
+        return {
+          ...data,
+          employeeId: data.employeeid,
+          managerId: data.managerid,
+          workloadCap: data.workloadcap,
+          overBeyondCap: data.overbeyondcap,
+          phoneNumber: data.phonenumber,
+          preferredCurrency: data.preferredcurrency,
+          notificationSettings: data.notificationsettings,
+          isActive: data.isactive,
+          createdAt: data.createdat,
+          updatedAt: data.updatedat,
+          lastLoginAt: data.lastloginat
+        };
       }
       
       return data;
@@ -168,14 +204,69 @@ class DatabaseService {
 
   async updateUser(id: string, data: any) {
     try {
+      // Map camelCase to lowercase for database update
+      const mappedData: any = {};
+      Object.keys(data).forEach(key => {
+        switch (key) {
+          case 'employeeId':
+            mappedData.employeeid = data[key];
+            break;
+          case 'managerId':
+            mappedData.managerid = data[key];
+            break;
+          case 'workloadCap':
+            mappedData.workloadcap = data[key];
+            break;
+          case 'overBeyondCap':
+            mappedData.overbeyondcap = data[key];
+            break;
+          case 'phoneNumber':
+            mappedData.phonenumber = data[key];
+            break;
+          case 'preferredCurrency':
+            mappedData.preferredcurrency = data[key];
+            break;
+          case 'notificationSettings':
+            mappedData.notificationsettings = data[key];
+            break;
+          case 'isActive':
+            mappedData.isactive = data[key];
+            break;
+          case 'lastLoginAt':
+            mappedData.lastloginat = data[key];
+            break;
+          default:
+            mappedData[key] = data[key];
+        }
+      });
+
       const { data: result, error } = await this.supabase
         .from('users')
-        .update(data)
+        .update(mappedData)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
+      
+      // Map result back to camelCase
+      if (result) {
+        return {
+          ...result,
+          employeeId: result.employeeid,
+          managerId: result.managerid,
+          workloadCap: result.workloadcap,
+          overBeyondCap: result.overbeyondcap,
+          phoneNumber: result.phonenumber,
+          preferredCurrency: result.preferredcurrency,
+          notificationSettings: result.notificationsettings,
+          isActive: result.isactive,
+          createdAt: result.createdat,
+          updatedAt: result.updatedat,
+          lastLoginAt: result.lastloginat
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Database error:', error);
@@ -209,7 +300,7 @@ class DatabaseService {
       const { data, error } = await this.supabase
         .from('users')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('createdat', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) {
@@ -217,7 +308,21 @@ class DatabaseService {
         throw error;
       }
       
-      return data || [];
+      // Map database column names to expected camelCase
+      return (data || []).map((user: any) => ({
+        ...user,
+        employeeId: user.employeeid,
+        managerId: user.managerid,
+        workloadCap: user.workloadcap,
+        overBeyondCap: user.overbeyondcap,
+        phoneNumber: user.phonenumber,
+        preferredCurrency: user.preferredcurrency,
+        notificationSettings: user.notificationsettings,
+        isActive: user.isactive,
+        createdAt: user.createdat,
+        updatedAt: user.updatedat,
+        lastLoginAt: user.lastloginat
+      }));
     } catch (error) {
       console.error('Database error in getAllUsers:', error);
       throw new Error(`Failed to get all users: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -227,13 +332,56 @@ class DatabaseService {
   // Project operations
   async createProject(data: any) {
     try {
+      // Map camelCase to lowercase for database insert
+      const mappedData: any = {};
+      Object.keys(data).forEach(key => {
+        switch (key) {
+          case 'managerId':
+            mappedData.managerid = data[key];
+            break;
+          case 'estimatedHours':
+            mappedData.estimatedhours = data[key];
+            break;
+          case 'actualHours':
+            mappedData.actualhours = data[key];
+            break;
+          case 'budgetAmount':
+            mappedData.budgetamount = data[key];
+            break;
+          case 'budgetCurrency':
+            mappedData.budgetcurrency = data[key];
+            break;
+          case 'lastActivity':
+            mappedData.lastactivity = data[key];
+            break;
+          default:
+            mappedData[key] = data[key];
+        }
+      });
+
       const { data: result, error } = await this.supabase
         .from('projects')
-        .insert([data])
+        .insert([mappedData])
         .select()
         .single();
       
       if (error) throw error;
+      
+      // Map result back to camelCase
+      if (result) {
+        return {
+          ...result,
+          managerId: result.managerid,
+          estimatedHours: result.estimatedhours,
+          actualHours: result.actualhours,
+          budgetAmount: result.budgetamount,
+          budgetCurrency: result.budgetcurrency,
+          createdAt: result.createdat,
+          updatedAt: result.updatedat,
+          lastActivity: result.lastactivity
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Database error:', error);
@@ -247,15 +395,15 @@ class DatabaseService {
         .from('projects')
         .select(`
           *,
-          manager:users!projects_managerId_fkey(*),
+          manager:users!projects_managerid_fkey(*),
           assignments:projectAssignments(
             *,
-            employee:users!projectAssignments_employeeId_fkey(*)
+            employee:users!projectAssignments_employeeid_fkey(*)
           ),
           milestones:milestones(*),
           comments:comments(
             *,
-            user:users!comments_userId_fkey(*)
+            user:users!comments_userid_fkey(*)
           )
         `)
         .eq('id', id)
@@ -263,6 +411,86 @@ class DatabaseService {
       
       if (error && error.code !== 'PGRST116') {
         throw error;
+      }
+      
+      // Map result back to camelCase
+      if (data) {
+        return {
+          ...data,
+          managerId: data.managerid,
+          estimatedHours: data.estimatedhours,
+          actualHours: data.actualhours,
+          budgetAmount: data.budgetamount,
+          budgetCurrency: data.budgetcurrency,
+          createdAt: data.createdat,
+          updatedAt: data.updatedat,
+          lastActivity: data.lastactivity,
+          manager: data.manager ? {
+            ...data.manager,
+            employeeId: data.manager.employeeid,
+            managerId: data.manager.managerid,
+            workloadCap: data.manager.workloadcap,
+            overBeyondCap: data.manager.overbeyondcap,
+            phoneNumber: data.manager.phonenumber,
+            preferredCurrency: data.manager.preferredcurrency,
+            notificationSettings: data.manager.notificationsettings,
+            isActive: data.manager.isactive,
+            createdAt: data.manager.createdat,
+            updatedAt: data.manager.updatedat,
+            lastLoginAt: data.manager.lastloginat
+          } : null,
+          assignments: data.assignments?.map((assignment: any) => ({
+            ...assignment,
+            projectId: assignment.projectid,
+            employeeId: assignment.employeeid,
+            involvementPercentage: assignment.involvementpercentage,
+            assignedAt: assignment.assignedat,
+            updatedAt: assignment.updatedat,
+            employee: assignment.employee ? {
+              ...assignment.employee,
+              employeeId: assignment.employee.employeeid,
+              managerId: assignment.employee.managerid,
+              workloadCap: assignment.employee.workloadcap,
+              overBeyondCap: assignment.employee.overbeyondcap,
+              phoneNumber: assignment.employee.phonenumber,
+              preferredCurrency: assignment.employee.preferredcurrency,
+              notificationSettings: assignment.employee.notificationsettings,
+              isActive: assignment.employee.isactive,
+              createdAt: assignment.employee.createdat,
+              updatedAt: assignment.employee.updatedat,
+              lastLoginAt: assignment.employee.lastloginat
+            } : null
+          })) || [],
+          milestones: data.milestones?.map((milestone: any) => ({
+            ...milestone,
+            projectId: milestone.projectid,
+            dueDate: milestone.duedate,
+            completedAt: milestone.completedat,
+            createdAt: milestone.createdat,
+            updatedAt: milestone.updatedat
+          })) || [],
+          comments: data.comments?.map((comment: any) => ({
+            ...comment,
+            userId: comment.userid,
+            projectId: comment.projectid,
+            createdAt: comment.createdat,
+            updatedAt: comment.updatedat,
+            user: comment.user ? {
+              ...comment.user,
+              employeeId: comment.user.employeeid,
+              managerId: comment.user.managerid,
+              workloadCap: comment.user.workloadcap,
+              overBeyondCap: comment.user.overbeyondcap,
+              phoneNumber: comment.user.phonenumber,
+              preferredCurrency: comment.user.preferredcurrency,
+              notificationSettings: comment.user.notificationsettings,
+              isActive: comment.user.isactive,
+              createdAt: comment.user.createdat,
+              updatedAt: comment.user.updatedat,
+              lastLoginAt: comment.user.lastloginat
+            } : null
+          })) || []
+        };
       }
       
       return data;
@@ -308,24 +536,27 @@ class DatabaseService {
     try {
       const { data, error } = await this.supabase
         .from('projects')
-        .select(`
-          *,
-          manager:users!projects_managerId_fkey(*),
-          assignments:projectAssignments(
-            *,
-            employee:users!projectAssignments_employeeId_fkey(*)
-          ),
-          milestones:milestones(*),
-          comments:comments(
-            *,
-            user:users!comments_userId_fkey(*)
-          )
-        `)
-        .order('created_at', { ascending: false })
+        .select('*')
+        .order('createdat', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return data || [];
+      
+      // Map results back to camelCase
+      return (data || []).map((project: any) => ({
+        ...project,
+        managerId: project.managerid,
+        estimatedHours: project.estimatedhours,
+        actualHours: project.actualhours,
+        budgetAmount: project.budgetamount,
+        budgetCurrency: project.budgetcurrency,
+        createdAt: project.createdat,
+        updatedAt: project.updatedat,
+        lastActivity: project.lastactivity,
+        assignments: [], // Empty for now to avoid complex joins
+        milestones: [], // Empty for now to avoid complex joins
+        comments: [] // Empty for now to avoid complex joins
+      }));
     } catch (error) {
       console.error('Database error:', error);
       throw new Error('Failed to get all projects');
@@ -364,13 +595,60 @@ class DatabaseService {
   // Initiative operations
   async createInitiative(data: any) {
     try {
+      // Map camelCase to lowercase for database insert
+      const mappedData: any = {};
+      Object.keys(data).forEach(key => {
+        switch (key) {
+          case 'assignedTo':
+            mappedData.assignedto = data[key];
+            break;
+          case 'createdBy':
+            mappedData.createdby = data[key];
+            break;
+          case 'estimatedHours':
+            mappedData.estimatedhours = data[key];
+            break;
+          case 'actualHours':
+            mappedData.actualhours = data[key];
+            break;
+          case 'workloadPercentage':
+            mappedData.workloadpercentage = data[key];
+            break;
+          case 'dueDate':
+            mappedData.duedate = data[key];
+            break;
+          case 'completedAt':
+            mappedData.completedat = data[key];
+            break;
+          default:
+            mappedData[key] = data[key];
+        }
+      });
+
       const { data: result, error } = await this.supabase
         .from('initiatives')
-        .insert([data])
+        .insert([mappedData])
         .select()
         .single();
       
       if (error) throw error;
+      
+      // Map result back to camelCase
+      if (result) {
+        return {
+          ...result,
+          assignedTo: result.assignedto,
+          createdBy: result.createdby,
+          estimatedHours: result.estimatedhours,
+          actualHours: result.actualhours,
+          workloadPercentage: result.workloadpercentage,
+          dueDate: result.duedate,
+          completedAt: result.completedat,
+          createdAt: result.createdat,
+          updatedAt: result.updatedat
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('Database error:', error);
@@ -384,14 +662,58 @@ class DatabaseService {
         .from('initiatives')
         .select(`
           *,
-          assignee:users!initiatives_assignedTo_fkey(*),
-          creator:users!initiatives_createdBy_fkey(*)
+          assignee:users!initiatives_assignedto_fkey(*),
+          creator:users!initiatives_createdby_fkey(*)
         `)
         .eq('id', id)
         .single();
       
       if (error && error.code !== 'PGRST116') {
         throw error;
+      }
+      
+      // Map result back to camelCase
+      if (data) {
+        return {
+          ...data,
+          assignedTo: data.assignedto,
+          createdBy: data.createdby,
+          estimatedHours: data.estimatedhours,
+          actualHours: data.actualhours,
+          workloadPercentage: data.workloadpercentage,
+          dueDate: data.duedate,
+          completedAt: data.completedat,
+          createdAt: data.createdat,
+          updatedAt: data.updatedat,
+          assignee: data.assignee ? {
+            ...data.assignee,
+            employeeId: data.assignee.employeeid,
+            managerId: data.assignee.managerid,
+            workloadCap: data.assignee.workloadcap,
+            overBeyondCap: data.assignee.overbeyondcap,
+            phoneNumber: data.assignee.phonenumber,
+            preferredCurrency: data.assignee.preferredcurrency,
+            notificationSettings: data.assignee.notificationsettings,
+            isActive: data.assignee.isactive,
+            createdAt: data.assignee.createdat,
+            updatedAt: data.assignee.updatedat,
+            lastLoginAt: data.assignee.lastloginat
+          } : null,
+          creator: data.creator ? {
+            ...data.creator,
+            employeeId: data.creator.employeeid,
+            managerId: data.creator.managerid,
+            workloadCap: data.creator.workloadcap,
+            overBeyondCap: data.creator.overbeyondcap,
+            phoneNumber: data.creator.phonenumber,
+            preferredCurrency: data.creator.preferredcurrency,
+            notificationSettings: data.creator.notificationsettings,
+            isActive: data.creator.isactive,
+            createdAt: data.creator.createdat,
+            updatedAt: data.creator.updatedat,
+            lastLoginAt: data.creator.lastloginat
+          } : null
+        };
       }
       
       return data;
@@ -439,14 +761,55 @@ class DatabaseService {
         .from('initiatives')
         .select(`
           *,
-          assignee:users!initiatives_assignedTo_fkey(*),
-          creator:users!initiatives_createdBy_fkey(*)
+          assignee:users!initiatives_assignedto_fkey(*),
+          creator:users!initiatives_createdby_fkey(*)
         `)
-        .order('created_at', { ascending: false })
+        .order('createdat', { ascending: false })
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return data || [];
+      
+      // Map results back to camelCase
+      return (data || []).map((initiative: any) => ({
+        ...initiative,
+        assignedTo: initiative.assignedto,
+        createdBy: initiative.createdby,
+        estimatedHours: initiative.estimatedhours,
+        actualHours: initiative.actualhours,
+        workloadPercentage: initiative.workloadpercentage,
+        dueDate: initiative.duedate,
+        completedAt: initiative.completedat,
+        createdAt: initiative.createdat,
+        updatedAt: initiative.updatedat,
+        assignee: initiative.assignee ? {
+          ...initiative.assignee,
+          employeeId: initiative.assignee.employeeid,
+          managerId: initiative.assignee.managerid,
+          workloadCap: initiative.assignee.workloadcap,
+          overBeyondCap: initiative.assignee.overbeyondcap,
+          phoneNumber: initiative.assignee.phonenumber,
+          preferredCurrency: initiative.assignee.preferredcurrency,
+          notificationSettings: initiative.assignee.notificationsettings,
+          isActive: initiative.assignee.isactive,
+          createdAt: initiative.assignee.createdat,
+          updatedAt: initiative.assignee.updatedat,
+          lastLoginAt: initiative.assignee.lastloginat
+        } : null,
+        creator: initiative.creator ? {
+          ...initiative.creator,
+          employeeId: initiative.creator.employeeid,
+          managerId: initiative.creator.managerid,
+          workloadCap: initiative.creator.workloadcap,
+          overBeyondCap: initiative.creator.overbeyondcap,
+          phoneNumber: initiative.creator.phonenumber,
+          preferredCurrency: initiative.creator.preferredcurrency,
+          notificationSettings: initiative.creator.notificationsettings,
+          isActive: initiative.creator.isactive,
+          createdAt: initiative.creator.createdat,
+          updatedAt: initiative.creator.updatedat,
+          lastLoginAt: initiative.creator.lastloginat
+        } : null
+      }));
     } catch (error) {
       console.error('Database error:', error);
       throw new Error('Failed to get all initiatives');
@@ -675,6 +1038,140 @@ class DatabaseService {
     } catch (error) {
       console.error('Database error:', error);
       throw new Error('Failed to create custom department');
+    }
+  }
+
+  // Project assignment operations
+  async assignEmployeeToProject(projectId: string, employeeId: string, involvementPercentage: number, assignedBy: string) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from('projectAssignments')
+        .insert([{
+          projectid: projectId,
+          employeeid: employeeId,
+          involvementpercentage: involvementPercentage,
+          assignedby: assignedBy
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        ...result,
+        projectId: result.projectid,
+        employeeId: result.employeeid,
+        involvementPercentage: result.involvementpercentage,
+        assignedAt: result.assignedat,
+        updatedAt: result.updatedat
+      };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to assign employee to project');
+    }
+  }
+
+  async unassignEmployeeFromProject(projectId: string, employeeId: string) {
+    try {
+      const { error } = await this.supabase
+        .from('projectAssignments')
+        .delete()
+        .eq('projectid', projectId)
+        .eq('employeeid', employeeId);
+      
+      if (error) throw error;
+      return { projectId, employeeId };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to unassign employee from project');
+    }
+  }
+
+  // Milestone operations
+  async createMilestone(data: any) {
+    try {
+      const { data: result, error } = await this.supabase
+        .from('milestones')
+        .insert([{
+          projectid: data.projectId,
+          title: data.title,
+          description: data.description,
+          duedate: data.dueDate,
+          status: data.status || 'pending'
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        ...result,
+        projectId: result.projectid,
+        dueDate: result.duedate,
+        completedAt: result.completedat,
+        createdAt: result.createdat,
+        updatedAt: result.updatedat
+      };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to create milestone');
+    }
+  }
+
+  async updateMilestone(id: string, data: any) {
+    try {
+      const mappedData: any = {};
+      Object.keys(data).forEach(key => {
+        switch (key) {
+          case 'projectId':
+            mappedData.projectid = data[key];
+            break;
+          case 'dueDate':
+            mappedData.duedate = data[key];
+            break;
+          case 'completedAt':
+            mappedData.completedat = data[key];
+            break;
+          default:
+            mappedData[key] = data[key];
+        }
+      });
+
+      const { data: result, error } = await this.supabase
+        .from('milestones')
+        .update(mappedData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        ...result,
+        projectId: result.projectid,
+        dueDate: result.duedate,
+        completedAt: result.completedat,
+        createdAt: result.createdat,
+        updatedAt: result.updatedat
+      };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to update milestone');
+    }
+  }
+
+  async deleteMilestone(id: string) {
+    try {
+      const { error } = await this.supabase
+        .from('milestones')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return { id };
+    } catch (error) {
+      console.error('Database error:', error);
+      throw new Error('Failed to delete milestone');
     }
   }
 

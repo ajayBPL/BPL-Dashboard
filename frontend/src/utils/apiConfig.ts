@@ -4,9 +4,9 @@
 // Supabase Edge Function URL
 const SUPABASE_FUNCTION_URL = 'https://mwrdlemotjhrnjzncbxk.supabase.co/functions/v1/make-server-de95975d';
 
-// Fallback to local backend if needed
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
-const API_HEALTH_URL = (import.meta as any).env?.VITE_API_HEALTH_URL || 'http://localhost:3000/health';
+// Use local backend API (running on port 3001)
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
+const API_HEALTH_URL = (import.meta as any).env?.VITE_API_HEALTH_URL || 'http://localhost:3001/health';
 
 // Use local backend as primary API (with Supabase PostgreSQL)
 const PRIMARY_API_BASE = API_BASE_URL;

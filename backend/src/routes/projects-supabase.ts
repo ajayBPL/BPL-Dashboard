@@ -180,10 +180,9 @@ async function handleUpdateProject(req: Request, res: Response, id: string, data
     }
 
     // Check permissions - allow admin, program_manager, or the project manager
-    const hasAccess = req.user!.role === 'admin' || 
-                      req.user!.role === 'ADMIN' ||
-                      req.user!.role === 'program_manager' || 
-                      req.user!.role === 'PROGRAM_MANAGER' ||
+    const userRole = req.user!.role.toLowerCase();
+    const hasAccess = userRole === 'admin' || 
+                      userRole === 'program_manager' ||
                       existingProject.managerId === req.user!.id;
     if (!hasAccess) {
       res.status(403).json({
@@ -223,10 +222,9 @@ async function handleDeleteProject(req: Request, res: Response, id: string): Pro
     }
 
     // Check permissions - allow admin, program_manager, or the project manager
-    const hasAccess = req.user!.role === 'admin' || 
-                      req.user!.role === 'ADMIN' ||
-                      req.user!.role === 'program_manager' || 
-                      req.user!.role === 'PROGRAM_MANAGER' ||
+    const userRole = req.user!.role.toLowerCase();
+    const hasAccess = userRole === 'admin' || 
+                      userRole === 'program_manager' ||
                       existingProject.managerId === req.user!.id;
     if (!hasAccess) {
       res.status(403).json({

@@ -114,28 +114,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔐 Attempting Supabase login with:', { email, password: '***' });
+      console.log('🔐 Attempting backend API login with:', { email, password: '***' });
       
-      // Try Supabase authentication first
-      const result = await supabaseService.signIn(email, password)
-      
-      if (!result.success) {
-        console.log('❌ Supabase login failed:', result.error)
-        return { success: false, error: result.error }
+      // Call the backend API at localhost:3001
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+      console.log('📡 Backend API response:', result);
+
+      if (!result.success || !response.ok) {
+        console.log('❌ Backend login failed:', result.error);
+        return { success: false, error: result.error || 'Login failed' };
       }
 
-      if (!result.user) {
-        return { success: false, error: 'No user data returned' }
+      if (!result.data?.user) {
+        return { success: false, error: 'No user data returned' };
       }
 
-      // Convert Supabase user to our User format
+      // Store the token
+      const token = result.data.token;
+      if (token) {
+        localStorage.setItem('bpl-token', token);
+        setAccessToken(token);
+        apiService.setToken(token);
+      }
+
+      // Convert backend user to our User format
       const userData: User = {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        role: result.user.role as any,
-        designation: result.user.designation,
-        managerId: result.user.managerId
+        id: result.data.user.id,
+        email: result.data.user.email,
+        name: result.data.user.name,
+        role: result.data.user.role as any,
+        designation: result.data.user.designation,
+        managerId: result.data.user.managerId
       }
 
       // Add or update user in centralizedDb
@@ -177,24 +194,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       localStorage.setItem('bpl-user', JSON.stringify(userData));
-      localStorage.setItem('bpl-token', result.session?.access_token || '');
       setUser(userData);
-      setAccessToken(result.session?.access_token || '');
-      
-      // Update apiService with the new token
-      apiService.setToken(result.session?.access_token || '');
 
-      console.log('✅ Supabase login successful');
+      console.log('✅ Backend API login successful');
       return { success: true };
     } catch (error) {
-      console.error('🚨 Supabase login error:', error)
+      console.error('🚨 Backend API login error:', error)
       console.error('🚨 Error details:', {
         name: (error as Error).name,
         message: (error as Error).message,
         stack: (error as Error).stack
       });
       
-      // Fallback to demo mode if Supabase fails
+      // Fallback to demo mode if backend fails
       console.log('🔄 Falling back to demo mode...')
       
       // Check if it's a demo user

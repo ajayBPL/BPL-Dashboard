@@ -379,8 +379,8 @@ export function EmployeeOverview() {
                 employee.department === 'R&D' ? 'rounded-md' : ''
               }`}
               style={{ 
-                backgroundColor: employee.department === 'R&D' ? '#f3f3f5' : enhancedColors.background, 
-                border: employee.department === 'R&D' ? `1px solid #e5e7eb` : `2px solid ${enhancedColors.border}` 
+                backgroundColor: '#ffffff', 
+                border: `1px solid #e5e7eb` 
               }}
             >
             <CardContent className="p-2 relative">

@@ -13,19 +13,34 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
   try {
     const initiatives = await db.getAllInitiatives();
     
+    console.log('🔍 Initiatives GET request:');
+    console.log('  User ID:', req.user!.id);
+    console.log('  User Role:', req.user!.role);
+    console.log('  Total initiatives:', initiatives.length);
+    
     // Apply role-based filtering
     let filteredInitiatives = initiatives;
-    if (req.user!.role === 'manager') {
-      // Managers can see initiatives they created or are assigned to
+    if (req.user!.role === 'admin' || req.user!.role === 'program_manager') {
+      // Admins and Program Managers can see all initiatives
+      filteredInitiatives = initiatives;
+      console.log('  ✅ Admin/Program Manager - showing all initiatives');
+    } else if (req.user!.role === 'manager' || req.user!.role === 'rd_manager') {
+      // Managers and R&D Managers can see initiatives they created or are assigned to
       filteredInitiatives = initiatives.filter((initiative: any) => 
         initiative.createdBy === req.user!.id || 
         initiative.assignedTo === req.user!.id
       );
+      console.log('  ✅ Manager/RD Manager - filtering by created/assigned');
+      console.log('  Filtered initiatives:', filteredInitiatives.length);
+      filteredInitiatives.forEach((i: any) => {
+        console.log(`    - ${i.title} (created: ${i.createdBy === req.user!.id}, assigned: ${i.assignedTo === req.user!.id})`);
+      });
     } else if (req.user!.role === 'employee') {
       // Employees can only see initiatives they're assigned to
       filteredInitiatives = initiatives.filter((initiative: any) => 
         initiative.assignedTo === req.user!.id
       );
+      console.log('  ✅ Employee - filtering by assigned only');
     }
 
     res.json({
@@ -74,49 +89,53 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<voi
   });
 }));
 
-// POST /initiatives - Create new initiative
-router.post('/', [
-  body('title').isLength({ min: 1 }).withMessage('Title is required'),
-  body('description').optional().isString(),
-  body('category').optional().isString(),
-  body('priority').optional().isIn(['low', 'medium', 'high', 'critical']),
-  body('estimatedHours').optional().isInt({ min: 0 }),
-  body('workloadPercentage').optional().isInt({ min: 0, max: 100 }),
-  body('assignedTo').optional().isString(),
-  body('dueDate').optional().isISO8601()
-], asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
+// POST /initiatives - Handle initiative actions
+router.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { action, data } = req.body;
+
+  // If action/data wrapper is used (frontend sends {action: 'create', data: {...}})
+  const initiativeData = data || req.body;
+
+  // Validate required fields
+  if (!initiativeData.title) {
     res.status(400).json({
       success: false,
       error: 'Validation failed',
-      details: errors.array()
+      details: [
+        {
+          type: 'field',
+          msg: 'Title is required',
+          path: 'title',
+          location: 'body'
+        }
+      ]
     });
     return;
   }
 
   // Check permissions
-  if (req.user!.role !== 'admin' && req.user!.role !== 'manager') {
+  const allowedRoles = ['admin', 'program_manager', 'rd_manager', 'manager'];
+  if (!allowedRoles.includes(req.user!.role)) {
     res.status(403).json({
       success: false,
       error: 'Insufficient permissions',
-      message: 'Only admins and managers can create initiatives'
+      message: 'Only admins, program managers, R&D managers, and team managers can create initiatives'
     });
     return;
   }
 
   try {
     const initiative = await db.createInitiative({
-      title: req.body.title,
-      description: req.body.description || '',
-      category: req.body.category || '',
-      priority: req.body.priority || 'medium',
+      title: initiativeData.title,
+      description: initiativeData.description || '',
+      category: initiativeData.category || '',
+      priority: initiativeData.priority || 'medium',
       status: 'pending',
-      estimatedHours: req.body.estimatedHours || 10,
-      workloadPercentage: req.body.workloadPercentage || 0,
-      assignedTo: req.body.assignedTo || null,
+      estimatedHours: initiativeData.estimatedHours || 10,
+      workloadPercentage: initiativeData.workloadPercentage || 0,
+      assignedTo: initiativeData.assignedTo || null,
       createdBy: req.user!.id,
-      dueDate: req.body.dueDate || null
+      dueDate: initiativeData.dueDate || null
     });
 
     res.status(201).json({

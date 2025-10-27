@@ -295,22 +295,37 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction):
 
 // SQL injection protection
 export const sqlInjectionProtection = (req: Request, res: Response, next: NextFunction): void => {
+  // More specific patterns that match actual SQL injection attempts, not just keywords
   const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/i,
-    /(\b(OR|AND)\s+\d+\s*=\s*\d+)/i,
-    /(UNION\s+SELECT)/i,
-    /(DROP\s+TABLE)/i,
-    /(DELETE\s+FROM)/i,
-    /(INSERT\s+INTO)/i,
-    /(UPDATE\s+SET)/i
+    // SQL injection with common attack patterns
+    /(\bOR\b\s+[\d'"\w]+\s*=\s*[\d'"\w]+)/i,  // OR 1=1, OR 'a'='a'
+    /(\bAND\b\s+[\d'"\w]+\s*=\s*[\d'"\w]+)/i, // AND 1=1
+    /(UNION\s+(ALL\s+)?SELECT)/i,              // UNION SELECT
+    /(;\s*DROP\s+TABLE)/i,                     // ; DROP TABLE
+    /(;\s*DELETE\s+FROM)/i,                    // ; DELETE FROM
+    /(;\s*INSERT\s+INTO)/i,                    // ; INSERT INTO
+    /(;\s*UPDATE\s+.+\s+SET)/i,                // ; UPDATE ... SET
+    /(;\s*CREATE\s+TABLE)/i,                   // ; CREATE TABLE
+    /(;\s*ALTER\s+TABLE)/i,                    // ; ALTER TABLE
+    /(--\s*$)/m,                               // SQL comment at end
+    /('\s*OR\s*')/i,                           // ' OR '
+    /('\s*AND\s*')/i,                          // ' AND '
+    /(\/\*.*?\*\/)/,                           // SQL block comments
+    /(EXEC\s*\()/i,                            // EXEC(
+    /(EXECUTE\s*\()/i,                         // EXECUTE(
+    /(xp_cmdshell)/i,                          // xp_cmdshell
+    /(sp_executesql)/i                         // sp_executesql
   ];
   
-  const checkForSQLInjection = (obj: any): boolean => {
+  const checkForSQLInjection = (obj: any, depth: number = 0): boolean => {
+    // Prevent deep recursion
+    if (depth > 10) return false;
+    
     if (typeof obj === 'string') {
       return sqlPatterns.some(pattern => pattern.test(obj));
     }
     if (typeof obj === 'object' && obj !== null) {
-      return Object.values(obj).some(value => checkForSQLInjection(value));
+      return Object.values(obj).some(value => checkForSQLInjection(value, depth + 1));
     }
     return false;
   };

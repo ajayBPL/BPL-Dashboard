@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { authenticateToken, authorize, canAccessUser } from '../middleware/auth';
 import { parseQuery, buildWhereClause, buildIncludeClause, getPaginationMeta } from '../middleware/queryParser';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { db } from '../services/database';
+// import { prisma } from '../index'; // Not needed with Supabase
 import { User, CreateUserRequest, UpdateUserRequest, ActionRequest } from '../../../shared/types';
 // import { notificationService } from '../services/notificationService';
 
@@ -21,8 +22,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response): Promise<void> 
   // Get all users from database service (handles mock data fallback)
   const allUsers = await db.getAllUsers();
   
-  // Apply basic filtering
-  let filteredUsers = allUsers.filter((user: any) => user.isActive !== false);
+  // Start with all users (including inactive)
+  let filteredUsers = [...allUsers];
   
   // Apply additional filters if needed
   if (filters && Object.keys(filters).length > 0) {
@@ -112,14 +113,7 @@ router.get('/:id', canAccessUser, asyncHandler(async (req: Request, res: Respons
 }));
 
 // POST /users - Handle user actions (create, update, delete, etc.)
-router.post('/', [
-  body('action').notEmpty().withMessage('Action is required'),
-  body('data').isObject().withMessage('Data must be an object'),
-  body('data.email').isEmail().withMessage('Valid email is required'),
-  body('data.name').notEmpty().withMessage('Name is required'),
-  body('data.password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('data.role').notEmpty().withMessage('Role is required'),
-], asyncHandler(async (req: Request, res: Response): Promise<void> => {
+router.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { action, id, data }: ActionRequest = req.body;
 
   switch (action) {
@@ -169,11 +163,13 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
     email: userData.email,
     password: hashedPassword,
     name: userData.name,
+    employeeId: userData.employeeId,
     role: userData.role.toUpperCase(),
     designation: userData.designation,
     managerId: userData.managerId,
     department: userData.department,
     skills: userData.skills || [],
+    phoneNumber: userData.phoneNumber,
     workloadCap: userData.workloadCap || 100,
     overBeyondCap: userData.overBeyondCap || 20,
     notificationSettings: userData.notificationSettings || {

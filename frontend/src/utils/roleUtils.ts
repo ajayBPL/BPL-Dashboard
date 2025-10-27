@@ -17,7 +17,12 @@ export interface User {
 /**
  * Normalize role string to standard format
  */
-export function normalizeRole(role: string): UserRole {
+export function normalizeRole(role: string | undefined | null): UserRole {
+  // Handle undefined, null, or empty role
+  if (!role || typeof role !== 'string') {
+    return 'employee'; // Default fallback
+  }
+  
   const normalized = role.toLowerCase().trim();
   
   switch (normalized) {
@@ -129,7 +134,11 @@ export function canAccessAnalytics(user: User | null): boolean {
 /**
  * Get role display name
  */
-export function getRoleDisplayName(role: string): string {
+export function getRoleDisplayName(role: string | undefined | null): string {
+  if (!role || typeof role !== 'string') {
+    return 'Employee'; // Default display name
+  }
+  
   const normalized = normalizeRole(role);
   
   switch (normalized) {
@@ -151,7 +160,11 @@ export function getRoleDisplayName(role: string): string {
 /**
  * Get role color classes for badges
  */
-export function getRoleColorClasses(role: string): string {
+export function getRoleColorClasses(role: string | undefined | null): string {
+  if (!role || typeof role !== 'string') {
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'; // Default color
+  }
+  
   const normalized = normalizeRole(role);
   
   switch (normalized) {

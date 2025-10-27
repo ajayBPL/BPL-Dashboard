@@ -217,13 +217,13 @@ app.use(errorHandler);
  */
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, shutting down gracefully...');
-  await db.disconnect();
+  // await db.disconnect(); // Temporarily disabled
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('Received SIGTERM, shutting down gracefully...');
-  await db.disconnect();
+  // await db.disconnect(); // Temporarily disabled
   process.exit(0);
 });
 

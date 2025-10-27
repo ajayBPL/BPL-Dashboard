@@ -72,6 +72,14 @@ export function ManagerDashboard() {
   const [showExportSystem, setShowExportSystem] = useState(false)             // Export system dialog
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null) // Selected project for details view
   
+  // Debug: Log initiatives state whenever it changes
+  useEffect(() => {
+    console.log('🔄 Initiatives state updated:', {
+      count: initiatives.length,
+      initiatives: initiatives.map(i => ({ id: i.id, title: i.title, createdBy: i.createdBy, assignedTo: i.assignedTo }))
+    });
+  }, [initiatives])
+  
   // Filter and search state management
   const [searchQuery, setSearchQuery] = useState('')                           // Text search query
   const [statusFilter, setStatusFilter] = useState<string>('all')             // Project status filter
@@ -154,24 +162,39 @@ export function ManagerDashboard() {
       
       // Get authentication token from localStorage
       const token = localStorage.getItem('bpl-token')
-      if (token) {
-        try {
-          // Fetch projects and users data in parallel for better performance
-          const [projectsResponse, usersResponse] = await Promise.all([
-            fetch(API_ENDPOINTS.PROJECTS, {
-              headers: getDefaultHeaders(token)
-            }),
-            fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
-              headers: getDefaultHeaders(token)
-            })
-          ])
+      if (!token) {
+        console.error('❌ No authentication token found');
+        setLoading(false);
+        return;
+      }
 
-          // Check if both API calls were successful
-          if (projectsResponse.ok && usersResponse.ok) {
-            const projectsData = await projectsResponse.json()
-            const usersData = await usersResponse.json()
+      console.log('🚀 Starting data fetch for user:', currentUser.name, '(', currentUser.role, ')');
+      
+      try {
+        // Fetch projects, users, and initiatives data in parallel for better performance
+        const [projectsResponse, usersResponse, initiativesResponse] = await Promise.all([
+          fetch(API_ENDPOINTS.PROJECTS, {
+            headers: getDefaultHeaders(token)
+          }),
+          fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
+            headers: getDefaultHeaders(token)
+          }),
+          fetch(API_ENDPOINTS.INITIATIVES, {
+            headers: getDefaultHeaders(token)
+          })
+        ])
+
+        console.log('📡 API Responses received:');
+        console.log('  Projects:', projectsResponse.ok ? '✅' : '❌', projectsResponse.status);
+        console.log('  Users:', usersResponse.ok ? '✅' : '❌', usersResponse.status);
+        console.log('  Initiatives:', initiativesResponse.ok ? '✅' : '❌', initiativesResponse.status);
+
+        // Process projects
+        if (projectsResponse.ok) {
+          try {
+            const projectsData = await projectsResponse.json();
+            console.log('📦 Projects data:', projectsData);
             
-            // Process projects data if successful
             if (projectsData.success && projectsData.data) {
               // Convert backend project format to frontend CentralizedProject format
               const backendProjects = projectsData.data.map((project: any) => ({
@@ -220,84 +243,89 @@ export function ManagerDashboard() {
                   p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
                 ))
               }
+            } else {
+              console.log('⚠️ Projects data invalid');
             }
-            
-            // Set users data
-            if (usersData.success && usersData.data) {
-              setUsers(usersData.data)
-            }
-          }
-        } catch (apiError) {
-          console.error('Error fetching projects from API:', apiError)
-          // Fallback to empty arrays if API fails
-          const allProjects: any[] = []
-          const allInitiatives: any[] = []
-          const allUsers: any[] = []
-          setUsers(allUsers)
-          
-          if (currentUser.role === 'admin') {
-            setProjects(allProjects)
-            setInitiatives(allInitiatives)
-          } else if (currentUser.role === 'program_manager') {
-            setProjects(allProjects)
-            setInitiatives(allInitiatives)
-          } else if (currentUser.role === 'rd_manager') {
-            setProjects(allProjects.filter(p => 
-              p.managerId === currentUser.id || 
-              p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-            ))
-            setInitiatives(allInitiatives)
-          } else if (currentUser.role === 'manager') {
-            setProjects(allProjects.filter(p => 
-              p.managerId === currentUser.id ||
-              p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-            ))
-            setInitiatives(allInitiatives.filter(i => 
-              i.createdBy === currentUser.id || i.assignedTo === currentUser.id
-            ))
+          } catch (projectError) {
+            console.error('❌ Error processing projects:', projectError);
           }
         }
-      } else {
-        // No token, use empty arrays
-        const allProjects: any[] = []
-        const allInitiatives: any[] = []
-        const allUsers: any[] = []
-        setUsers(allUsers)
-        
-        if (currentUser.role === 'admin') {
-          setProjects(allProjects)
-          setInitiatives(allInitiatives)
-        } else if (currentUser.role === 'program_manager') {
-          setProjects(allProjects)
-          setInitiatives(allInitiatives)
-        } else if (currentUser.role === 'rd_manager') {
-          setProjects(allProjects.filter(p => 
-            p.managerId === currentUser.id || 
-            p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-          ))
-          setInitiatives(allInitiatives)
-        } else if (currentUser.role === 'manager') {
-          setProjects(allProjects.filter(p => 
-            p.managerId === currentUser.id ||
-            p.assignedEmployees.some(emp => emp.employeeId === currentUser.id)
-          ))
-          setInitiatives(allInitiatives.filter(i => 
-            i.createdBy === currentUser.id || i.assignedTo === currentUser.id
-          ))
-        }
-      }
 
-      // Always fetch initiatives from backend API
-      const allInitiatives: any[] = []
-      if (currentUser.role === 'admin' || currentUser.role === 'program_manager' || currentUser.role === 'rd_manager') {
-        setInitiatives(allInitiatives)
-      } else if (currentUser.role === 'manager') {
-        setInitiatives(allInitiatives.filter(i => 
-          i.createdBy === currentUser.id || i.assignedTo === currentUser.id
-        ))
+        // Process users
+        if (usersResponse.ok) {
+          try {
+            const usersData = await usersResponse.json();
+            console.log('👥 Users data received:', usersData.success ? `${usersData.data?.length || 0} users` : 'failed');
+            
+            if (usersData.success && usersData.data) {
+              setUsers(usersData.data);
+            }
+          } catch (userError) {
+            console.error('❌ Error processing users:', userError);
+          }
+        }
+        
+        // Process initiatives - COMPLETELY INDEPENDENT
+        if (initiativesResponse.ok) {
+          try {
+            const initiativesData = await initiativesResponse.json();
+            console.log('💡 RAW Initiatives API response:', JSON.stringify(initiativesData, null, 2));
+            
+            if (initiativesData.success && Array.isArray(initiativesData.data)) {
+              console.log(`📊 Processing ${initiativesData.data.length} initiatives`);
+              
+              // Map each initiative to our frontend format
+              const mappedInitiatives = initiativesData.data.map((init: any, index: number) => {
+                console.log(`  ${index + 1}. Mapping initiative:`, init.title, {
+                  createdBy: init.createdBy,
+                  assignedTo: init.assignedTo,
+                  currentUserId: currentUser.id
+                });
+                
+                return {
+                  id: init.id,
+                  title: init.title,
+                  description: init.description || '',
+                  category: init.category || '',
+                  priority: init.priority?.toLowerCase() || 'medium',
+                  status: init.status?.toLowerCase() || 'pending',
+                  estimatedHours: init.estimatedHours || 0,
+                  actualHours: init.actualHours || 0,
+                  workloadPercentage: init.workloadPercentage || 0,
+                  assignedTo: init.assignedTo || null,
+                  createdBy: init.createdBy,
+                  dueDate: init.dueDate,
+                  completedAt: init.completedAt,
+                  createdAt: init.createdAt,
+                  updatedAt: init.updatedAt
+                };
+              });
+              
+              console.log(`✅ Mapped ${mappedInitiatives.length} initiatives successfully`);
+              
+              // Set ALL initiatives without any filtering - backend already filters
+              console.log(`🎯 Setting ${mappedInitiatives.length} initiatives to state`);
+              setInitiatives(mappedInitiatives);
+              
+              console.log('✨ Initiatives state should now be updated!');
+            } else {
+              console.error('❌ Invalid initiatives data structure:', initiativesData);
+              setInitiatives([]);
+            }
+          } catch (initError) {
+            console.error('❌ Error processing initiatives:', initError);
+            setInitiatives([]);
+          }
+        } else {
+          console.error('❌ Initiatives API call failed:', initiativesResponse.status);
+          setInitiatives([]);
+        }
+      } catch (apiError) {
+        console.error('❌ Fatal error in fetchData:', apiError);
+        toast.error('Failed to load dashboard data');
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('❌ Unexpected error in fetchData:', error);
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
@@ -469,6 +497,7 @@ export function ManagerDashboard() {
       const projectData = {
         title: projectForm.title,
         description: projectForm.description,
+        managerId: currentUser.id, // Add managerId (required by API)
         timelineDate: projectForm.timelineDate,
         priority: projectForm.priority,
         category: projectForm.category,
@@ -574,6 +603,45 @@ export function ManagerDashboard() {
     }
   }
 
+  const handleDeleteInitiative = async (initiativeId: string, initiativeTitle: string) => {
+    if (!currentUser) return
+
+    try {
+      const token = localStorage.getItem('bpl-token')
+      if (!token) {
+        toast.error('Authentication token not found')
+        return
+      }
+
+      console.log('🗑️ Deleting initiative:', initiativeId, initiativeTitle)
+
+      // Delete initiative via backend API
+      const response = await fetch(`${API_ENDPOINTS.INITIATIVES}/${initiativeId}`, {
+        method: 'DELETE',
+        headers: getDefaultHeaders(token)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete initiative')
+      }
+
+      // Refresh initiatives list from backend
+      await fetchData()
+      
+      toast.success(`Initiative "${initiativeTitle}" deleted successfully!`)
+    } catch (error) {
+      console.error('Error deleting initiative:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete initiative'
+      toast.error(errorMessage)
+    }
+  }
+
   const handleClearFilters = () => {
     setSearchQuery('')
     setStatusFilter('all')
@@ -582,7 +650,10 @@ export function ManagerDashboard() {
 
   const canCreateProjects = currentUser && ['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())
   const canCreateInitiatives = currentUser && ['admin', 'program_manager', 'rd_manager', 'manager'].includes(currentUser.role.toLowerCase())
-  const canViewEmployeeOverview = currentUser && (currentUser.role === 'program_manager' || currentUser.role === 'PROGRAM_MANAGER')
+  const canViewEmployeeOverview = currentUser && (
+    currentUser.role === 'program_manager' || currentUser.role === 'PROGRAM_MANAGER' ||
+    currentUser.role === 'rd_manager' || currentUser.role === 'RD_MANAGER'
+  )
 
   // Debug logging
   console.log('ManagerDashboard Debug:', {
@@ -802,6 +873,7 @@ export function ManagerDashboard() {
                     initiatives={initiatives}
                     canCreateInitiatives={!!canCreateInitiatives}
                     onCreateInitiative={() => setShowCreateInitiative(true)}
+                    onDeleteInitiative={handleDeleteInitiative}
                   />
                 </TabsContent>
                 

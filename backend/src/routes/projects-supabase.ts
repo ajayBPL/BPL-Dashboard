@@ -122,11 +122,12 @@ async function handleCreateProject(req: Request, res: Response, data: any): Prom
   }
 
   // Check permissions
-  if (req.user!.role !== 'admin' && req.user!.role !== 'manager') {
+  const allowedRoles = ['admin', 'program_manager', 'rd_manager', 'manager'];
+  if (!allowedRoles.includes(req.user!.role)) {
     res.status(403).json({
       success: false,
       error: 'Insufficient permissions',
-      message: 'Only admins and managers can create projects'
+      message: 'Only admins, program managers, R&D managers, and team managers can create projects'
     });
     return;
   }
@@ -262,8 +263,10 @@ async function handleAssignEmployee(req: Request, res: Response, projectId: stri
 
     const assignment = await db.assignEmployeeToProject(
       projectId,
-      data.employeeId,
-      data.involvementPercentage || 100,
+      {
+        employeeId: data.employeeId,
+        involvementPercentage: data.involvementPercentage || 100
+      },
       req.user!.id
     );
 

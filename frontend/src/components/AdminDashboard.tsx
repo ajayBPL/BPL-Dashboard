@@ -29,6 +29,7 @@ import { Alert, AlertDescription } from './ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Switch } from './ui/switch'
 import { Avatar, AvatarFallback } from './ui/avatar'
+import { SearchableSelect, SearchableSelectOption } from './ui/searchable-select'
 import { 
   Users, 
   UserPlus, 
@@ -47,7 +48,6 @@ import {
   Plus
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { ApiTester } from './ApiTester'
 
 export function AdminDashboard() {
   const [users, setUsers] = useState<CentralizedUser[]>([])
@@ -114,33 +114,78 @@ export function AdminDashboard() {
   // Load custom roles and departments from API
   const loadCustomRoles = async () => {
     try {
-      console.log('Loading custom roles...');
+      console.log('🔄 Loading custom roles...');
       const response = await apiService.request('/roles');
-      console.log('Roles API response:', response);
-      if (response.success) {
-        console.log('Roles data:', response.data);
-        setCustomRoles(Array.isArray(response.data) ? response.data : []);
+      console.log('📡 Roles API response:', response);
+      console.log('🔍 response.data type:', typeof response.data);
+      console.log('🔍 response.data is array?:', Array.isArray(response.data));
+      console.log('🔍 response.data keys:', response.data ? Object.keys(response.data) : 'null');
+      console.log('🔍 Full response.data:', JSON.stringify(response.data));
+      
+      if (response.success && response.data) {
+        // The API might return data in different formats, let's handle them all
+        let rolesData = [];
+        
+        if (Array.isArray(response.data)) {
+          rolesData = response.data;
+        } else if (typeof response.data === 'object' && response.data !== null) {
+          // Check if data has a nested array property
+          const dataObj = response.data as any;
+          rolesData = dataObj.roles || dataObj.data || [];
+        }
+        
+        console.log('✅ Setting custom roles:', rolesData.length, 'roles:', rolesData.map((r: any) => r?.name || 'unnamed'));
+        setCustomRoles(rolesData);
+        
+        // Verify state update
+        setTimeout(() => {
+          console.log('🔍 Verification: customRoles state should now have', rolesData.length, 'items');
+        }, 100);
       } else {
-        console.error('Failed to load roles:', response.error);
+        console.error('❌ Failed to load roles:', response.error || 'No data in response');
+        setCustomRoles([]);
       }
     } catch (error) {
-      console.error('Error loading custom roles:', error);
+      console.error('🚨 Error loading custom roles:', error);
+      setCustomRoles([]);
     }
   };
 
   const loadCustomDepartments = async () => {
     try {
-      console.log('Loading custom departments...');
+      console.log('🔄 Loading custom departments...');
       const response = await apiService.request('/departments');
-      console.log('Departments API response:', response);
-      if (response.success) {
-        console.log('Departments data:', response.data);
-        setCustomDepartments(Array.isArray(response.data) ? response.data : []);
+      console.log('📡 Departments API response:', response);
+      console.log('🔍 response.data type:', typeof response.data);
+      console.log('🔍 response.data is array?:', Array.isArray(response.data));
+      console.log('🔍 Full response.data:', JSON.stringify(response.data));
+      
+      if (response.success && response.data) {
+        // The API might return data in different formats, let's handle them all
+        let deptsData = [];
+        
+        if (Array.isArray(response.data)) {
+          deptsData = response.data;
+        } else if (typeof response.data === 'object' && response.data !== null) {
+          // Check if data has a nested array property
+          const dataObj = response.data as any;
+          deptsData = dataObj.departments || dataObj.data || [];
+        }
+        
+        console.log('✅ Setting custom departments:', deptsData.length, 'departments:', deptsData.map((d: any) => d?.name || 'unnamed'));
+        setCustomDepartments(deptsData);
+        
+        // Verify state update
+        setTimeout(() => {
+          console.log('🔍 Verification: customDepartments state should now have', deptsData.length, 'items');
+        }, 100);
       } else {
-        console.error('Failed to load departments:', response.error);
+        console.error('❌ Failed to load departments:', response.error || 'No data in response');
+        setCustomDepartments([]);
       }
     } catch (error) {
-      console.error('Error loading custom departments:', error);
+      console.error('🚨 Error loading custom departments:', error);
+      setCustomDepartments([]);
     }
   };
 
@@ -166,10 +211,21 @@ export function AdminDashboard() {
   })
 
   useEffect(() => {
+    console.log('AdminDashboard mounted, loading data...')
     fetchUsers()
     loadCustomRoles()
     loadCustomDepartments()
   }, [])
+
+  // Debug: Log customRoles whenever it changes
+  useEffect(() => {
+    console.log('🔥 customRoles updated:', customRoles.length, 'items:', customRoles.map(r => r.name))
+  }, [customRoles])
+
+  // Debug: Log customDepartments whenever it changes
+  useEffect(() => {
+    console.log('🔥 customDepartments updated:', customDepartments.length, 'items:', customDepartments.map(d => d.name))
+  }, [customDepartments])
 
   useEffect(() => {
     if (users.length > 0 && currentUser) {
@@ -177,6 +233,49 @@ export function AdminDashboard() {
       setSubordinateEmployees(subordinateEmployees)
     }
   }, [users, currentUser])
+
+  // Prepare role options for SearchableSelect
+  const roleOptions: SearchableSelectOption[] = React.useMemo(() => {
+    const builtInRoles: SearchableSelectOption[] = [
+      { value: 'admin', label: 'Admin', group: 'Built-in Roles' },
+      { value: 'program_manager', label: 'Program Manager', group: 'Built-in Roles' },
+      { value: 'rd_manager', label: 'R&D Manager', group: 'Built-in Roles' },
+      { value: 'manager', label: 'Team Manager', group: 'Built-in Roles' },
+      { value: 'employee', label: 'Employee', group: 'Built-in Roles' },
+    ]
+
+    const customRoleOptions: SearchableSelectOption[] = customRoles.map((role) => ({
+      value: role.name,
+      label: role.name,
+      description: role.description,
+      group: 'Custom Roles',
+    }))
+
+    return [...builtInRoles, ...customRoleOptions]
+  }, [customRoles])
+
+  // Prepare department options for SearchableSelect
+  const departmentOptions: SearchableSelectOption[] = React.useMemo(() => {
+    const builtInDepts: SearchableSelectOption[] = [
+      { value: 'Engineering', label: 'Engineering', group: 'Built-in Departments' },
+      { value: 'Product Management', label: 'Product Management', group: 'Built-in Departments' },
+      { value: 'Marketing', label: 'Marketing', group: 'Built-in Departments' },
+      { value: 'Sales', label: 'Sales', group: 'Built-in Departments' },
+      { value: 'Operations', label: 'Operations', group: 'Built-in Departments' },
+      { value: 'HR', label: 'Human Resources', group: 'Built-in Departments' },
+      { value: 'Finance', label: 'Finance', group: 'Built-in Departments' },
+      { value: 'R&D', label: 'Research & Development', group: 'Built-in Departments' },
+    ]
+
+    const customDeptOptions: SearchableSelectOption[] = customDepartments.map((dept) => ({
+      value: dept.name,
+      label: dept.name,
+      description: dept.description,
+      group: 'Custom Departments',
+    }))
+
+    return [...builtInDepts, ...customDeptOptions]
+  }, [customDepartments])
 
   useEffect(() => {
     filterUsers()
@@ -258,7 +357,7 @@ export function AdminDashboard() {
     // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(user => 
-        statusFilter === 'active' ? user.isActive : !user.isActive
+        statusFilter === 'active' ? user.isActive === true : user.isActive === false
       )
     }
 
@@ -285,8 +384,8 @@ export function AdminDashboard() {
         // Reload custom roles
         await loadCustomRoles();
         
-        // Auto-select the newly created role in the form
-        updateFormField('role', newRole.name.toLowerCase().replace(/\s+/g, '_'))
+        // Auto-select the newly created role in the form (use the actual role name, not transformed)
+        updateFormField('role', (response.data as any).name)
         
         setNewRole({ name: '', description: '', permissions: [] })
         setShowRoleManagement(false)
@@ -319,8 +418,8 @@ export function AdminDashboard() {
         // Reload custom departments
         await loadCustomDepartments();
         
-        // Auto-select the newly created department in the form
-        updateFormField('department', newDepartment.name)
+        // Auto-select the newly created department in the form (use the actual department name from API)
+        updateFormField('department', (response.data as any).name)
         
         setNewDepartment({ name: '', description: '', headId: '' })
         setShowDepartmentManagement(false)
@@ -441,22 +540,22 @@ export function AdminDashboard() {
       if (data.success && data.data) {
         // Convert API response to match the expected format
         const newUser: CentralizedUser = {
-          id: data.data.user.id,
-          email: data.data.user.email,
-          name: data.data.user.name,
+          id: data.data.id,
+          email: data.data.email,
+          name: data.data.name,
           employeeId: formData.employeeId,
-          role: data.data.user.role,
-          designation: data.data.user.designation,
-          managerId: data.data.user.managerId,
-          department: data.data.user.department,
+          role: data.data.role,
+          designation: data.data.designation,
+          managerId: data.data.managerId,
+          department: data.data.department,
           skills: userData.skills,
-          workloadCap: 100,
-          overBeyondCap: 20,
+          workloadCap: data.data.workloadCap || 100,
+          overBeyondCap: data.data.overBeyondCap || 20,
           phoneNumber: userData.phoneNumber,
-          notificationSettings: userData.notificationSettings,
+          notificationSettings: data.data.notificationSettings || userData.notificationSettings,
           isActive: true,
           password: formData.password, // Add password for type compatibility
-          createdAt: new Date().toISOString()
+          createdAt: data.data.createdAt || new Date().toISOString()
         }
 
         setUsers([...users, newUser])
@@ -618,25 +717,25 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('manager'); setStatusFilter('all'); }}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('admin'); setStatusFilter('active'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Admins</p>
-                <p className="text-2xl font-bold text-red-600">{users.filter(u => u.role === 'admin').length}</p>
+                <p className="text-2xl font-bold text-red-600">{users.filter(u => u.role === 'admin' && u.isActive === true).length}</p>
               </div>
               <Shield className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('manager'); }}>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('manager'); setStatusFilter('active'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Managers</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {users.filter(u => ['program_manager', 'rd_manager', 'manager'].includes(u.role)).length}
+                  {users.filter(u => ['program_manager', 'rd_manager', 'manager'].includes(u.role) && u.isActive === true).length}
                 </p>
               </div>
               <Building className="h-8 w-8 text-blue-600" />
@@ -644,12 +743,12 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md" onClick={() => { setActiveTab('users'); setRoleFilter('employee'); setStatusFilter('active'); }}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Employees</p>
-                <p className="text-2xl font-bold text-green-600">{users.filter(u => u.role === 'employee' || u.role === 'rd_manager').length}</p>
+                <p className="text-2xl font-bold text-green-600">{users.filter(u => (u.role === 'employee' || u.role === 'rd_manager') && u.isActive === true).length}</p>
               </div>
               <Activity className="h-8 w-8 text-green-600" />
             </div>
@@ -661,7 +760,7 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Users</p>
-                <p className="text-2xl font-bold text-primary">{users.filter(u => u.isActive).length}</p>
+                <p className="text-2xl font-bold text-primary">{users.filter(u => u.isActive === true).length}</p>
               </div>
               <Clock className="h-8 w-8 text-primary" />
             </div>
@@ -672,10 +771,10 @@ export function AdminDashboard() {
       {/* Main Content Tabs */}
       <div className="space-y-6">
         <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg p-1 border">
-          <div className="flex space-x-1">
+          <div className="flex flex-row items-center justify-between gap-1">
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'users' 
                   ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
@@ -686,7 +785,7 @@ export function AdminDashboard() {
             {(isAdmin(currentUser) || isProgramManager(currentUser) || isRdManager(currentUser)) && (
               <button
                 onClick={() => setActiveTab('hierarchy')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                   activeTab === 'hierarchy' 
                     ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                     : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
@@ -697,7 +796,7 @@ export function AdminDashboard() {
             )}
             <button
               onClick={() => setActiveTab('departments')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'departments' 
                   ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
@@ -707,7 +806,7 @@ export function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'analytics' 
                   ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
@@ -717,23 +816,13 @@ export function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'activity' 
                   ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
                   : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
               }`}
             >
               Activity
-            </button>
-            <button
-              onClick={() => setActiveTab('api')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'api' 
-                  ? 'bg-blue-600 text-black shadow-lg font-semibold border-2 border-blue-700' 
-                  : 'text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800'
-              }`}
-            >
-              API
             </button>
           </div>
         </div>
@@ -1103,7 +1192,7 @@ export function AdminDashboard() {
                             <SelectTrigger>
                               <SelectValue placeholder="Select department head" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-[300px] overflow-y-auto">
                               {managers.map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {user.name} ({getRoleDisplay(user.role)})
@@ -1161,11 +1250,6 @@ export function AdminDashboard() {
         </div>
         )}
 
-        {activeTab === 'api' && (
-        <div className="space-y-6">
-          <ApiTester />
-        </div>
-        )}
 
         <Alert>
           <Info className="h-4 w-4" />
@@ -1267,43 +1351,31 @@ export function AdminDashboard() {
               <h3 className="font-medium">Role & Organization</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role *</Label>
-                  <Select value={formData.role} onValueChange={(value) => {
-                    if (value === 'create_role') {
-                      setShowRoleManagement(true);
-                      updateFormField('role', '');
-                    } else {
-                      updateFormField('role', value);
-                    }
-                  }} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="program_manager">Program Manager</SelectItem>
-                      <SelectItem value="rd_manager">R&D Manager</SelectItem>
-                      <SelectItem value="manager">Team Manager</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      
-                      {/* Custom Roles */}
-                      {customRoles.map((role) => (
-                        <SelectItem key={role.id} value={role.name}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                      
-                      <SelectItem 
-                        value="create_role" 
-                        className="text-blue-600 font-medium"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Plus className="h-4 w-4" />
-                          Create New Role
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="role">Role *</Label>
+                    {customRoles.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {customRoles.length} custom role{customRoles.length !== 1 ? 's' : ''} loaded
+                      </span>
+                    )}
+                  </div>
+                  <SearchableSelect
+                    key={`role-select-${customRoles.length}`}
+                    options={roleOptions}
+                    value={formData.role}
+                    onValueChange={(value) => {
+                      console.log('🎯 Role selected:', value)
+                      updateFormField('role', value)
+                    }}
+                    placeholder="Select role..."
+                    searchPlaceholder="Search roles..."
+                    emptyMessage="No role found."
+                    onCreateNew={() => {
+                      console.log('🆕 Opening role management')
+                      setShowRoleManagement(true)
+                    }}
+                    createNewLabel="➕ Create New Role"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="designation">Designation *</Label>
@@ -1318,46 +1390,31 @@ export function AdminDashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Select value={formData.department} onValueChange={(value) => {
-                    if (value === 'create_department') {
-                      setShowDepartmentManagement(true);
-                      updateFormField('department', '');
-                    } else {
-                      updateFormField('department', value);
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Product Management">Product Management</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                      <SelectItem value="Sales">Sales</SelectItem>
-                      <SelectItem value="Operations">Operations</SelectItem>
-                      <SelectItem value="HR">Human Resources</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="R&D">Research & Development</SelectItem>
-                      
-                      {/* Custom Departments */}
-                      {customDepartments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                      
-                      <SelectItem 
-                        value="create_department" 
-                        className="text-blue-600 font-medium"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Plus className="h-4 w-4" />
-                          Create New Department
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="department">Department</Label>
+                    {customDepartments.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {customDepartments.length} custom dept{customDepartments.length !== 1 ? 's' : ''} loaded
+                      </span>
+                    )}
+                  </div>
+                  <SearchableSelect
+                    key={`dept-select-${customDepartments.length}`}
+                    options={departmentOptions}
+                    value={formData.department}
+                    onValueChange={(value) => {
+                      console.log('🏢 Department selected:', value)
+                      updateFormField('department', value)
+                    }}
+                    placeholder="Select department..."
+                    searchPlaceholder="Search departments..."
+                    emptyMessage="No department found."
+                    onCreateNew={() => {
+                      console.log('🆕 Opening department management')
+                      setShowDepartmentManagement(true)
+                    }}
+                    createNewLabel="➕ Create New Department"
+                  />
                 </div>
                 {(normalizeRole(formData.role) === 'employee' || normalizeRole(formData.role) === 'manager' || normalizeRole(formData.role) === 'rd_manager') && (
                   <div className="space-y-2">
@@ -1366,7 +1423,7 @@ export function AdminDashboard() {
                       <SelectTrigger>
                         <SelectValue placeholder="Select manager (optional)" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[300px] overflow-y-auto">
                         {managers.map((manager) => (
                           <SelectItem key={manager.id} value={manager.id}>
                             {manager.name} ({getRoleDisplay(manager.role)})
@@ -1503,7 +1560,7 @@ export function AdminDashboard() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select department head" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
                     {managers.map((manager) => (
                       <SelectItem key={manager.id} value={manager.id}>
                         {manager.name} ({getRoleDisplay(manager.role)})
@@ -1627,15 +1684,6 @@ export function AdminDashboard() {
           isOpen={showExportSystem} 
           onClose={() => setShowExportSystem(false)} 
         />
-
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>BPL Commander Admin:</strong> Manage users, projects, and system settings. 
-            User data is stored in the database and persists across sessions. 
-            New users can login with their credentials immediately after creation.
-          </AlertDescription>
-        </Alert>
       </div>
     )
   }

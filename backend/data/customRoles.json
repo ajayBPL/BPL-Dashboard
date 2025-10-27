@@ -1,38 +1,11 @@
 [
   {
-    "id": "role-1758047373654",
-    "name": "tester",
-    "description": "tester",
-    "permissions": [],
-    "isActive": true,
-    "createdAt": "2025-09-16T18:29:33.654Z",
-    "updatedAt": "2025-09-16T18:29:33.654Z"
-  },
-  {
-    "id": "role-1758047423390",
-    "name": "Tester",
+    "id": "role-1761552038290",
+    "name": "Sales Manager",
     "description": "",
     "permissions": [],
     "isActive": true,
-    "createdAt": "2025-09-16T18:30:23.390Z",
-    "updatedAt": "2025-09-16T18:30:23.390Z"
-  },
-  {
-    "id": "role-1758170114113",
-    "name": "Intern",
-    "description": "Internship",
-    "permissions": [],
-    "isActive": true,
-    "createdAt": "2025-09-18T04:35:14.113Z",
-    "updatedAt": "2025-09-18T04:35:14.113Z"
-  },
-  {
-    "id": "role-1758172716193",
-    "name": "Lab In Charge",
-    "description": "",
-    "permissions": [],
-    "isActive": true,
-    "createdAt": "2025-09-18T05:18:36.193Z",
-    "updatedAt": "2025-09-18T05:18:36.193Z"
+    "createdAt": "2025-10-27T08:00:38.290Z",
+    "updatedAt": "2025-10-27T08:00:38.290Z"
   }
 ]

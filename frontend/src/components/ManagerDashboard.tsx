@@ -1011,7 +1011,7 @@ export function ManagerDashboard() {
                         ).map((employee) => {
                           const workload = employee.workloadCap || 0
                           return (
-                            <Card key={employee.id} className="p-4" style={{ backgroundColor: '#7FFFD4', border: '2px solid #40E0D0' }}>
+                            <Card key={employee.id} className="p-4 bg-white dark:bg-gray-800">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
         <Avatar className="h-10 w-10">
@@ -1020,16 +1020,16 @@ export function ManagerDashboard() {
           </AvatarFallback>
         </Avatar>
                                   <div>
-                                    <h4 className="font-medium" style={{ color: '#006400' }}>{employee.name}</h4>
-                                    <p className="text-sm" style={{ color: '#2E8B57' }}>{employee.email}</p>
-                                    <p className="text-sm" style={{ color: '#2E8B57' }}>
+                                    <h4 className="font-medium text-foreground">{employee.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{employee.email}</p>
+                                    <p className="text-sm text-muted-foreground">
                                       Reports to: {employee.managerName} ({getRoleDisplay(employee.managerRole)})
                                     </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-4">
                                   <div className="text-right">
-                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Workload</p>
+                                    <p className="text-sm text-muted-foreground">Workload</p>
                                     <p className={`font-medium ${
                                       workload > 100 ? 'text-red-600' :
                                       workload > 80 ? 'text-yellow-600' : 'text-green-600'
@@ -1038,14 +1038,14 @@ export function ManagerDashboard() {
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Department</p>
-                                    <p className="font-medium" style={{ color: '#006400' }}>{employee.department || 'Not assigned'}</p>
+                                    <p className="text-sm text-muted-foreground">Department</p>
+                                    <p className="text-sm font-medium text-foreground">{employee.department || 'Not assigned'}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm" style={{ color: '#2E8B57' }}>Designation</p>
-                                    <p className="font-medium" style={{ color: '#006400' }}>{employee.designation || 'Not assigned'}</p>
+                                    <p className="text-sm text-muted-foreground">Designation</p>
+                                    <p className="text-sm font-medium text-foreground">{employee.designation || 'Not assigned'}</p>
                                   </div>
-                                  <Badge variant="outline" style={{ backgroundColor: '#40E0D0', color: '#006400', borderColor: '#2E8B57' }}>
+                                  <Badge variant="outline">
                                     {getRoleDisplay(employee.role)}
                                   </Badge>
                                 </div>

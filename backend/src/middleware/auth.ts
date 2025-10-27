@@ -48,8 +48,9 @@ export const authenticateToken = async (
       return;
     }
 
-    // Check if it's a demo token (for development)
-    if (token === 'demo-token') {
+    // Check if it's a demo token (for development ONLY)
+    if (process.env.NODE_ENV === 'development' && token === 'demo-token') {
+      console.warn('⚠️  Demo token used - this is only allowed in development mode');
       // Create a demo admin user for development
       req.user = {
         id: 'demo-admin',

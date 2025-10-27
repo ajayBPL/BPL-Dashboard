@@ -74,6 +74,12 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response): Promise<voi
   });
 }));
 
+// PUT /projects/:id - Update project
+router.put('/:id', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  await handleUpdateProject(req, res, id, req.body);
+}));
+
 // POST /projects - Handle project actions
 router.post('/', asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { action, id, data } = req.body;
@@ -173,13 +179,17 @@ async function handleUpdateProject(req: Request, res: Response, id: string, data
       throw new NotFoundError('Project not found');
     }
 
-    // Check permissions
-    const hasAccess = req.user!.role === 'admin' || existingProject.managerId === req.user!.id;
+    // Check permissions - allow admin, program_manager, or the project manager
+    const hasAccess = req.user!.role === 'admin' || 
+                      req.user!.role === 'ADMIN' ||
+                      req.user!.role === 'program_manager' || 
+                      req.user!.role === 'PROGRAM_MANAGER' ||
+                      existingProject.managerId === req.user!.id;
     if (!hasAccess) {
       res.status(403).json({
         success: false,
         error: 'Insufficient permissions',
-        message: 'Only admins and project managers can update projects'
+        message: 'Only admins, program managers, and project managers can update projects'
       });
       return;
     }
@@ -212,8 +222,12 @@ async function handleDeleteProject(req: Request, res: Response, id: string): Pro
       throw new NotFoundError('Project not found');
     }
 
-    // Check permissions
-    const hasAccess = req.user!.role === 'admin' || existingProject.managerId === req.user!.id;
+    // Check permissions - allow admin, program_manager, or the project manager
+    const hasAccess = req.user!.role === 'admin' || 
+                      req.user!.role === 'ADMIN' ||
+                      req.user!.role === 'program_manager' || 
+                      req.user!.role === 'PROGRAM_MANAGER' ||
+                      existingProject.managerId === req.user!.id;
     if (!hasAccess) {
       res.status(403).json({
         success: false,

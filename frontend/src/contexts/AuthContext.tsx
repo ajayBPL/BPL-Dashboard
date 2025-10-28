@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { centralizedDb } from '../utils/centralizedDb'
-import { API_ENDPOINTS, getDefaultHeaders } from '../utils/apiConfig'
 import { apiService } from '../services/api'
+import { supabaseService } from '../services/supabaseService'
 
 interface User {
   id: string
@@ -31,9 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [supabaseConfig] = useState<{ projectId: string; publicAnonKey: string; supabaseUrl: string }>({
-    projectId: 'bplcommander-demo',
-    publicAnonKey: 'demo-anon-key',
-    supabaseUrl: 'https://bplcommander-demo.supabase.co'
+    projectId: 'mwrdlemotjhrnjzncbxk',
+    publicAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmRsZW1vdGpocm5qem5jYnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDQxNDMsImV4cCI6MjA2OTM4MDE0M30.b-0QzJwCbxlEqb6koGIUiEU6bC0J1zkLN0eMV5E3_Dg',
+    supabaseUrl: 'https://mwrdlemotjhrnjzncbxk.supabase.co'
   })
 
   useEffect(() => { 
@@ -87,41 +87,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }, [])
 
+  // Listen to Supabase auth changes
+  useEffect(() => {
+    try {
+      const { data: { subscription } } = supabaseService.onAuthStateChange((event, session) => {
+        console.log('Supabase auth state changed:', event, session)
+        
+        if (event === 'SIGNED_IN' && session) {
+          setAccessToken(session.access_token)
+          apiService.setToken(session.access_token)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setAccessToken(null)
+          apiService.clearToken()
+          localStorage.removeItem('bpl-user')
+          localStorage.removeItem('bpl-token')
+        }
+      })
+
+      return () => subscription.unsubscribe()
+    } catch (error) {
+      console.error('Error setting up Supabase auth listener:', error)
+    }
+  }, [])
+
 
   const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Call the real API
-      const response = await fetch(API_ENDPOINTS.LOGIN, {
+      console.log('🔐 Attempting backend API login with:', { email, password: '***' });
+      
+      // Call the backend API at localhost:3001
+      const response = await fetch('http://localhost:3001/api/auth/login', {
         method: 'POST',
-        headers: getDefaultHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
+      console.log('📡 Backend API response:', result);
 
-      if (!response.ok || !data.success) {
-        return { success: false, error: data.error || 'Invalid email or password' };
+      if (!result.success || !response.ok) {
+        console.log('❌ Backend login failed:', result.error);
+        return { success: false, error: result.error || 'Login failed' };
       }
 
-      // Extract user data and token from API response
-      const userData: User = {
-        id: data.data.user.id,
-        email: data.data.user.email,
-        name: data.data.user.name,
-        role: data.data.user.role,
-        designation: data.data.user.designation,
-        managerId: data.data.user.managerId
-      };
+      if (!result.data?.user) {
+        return { success: false, error: 'No user data returned' };
+      }
 
-      const token = data.data.token;
+      // Store the token
+      const token = result.data.token;
+      if (token) {
+        localStorage.setItem('bpl-token', token);
+        setAccessToken(token);
+        apiService.setToken(token);
+      }
+
+      // Convert backend user to our User format
+      const userData: User = {
+        id: result.data.user.id,
+        email: result.data.user.email,
+        name: result.data.user.name,
+        role: result.data.user.role as any,
+        designation: result.data.user.designation,
+        managerId: result.data.user.managerId
+      }
 
       // Add or update user in centralizedDb
       const existingUser = centralizedDb.getUserById(userData.id);
-      console.log('AuthContext Debug - User data:', userData);
+      console.log('AuthContext Debug - Supabase user data:', userData);
       console.log('AuthContext Debug - Existing user:', existingUser);
       
       if (!existingUser) {
-        console.log('AuthContext Debug - Adding new user to centralizedDb');
+        console.log('AuthContext Debug - Adding new Supabase user to centralizedDb');
         const addedUser = centralizedDb.addUser({
           email: userData.email,
           name: userData.name,
@@ -144,36 +184,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             weeklyReports: false
           }
         }, userData.id);
-        console.log('AuthContext Debug - Added user:', addedUser);
+        console.log('AuthContext Debug - Added Supabase user:', addedUser);
       } else {
-        console.log('AuthContext Debug - Updating existing user');
-        // Update existing user with latest data
+        console.log('AuthContext Debug - Updating existing Supabase user');
         centralizedDb.updateUser(userData.id, {
-          name: userData.name,
-          role: userData.role,
-          designation: userData.designation,
-          managerId: userData.managerId,
-          lastLoginAt: new Date().toISOString()
+          ...userData,
+          lastLoginAt: new Date().toISOString(),
         });
       }
 
-      // Store in state and localStorage
-      setUser(userData);
-      setAccessToken(token);
       localStorage.setItem('bpl-user', JSON.stringify(userData));
-      localStorage.setItem('bpl-token', token);
-      
-      // Update apiService with the new token
-      apiService.setToken(token);
+      setUser(userData);
 
+      console.log('✅ Backend API login successful');
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Login failed. Please try again.' };
+      console.error('🚨 Backend API login error:', error)
+      console.error('🚨 Error details:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      
+      // Fallback to demo mode if backend fails
+      console.log('🔄 Falling back to demo mode...')
+      
+      // Check if it's a demo user
+      const demoUsers = [
+        { email: 'admin@bplcommander.com', password: 'admin123', role: 'admin', name: 'System Admin' },
+        { email: 'manager@bplcommander.com', password: 'manager123', role: 'manager', name: 'Project Manager' },
+        { email: 'employee@bplcommander.com', password: 'employee123', role: 'employee', name: 'Test Employee' }
+      ]
+      
+      const demoUser = demoUsers.find(u => u.email === email && u.password === password)
+      
+      if (demoUser) {
+        const userData: User = {
+          id: `demo-${demoUser.role}`,
+          email: demoUser.email,
+          name: demoUser.name,
+          role: demoUser.role as any,
+          designation: `${demoUser.role.charAt(0).toUpperCase() + demoUser.role.slice(1)}`,
+          managerId: undefined
+        }
+        
+        // Add to centralizedDb
+        centralizedDb.addUser({
+          email: userData.email,
+          name: userData.name,
+          role: userData.role as any,
+          designation: userData.designation,
+          managerId: userData.managerId,
+          lastLoginAt: new Date().toISOString(),
+          isActive: true,
+          password: 'defaultpass123',
+          skills: [],
+          department: 'General',
+          workloadCap: 100,
+          overBeyondCap: 20,
+          preferredCurrency: 'USD',
+          notificationSettings: {
+            email: true,
+            inApp: true,
+            projectUpdates: true,
+            deadlineReminders: true,
+            weeklyReports: false
+          }
+        }, userData.id);
+        
+        localStorage.setItem('bpl-user', JSON.stringify(userData));
+        localStorage.setItem('bpl-token', 'demo-token');
+        setUser(userData);
+        setAccessToken('demo-token');
+        apiService.setToken('demo-token');
+        
+        console.log('✅ Demo login successful');
+        return { success: true };
+      }
+      
+      return { success: false, error: `Login failed: ${(error as Error).message}` }
     }
   }
 
   const signOut = async () => {
+    try {
+      // Sign out from Supabase
+      await supabaseService.signOut()
+    } catch (error) {
+      console.error('Supabase sign out error:', error)
+    }
+    
     setUser(null)
     setAccessToken(null)
     localStorage.removeItem('bpl-user')

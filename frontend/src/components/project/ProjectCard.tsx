@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { CentralizedProject, centralizedDb } from '../../utils/centralizedDb'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -15,7 +15,6 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { 
-  calculateProjectProgress, 
   calculateTotalInvolvement, 
   getStatusColor, 
   getPriorityColor,
@@ -25,58 +24,28 @@ import {
   getProjectHealth,
   getProjectRisk
 } from '../../utils/projectHelpers'
-import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
+import { ProgressCalculationService } from '../../utils/progressCalculationService'
+import { useUsers } from '../../contexts/UsersContext'
 
 interface ProjectCardProps {
   project: CentralizedProject
   onViewDetails: (projectId: string) => void
 }
 
-interface User {
-  id: string
-  name: string
-  email: string
-}
-
 export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
-  const [users, setUsers] = useState<User[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
+  const { users, getUserById } = useUsers()
   
-  const progress = project.progress || 0
+  // ✅ CRITICAL FIX: Use unified progress calculation
+  const progressData = ProgressCalculationService.calculateProjectProgress(project)
+  const progress = progressData.finalProgress
   const assignedCount = project.assignedEmployees.length
   const totalInvolvement = calculateTotalInvolvement(project)
   const health = getProjectHealth(project)
   const risks = getProjectRisk(project)
   
-  // Fetch users from API to get proper names for avatars
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (project.assignedEmployees.length === 0) return
-      
-      try {
-        setLoadingUsers(true)
-        const token = localStorage.getItem('bpl-token')
-        if (!token) return
-
-        const response = await fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
-          headers: getDefaultHeaders(token)
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setUsers(data.data)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching users for avatars:', error)
-      } finally {
-        setLoadingUsers(false)
-      }
-    }
-
-    fetchUsers()
-  }, [project.assignedEmployees])
+  // Check if project has high team involvement (but this doesn't block progress)
+  const hasHighTeamInvolvement = totalInvolvement > 200
+  const progressStuck = progress === 0 && hasHighTeamInvolvement
   
   const getHealthColor = (health: string) => {
     switch (health) {
@@ -99,7 +68,7 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
   // Helper function to get user initials
   const getUserInitials = (employeeId: string): string => {
     // First try to find in API users
-    const apiUser = users.find(user => user.id === employeeId)
+    const apiUser = getUserById(employeeId)
     if (apiUser?.name) {
       return apiUser.name.charAt(0).toUpperCase()
     }
@@ -212,18 +181,33 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">{progress.toFixed(1)}%</span>
+              <span className="text-sm text-muted-foreground">
+                {progress.toFixed(1)}%
+              </span>
             </div>
             <Progress value={progress} className="h-2" />
+            
+            {/* Show info for high team involvement (but not blocking) */}
+            {hasHighTeamInvolvement && (
+              <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                <AlertTriangle className="h-3 w-3" />
+                <span>High team involvement ({totalInvolvement}%) - Progress updates allowed</span>
+              </div>
+            )}
           </div>
           
           {/* Risk Indicators */}
-          {risks.length > 0 && (
+          {(risks.length > 0 || hasHighTeamInvolvement) && (
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
               <div className="text-sm">
                 <span className="text-yellow-600 dark:text-yellow-400 font-medium">Risks: </span>
-                <span className="text-muted-foreground">{risks.join(', ')}</span>
+                <span className="text-muted-foreground">
+                  {[
+                    ...risks,
+                    ...(hasHighTeamInvolvement ? [`High team involvement (${totalInvolvement}%)`] : [])
+                  ].join(', ')}
+                </span>
               </div>
             </div>
           )}

@@ -375,10 +375,12 @@ export function EmployeeOverview() {
           return (
             <Card 
               key={employee.id} 
-              className="hover:shadow-lg transition-all duration-200"
+              className={`hover:shadow-lg transition-all duration-200 ${
+                employee.department === 'R&D' ? 'rounded-md' : ''
+              }`}
               style={{ 
-                backgroundColor: enhancedColors.background, 
-                border: `2px solid ${enhancedColors.border}` 
+                backgroundColor: '#ffffff', 
+                border: `1px solid #e5e7eb` 
               }}
             >
             <CardContent className="p-2 relative">

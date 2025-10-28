@@ -315,9 +315,9 @@ export function NotificationSystem() {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-md max-h-[80vh] p-0 bg-yellow-50 border-yellow-200">
-        <DialogHeader className="p-6 pb-0 bg-yellow-100 border-b border-yellow-200">
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className="max-w-md max-h-[80vh] p-0 !bg-white dark:!bg-gray-900" style={{ backgroundColor: 'white' }}>
+        <DialogHeader className="p-6 pb-4 !bg-white dark:!bg-gray-900 border-b flex items-center" style={{ backgroundColor: 'white' }}>
+          <DialogTitle className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
               Notifications
@@ -332,8 +332,8 @@ export function NotificationSystem() {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 bg-yellow-50">
-          <div className="flex gap-2 mb-4">
+        <div className="px-6 !bg-white dark:!bg-gray-900" style={{ backgroundColor: 'white' }}>
+          <div className="flex gap-2 mb-4 pt-4">
             <Button 
               variant={filter === 'unread' ? 'default' : 'outline'} 
               size="sm"
@@ -358,8 +358,8 @@ export function NotificationSystem() {
           </div>
         </div>
 
-        <ScrollArea className="max-h-96 bg-yellow-50">
-          <div className="px-6 pb-6">
+        <ScrollArea className="max-h-96 !bg-white dark:!bg-gray-900" style={{ backgroundColor: 'white' }}>
+          <div className="px-6 pb-6" style={{ backgroundColor: 'white' }}>
             {filteredNotifications.length === 0 ? (
               <div className="text-center py-8">
                 <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -372,7 +372,7 @@ export function NotificationSystem() {
                 {filteredNotifications.map((notification, index) => (
                   <div key={notification.id}>
                     <div className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                      !notification.read ? 'bg-yellow-100 border border-yellow-200' : 'bg-yellow-50'
+                      !notification.read ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800' : 'bg-gray-50 dark:bg-gray-800'
                     }`}>
                       <div className={`mt-1 ${getPriorityColor(notification.priority)}`}>
                         {getNotificationIcon(notification.type)}

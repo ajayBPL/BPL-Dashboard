@@ -48,6 +48,41 @@ export const authenticateToken = async (
       return;
     }
 
+    // Check if it's a demo token (for development ONLY)
+    if (process.env.NODE_ENV === 'development' && token === 'demo-token') {
+      console.warn('⚠️  Demo token used - this is only allowed in development mode');
+      // Create a demo admin user for development
+      req.user = {
+        id: 'demo-admin',
+        email: 'admin@bplcommander.com',
+        name: 'System Admin',
+        role: 'admin',
+        designation: 'System Administrator',
+        managerId: undefined,
+        department: 'IT',
+        avatar: undefined,
+        phoneNumber: undefined,
+        timezone: 'UTC',
+        preferredCurrency: 'USD',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        skills: [],
+        workloadCap: 100,
+        overBeyondCap: 20,
+        notificationSettings: {
+          email: true,
+          inApp: true,
+          projectUpdates: true,
+          deadlineReminders: true,
+          weeklyReports: false
+        }
+      };
+      next();
+      return;
+    }
+
     // Verify token
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
 

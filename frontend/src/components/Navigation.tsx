@@ -165,7 +165,7 @@ export function Navigation() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full z-50">
+                  <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full z-50 p-0 overflow-hidden">
                     <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-primary">
                         {user.name.charAt(0)}

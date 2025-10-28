@@ -1,23 +1,57 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { CentralizedInitiative, centralizedDb } from '../../utils/centralizedDb'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
 import { Button } from '../ui/button'
-import { Lightbulb, Calendar, User, Clock } from 'lucide-react'
+import { Lightbulb, Calendar, User, Clock, X, Loader2 } from 'lucide-react'
 import { getPriorityColor, getStatusColor, formatDate } from '../../utils/projectHelpers'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog'
 
 interface InitiativesListProps {
   initiatives: CentralizedInitiative[]
   canCreateInitiatives: boolean
   onCreateInitiative: () => void
+  onDeleteInitiative: (initiativeId: string, initiativeTitle: string) => Promise<void>
 }
 
 export function InitiativesList({ 
   initiatives, 
   canCreateInitiatives, 
-  onCreateInitiative 
+  onCreateInitiative,
+  onDeleteInitiative
 }: InitiativesListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [initiativeToDelete, setInitiativeToDelete] = useState<{ id: string; title: string } | null>(null)
+
+  const handleDeleteClick = (initiative: CentralizedInitiative) => {
+    setInitiativeToDelete({ id: initiative.id, title: initiative.title })
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!initiativeToDelete) return
+    
+    setDeletingId(initiativeToDelete.id)
+    setShowDeleteDialog(false)
+    
+    try {
+      await onDeleteInitiative(initiativeToDelete.id, initiativeToDelete.title)
+    } finally {
+      setDeletingId(null)
+      setInitiativeToDelete(null)
+    }
+  }
   if (initiatives.length === 0) {
     return (
       <div className="text-center py-12">
@@ -48,16 +82,29 @@ export function InitiativesList({
           : 0
 
         return (
-          <Card key={initiative.id}>
+          <Card key={initiative.id} className={deletingId === initiative.id ? 'opacity-50' : ''}>
             <CardHeader>
               <div className="flex items-start justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-base">{initiative.title}</CardTitle>
                   <CardDescription className="mt-1">{initiative.description}</CardDescription>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <Badge className={getStatusColor(initiative.status)}>{initiative.status}</Badge>
                   <Badge className={getPriorityColor(initiative.priority)}>{initiative.priority}</Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteClick(initiative)}
+                    disabled={deletingId === initiative.id}
+                  >
+                    {deletingId === initiative.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -110,6 +157,27 @@ export function InitiativesList({
           </Card>
         )
       })}
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Initiative</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{initiativeToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

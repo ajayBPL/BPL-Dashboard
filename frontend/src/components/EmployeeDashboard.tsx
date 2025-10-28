@@ -274,7 +274,7 @@ export function EmployeeDashboard() {
               <div className="space-y-4">
                 {projects.map((project) => {
                   const progress = calculateProjectProgress(project)
-                  const myAssignment = project.assignedEmployees.find(emp => emp.employeeId === currentUser?.id)
+                  const myAssignment = project.assignments?.find(emp => emp.employeeId === currentUser?.id)
                   const manager = centralizedDb.getUserById(project.managerId)
                   
                   return (

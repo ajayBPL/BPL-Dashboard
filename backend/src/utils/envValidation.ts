@@ -12,6 +12,9 @@ dotenv.config();
 
 interface EnvConfig {
   DATABASE_URL: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
   JWT_SECRET: string;
   JWT_EXPIRES_IN: string;
   PORT: number;
@@ -47,6 +50,8 @@ export function validateEnvironment(): EnvConfig {
   // Required environment variables
   const requiredVars = {
     DATABASE_URL: process.env.DATABASE_URL,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
     PORT: process.env.PORT,
@@ -80,6 +85,21 @@ export function validateEnvironment(): EnvConfig {
   if (process.env.DATABASE_URL) {
     if (!process.env.DATABASE_URL.startsWith('postgresql://')) {
       errors.push('DATABASE_URL must be a valid PostgreSQL connection string');
+    }
+  }
+
+  // Validate Supabase configuration
+  if (process.env.SUPABASE_URL) {
+    try {
+      new URL(process.env.SUPABASE_URL);
+    } catch {
+      errors.push('SUPABASE_URL must be a valid URL');
+    }
+  }
+
+  if (process.env.SUPABASE_ANON_KEY) {
+    if (process.env.SUPABASE_ANON_KEY.length < 50) {
+      errors.push('SUPABASE_ANON_KEY appears to be invalid (too short)');
     }
   }
 
@@ -135,6 +155,9 @@ export function validateEnvironment(): EnvConfig {
   // Return validated configuration
   return {
     DATABASE_URL: process.env.DATABASE_URL!,
+    SUPABASE_URL: process.env.SUPABASE_URL!,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     JWT_SECRET: process.env.JWT_SECRET!,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN!,
     PORT: parseInt(process.env.PORT!, 10),

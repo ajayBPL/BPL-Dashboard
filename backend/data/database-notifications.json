@@ -1,0 +1,12 @@
+[
+  {
+    "id": "db-fallback-1760350699845",
+    "type": "system",
+    "title": "Database Unavailable",
+    "message": "⚠️ Using temporary storage - data will not persist across restarts. Please configure PostgreSQL database.",
+    "priority": "critical",
+    "read": false,
+    "createdAt": "2025-10-13T10:18:19.845Z",
+    "persistent": true
+  }
+]

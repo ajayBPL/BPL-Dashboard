@@ -24,14 +24,14 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:25:11.234Z",
-    "updatedAt": "2025-10-12T18:34:56.299Z",
-    "lastLoginAt": "2025-10-12T18:34:56.297Z"
+    "updatedAt": "2025-10-13T18:54:02.213Z",
+    "lastLoginAt": "2025-10-13T18:54:02.212Z"
   },
   {
     "id": "program-manager-001",
     "email": "program.manager@bplcommander.com",
     "name": "Program Manager",
-    "password": "program123",
+    "password": "$2b$12$ALpZYdoI/d2YU.ZLJZu1SOXQpFjovkWOLU9BOaZqiNGRQDwSAjpE2",
     "role": "program_manager",
     "designation": "Senior Program Manager",
     "department": "Operations",
@@ -51,14 +51,14 @@
     },
     "isActive": true,
     "createdAt": "2024-01-01T00:00:00Z",
-    "updatedAt": "2025-10-08T04:45:29.196Z",
-    "lastLoginAt": null
+    "updatedAt": "2025-10-13T18:21:07.886Z",
+    "lastLoginAt": "2025-10-13T18:21:07.886Z"
   },
   {
     "id": "rd-manager-001",
     "email": "rd.manager@bplcommander.com",
     "name": "R&D Manager",
-    "password": "rd123",
+    "password": "$2b$12$08A4LVAGvPulWDJ5b2odOOmNgmOjDoF/7sr05zsstGYaFmMwiTaTa",
     "role": "rd_manager",
     "designation": "Research & Development Manager",
     "department": "R&D",
@@ -86,7 +86,7 @@
     "id": "manager-001",
     "email": "manager@bplcommander.com",
     "name": "Team Manager",
-    "password": "manager123",
+    "password": "$2b$12$6Q2G.dybj1lNe1ebY50AH.B3EnZhK7aT6AHRGEJbhTw3v7IC6Atbu",
     "role": "manager",
     "designation": "Team Lead",
     "managerId": "program-manager-001",
@@ -114,7 +114,7 @@
     "id": "employee-001",
     "email": "employee@bplcommander.com",
     "name": "Test Employee",
-    "password": "employee123",
+    "password": "$2b$12$1xWD9fO8KvRpCmCvTZ.jN.Cj3gCBDna7pBGA0LZ10bycyx3G1.vYW",
     "role": "employee",
     "designation": "Software Developer",
     "managerId": "manager-001",
@@ -188,8 +188,8 @@
     },
     "isActive": true,
     "createdAt": "2025-09-15T10:27:50.077Z",
-    "updatedAt": "2025-10-12T18:35:24.566Z",
-    "lastLoginAt": "2025-10-12T18:35:24.565Z"
+    "updatedAt": "2025-10-13T18:51:29.264Z",
+    "lastLoginAt": "2025-10-13T18:51:29.263Z"
   },
   {
     "id": "user-1757932094744",

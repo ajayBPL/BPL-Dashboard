@@ -5298,3 +5298,44 @@ input:not(:disabled), textarea:not(:disabled), select:not(:disabled) {
     opacity: 0;
   }
 }
+
+/* Toast Notifications - Proper Stacking */
+[data-sonner-toaster] {
+  --width: 400px;
+}
+
+[data-sonner-toast] {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  min-height: 64px;
+  padding: 16px;
+}
+
+/* Success Toast Styling */
+[data-sonner-toast][data-type="success"] {
+  background: #dcfce7 !important;
+  border: 1px solid #86efac !important;
+  color: #166534 !important;
+}
+
+/* Error Toast Styling */
+[data-sonner-toast][data-type="error"] {
+  background: #fef2f2 !important;
+  border: 1px solid #fca5a5 !important;
+  color: #dc2626 !important;
+}
+
+/* Warning Toast Styling */
+[data-sonner-toast][data-type="warning"] {
+  background: #fef3c7 !important;
+  border: 1px solid #f59e0b !important;
+  color: #92400e !important;
+}
+
+/* Info/Normal Toast Styling */
+[data-sonner-toast][data-type="info"],
+[data-sonner-toast]:not([data-type]) {
+  background: #fef3c7 !important;
+  border: 1px solid #f59e0b !important;
+  color: #92400e !important;
+}

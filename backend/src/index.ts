@@ -22,17 +22,19 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import { PrismaClient } from '@prisma/client';
 import { validateEnvironmentOrExit } from './utils/envValidation';
+
+// Import security middleware
+import { securityMiddleware } from './middleware/security';
 
 // Import all API route modules
 import authRoutes from './routes/auth';           // Authentication endpoints (login, register, logout)
 import userRoutes from './routes/users';          // User management endpoints
-import projectRoutes from './routes/projects';    // Project CRUD operations
-import initiativeRoutes from './routes/initiatives'; // Initiative management
+import projectRoutes from './routes/projects-supabase';    // Project CRUD operations - Supabase compatible
+import initiativeRoutes from './routes/initiatives-supabase'; // Initiative management - Supabase compatible
 import workloadRoutes from './routes/workload';   // Employee workload tracking
-import analyticsRoutes from './routes/analytics'; // Dashboard analytics and reports
-import notificationRoutes from './routes/notifications'; // Notification system
+// import analyticsRoutes from './routes/analytics'; // Advanced analytics and business intelligence - temporarily disabled
+// import notificationRoutes from './routes/notifications'; // Notification system - temporarily disabled
 import commentRoutes from './routes/comments';    // Project/initiative comments
 import fileRoutes from './routes/files';          // File upload/download
 import exportRoutes from './routes/export';       // Data export functionality
@@ -48,6 +50,7 @@ import departmentRoutes from './routes/departments'; // Department management
 import { errorHandler } from './middleware/errorHandler';     // Global error handling
 import { notFoundHandler } from './middleware/notFoundHandler'; // 404 handler
 import { db } from './services/database';                     // Database service abstraction
+import WebSocketService from './services/websocketService';    // Real-time WebSocket service
 
 // Load environment variables from .env file
 dotenv.config();
@@ -60,113 +63,83 @@ const app = express();
 const PORT = envConfig.PORT;
 
 /**
- * Initialize Prisma ORM client for database operations
- * - Enables query logging in development mode
- * - Only logs errors in production for performance
+ * Initialize Supabase database service
+ * This ensures the application uses Supabase PostgreSQL
  */
-export const prisma = new PrismaClient({
-  log: envConfig.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-/**
- * Initialize database service with fallback to mock data
- * This allows the application to run without PostgreSQL installation
- * for development and testing purposes
- */
-db.initialize().then(() => {
-  console.log('Database service initialized');
-  if (db.isUsingMock()) {
-    console.log('⚠️  Using mock database - install PostgreSQL for full functionality');
-  } else {
-    console.log('✅ Connected to PostgreSQL database');
+async function initializeDatabase() {
+  try {
+    console.log('🔄 Initializing Supabase database connection...');
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<boolean>((_, reject) => {
+      setTimeout(() => reject(new Error('Database connection timeout')), 10000); // 10 second timeout
+    });
+    
+    const connectionPromise = db.testConnection();
+    const connected = await Promise.race([connectionPromise, timeoutPromise]);
+    
+    if (connected) {
+      console.log('✅ Supabase database service initialized successfully');
+      return true;
+    } else {
+      console.error('❌ Supabase database connection failed');
+      console.error('📝 Please check your Supabase configuration in .env file');
+      console.error('📝 Required variables: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Supabase database initialization failed:', error);
+    console.error('📝 Please check your Supabase configuration in .env file');
+    return false;
   }
-}).catch((error) => {
-  console.error('Database initialization failed:', error);
+}
+
+// Initialize database connection and wait for it to complete
+let dbInitialized = false;
+initializeDatabase().then((success) => {
+  if (!success) {
+    console.error('💥 Application startup failed due to database connection issues');
+    console.error('💥 Please fix the Supabase configuration and restart the application');
+    process.exit(1);
+  }
+  dbInitialized = true;
+  console.log('✅ Database initialization completed');
 });
 
 /**
  * Security middleware configuration
  * Helmet provides security headers to protect against common vulnerabilities
  */
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// Enhanced Security middleware configuration
+app.use(securityMiddleware.securityHeaders);
 
 /**
  * CORS (Cross-Origin Resource Sharing) configuration
  * Allows frontend applications from different origins to access the API
  * Supports both localhost development and network access scenarios
  */
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Define allowed origins for different environments
-    const allowedOrigins = [
-      'http://localhost:3000',      // Local development
-      'http://localhost:3002',      // Alternative local port
-      'http://localhost:3003',      // Current frontend port
-      'http://192.168.29.213:3000', // Network IP variations
-      'http://192.168.29.213:3002',
-      'http://192.168.10.205:3000', // Current network IP
-      'http://192.168.10.205:3002',
-      'http://192.168.10.205:3003', // Current frontend on network
-      'http://192.168.10.11:3000',  // Additional network IPs
-      'http://192.168.10.11:3002',
-      'http://192.168.29.213:5173', // Vite dev server ports
-      'http://192.168.10.205:5173',
-      'http://192.168.10.11:5173',
-      process.env.CORS_ORIGIN || 'http://localhost:3000' // Environment-specific origin
-    ];
-    
-    // Allow specific localhost and development IPs only
-    const isLocalhost = origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
-    const isDevNetwork = origin.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11)(:\d+)?$/);
-    
-    if (isLocalhost || isDevNetwork) {
-      return callback(null, true);
-    }
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log(`CORS: Blocked origin: ${origin}`);
-      // Return proper CORS error response instead of throwing
-      callback(null, false);
-    }
-  },
-  credentials: true, // Allow cookies and authorization headers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed request headers
-}));
+app.use(securityMiddleware.corsConfig);
 
 /**
  * Rate limiting middleware to prevent abuse
  * Limits the number of requests per IP address within a time window
  */
-const limiter = rateLimit({
-  windowMs: envConfig.RATE_LIMIT_WINDOW_MS,
-  max: envConfig.RATE_LIMIT_MAX_REQUESTS,
-  message: {
-    success: false,
-    error: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true,  // Return rate limit info in headers
-  legacyHeaders: false,   // Disable X-RateLimit-* headers
-});
-
-// Apply rate limiting to all API routes
-app.use('/api/', limiter);
+// Enhanced rate limiting with different limits for different operations
+app.use('/api/auth', securityMiddleware.authRateLimit);
+app.use('/api/auth/reset-password', securityMiddleware.passwordResetRateLimit);
+app.use('/api/files', securityMiddleware.uploadRateLimit);
+app.use('/api', securityMiddleware.generalRateLimit);
 
 /**
- * Body parsing middleware
- * - JSON parsing with 10MB limit for large file uploads
- * - URL-encoded form parsing for form submissions
+ * Additional security middleware
  */
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(securityMiddleware.requestSizeLimit);
+app.use(securityMiddleware.sanitizeInput);
+app.use(securityMiddleware.securityLogger);
+app.use(securityMiddleware.sqlInjectionProtection);
+app.use(securityMiddleware.xssProtection);
+app.use(securityMiddleware.bruteForceProtection);
+app.use(securityMiddleware.trackLoginAttempt);
 
 /**
  * HTTP request logging middleware
@@ -192,17 +165,32 @@ app.get('/health', (req, res) => {
 });
 
 /**
+ * Database readiness middleware
+ * Ensures database is initialized before processing API requests
+ */
+app.use('/api', (req, res, next) => {
+  if (!dbInitialized) {
+    return res.status(503).json({
+      error: 'Service Unavailable',
+      message: 'Database is still initializing. Please try again in a moment.',
+      retryAfter: 5
+    });
+  }
+  return next();
+});
+
+/**
  * API Route Registration
  * All API endpoints are prefixed with '/api' for clear separation
  * Each route module handles specific domain functionality
  */
 app.use('/api/auth', authRoutes);           // Authentication & authorization
 app.use('/api/users', userRoutes);          // User management & profiles
-app.use('/api/projects', projectRoutes);    // Project CRUD operations
-app.use('/api/initiatives', initiativeRoutes); // Initiative management
+app.use('/api/projects', projectRoutes);    // Project CRUD operations - Supabase compatible
+app.use('/api/initiatives', initiativeRoutes); // Initiative management - Supabase compatible
 app.use('/api/workload', workloadRoutes);   // Employee workload tracking
-app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports
-app.use('/api/notifications', notificationRoutes); // Notification system
+// app.use('/api/analytics', analyticsRoutes); // Dashboard analytics & reports - temporarily disabled
+// app.use('/api/notifications', notificationRoutes); // Notification system - temporarily disabled
 app.use('/api/comments', commentRoutes);    // Comments on projects/initiatives
 app.use('/api/files', fileRoutes);          // File upload/download
 app.use('/api/export', exportRoutes);       // Data export functionality
@@ -229,13 +217,13 @@ app.use(errorHandler);
  */
 process.on('SIGINT', async () => {
   console.log('Received SIGINT, shutting down gracefully...');
-  await prisma.$disconnect();
+  // await db.disconnect(); // Temporarily disabled
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('Received SIGTERM, shutting down gracefully...');
-  await prisma.$disconnect();
+  // await db.disconnect(); // Temporarily disabled
   process.exit(0);
 });
 
@@ -251,6 +239,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
   console.log(`✅ Environment validation passed`);
 });
+
+/**
+ * Initialize WebSocket server for real-time communication
+ * - Enables live progress updates
+ * - Real-time notifications
+ * - Collaborative editing features
+ */
+let wsService: WebSocketService;
+try {
+  wsService = new WebSocketService(server);
+  console.log('🔌 WebSocket server initialized for real-time features');
+} catch (error) {
+  console.error('❌ Failed to initialize WebSocket server:', error);
+}
+
+// Export WebSocket service for use in other modules
+export { wsService };
 
 /**
  * Handle unhandled promise rejections

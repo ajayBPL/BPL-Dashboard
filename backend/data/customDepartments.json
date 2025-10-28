@@ -1,11 +1,20 @@
 [
   {
-    "id": "dept-1758047387924",
-    "name": "Testing",
-    "description": "",
-    "headId": null,
+    "id": "dept-1761593345272",
+    "name": "Medical New",
+    "description": "Medical test",
+    "headId": "cmh9in9ij0005qyo9r13g0sf2",
     "isActive": true,
-    "createdAt": "2025-09-16T18:29:47.924Z",
-    "updatedAt": "2025-09-16T18:29:47.924Z"
+    "createdAt": "2025-10-27T19:29:05.272Z",
+    "updatedAt": "2025-10-27T19:41:23.247Z"
+  },
+  {
+    "id": "dept-1761593410365",
+    "name": "Medical Tech",
+    "description": "Medical Tech",
+    "headId": "cmh9in9ij0005qyo9r13g0sf2",
+    "isActive": true,
+    "createdAt": "2025-10-27T19:30:10.365Z",
+    "updatedAt": "2025-10-27T19:30:10.365Z"
   }
 ]

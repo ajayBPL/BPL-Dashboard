@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { centralizedDb, CentralizedProject, ProjectChange } from '../../utils/centralizedDb'
 import { useAuth } from '../../contexts/AuthContext'
+import { API_ENDPOINTS, getDefaultHeaders } from '../../utils/apiConfig'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -167,6 +168,43 @@ export function ProjectEditDialog({ project, isOpen, onClose, onProjectUpdated }
         updatedAt: new Date().toISOString()
       }
 
+      // Update project in backend API
+      const token = localStorage.getItem('bpl-token')
+      if (token) {
+        try {
+          const response = await fetch(API_ENDPOINTS.PROJECT_BY_ID(project.id), {
+            method: 'PUT',
+            headers: {
+              ...getDefaultHeaders(token),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              title: formData.title.trim(),
+              description: formData.description.trim(),
+              timeline: formData.timeline.trim(),
+              status: formData.status.toUpperCase(),
+              priority: formData.priority.toUpperCase(),
+              estimatedHours: formData.estimatedHours ? parseInt(formData.estimatedHours) : undefined
+            })
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to update project in backend')
+          }
+
+          const result = await response.json()
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to update project')
+          }
+        } catch (apiError) {
+          console.error('Backend API error:', apiError)
+          toast.error('Failed to update project in backend')
+          setLoading(false)
+          return
+        }
+      }
+
+      // Also update local database for consistency
       const updatedProject = centralizedDb.updateProjectWithTracking(
         project.id,
         updates,
@@ -179,7 +217,7 @@ export function ProjectEditDialog({ project, isOpen, onClose, onProjectUpdated }
         onProjectUpdated()
         onClose()
       } else {
-        toast.error('Failed to update project')
+        toast.error('Failed to update local project data')
       }
     } catch (error) {
       console.error('Error updating project:', error)

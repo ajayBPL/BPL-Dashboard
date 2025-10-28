@@ -1,912 +1,762 @@
 import { PrismaClient } from '@prisma/client';
-import { mockDb } from './mockDb';
-import { fileBasedMockDb } from './fileBasedMockDb';
 
-// Database service that can fallback to mock data
+// Database service using Prisma ORM with Supabase PostgreSQL
 class DatabaseService {
   private prisma: PrismaClient;
-  private useMock: boolean = false;
+  private isConnected: boolean = false;
 
   constructor() {
     this.prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
-    // Try real database connection first
-    this.useMock = false;
   }
 
   // Test database connection
   async testConnection(): Promise<boolean> {
     try {
       await this.prisma.$connect();
-      // Test with a simple query
       await this.prisma.$queryRaw`SELECT 1`;
-      console.log('✅ Database connection successful');
+      console.log('✅ Connected to Supabase PostgreSQL database');
+          this.isConnected = true;
       return true;
     } catch (error) {
-      console.error('❌ Database connection failed, falling back to mock data');
-      this.useMock = true;
+      console.error('❌ Database connection failed:', error);
       return false;
-    }
-  }
-
-  // Check if we should use mock data
-  private async checkConnection(): Promise<void> {
-    if (!this.useMock) {
-      try {
-        await this.prisma.$queryRaw`SELECT 1`;
-      } catch (error) {
-        console.error('❌ Database connection failed, falling back to mock data');
-        console.error('Database error details:', error);
-        this.useMock = true;
-        
-        // Log warning about data persistence
-        console.warn('⚠️  WARNING: Using mock database - data will not persist across restarts');
-        console.warn('⚠️  WARNING: Multiple instances will have isolated data');
-        console.warn('⚠️  Please configure PostgreSQL database for production use');
-        
-        // Store notification for frontend to display
-        this.storeDatabaseFallbackNotification();
-      }
-    }
-  }
-
-  // Store database fallback notification for frontend
-  private storeDatabaseFallbackNotification(): void {
-    try {
-      const notification = {
-        id: `db-fallback-${Date.now()}`,
-        type: 'system',
-        title: 'Database Unavailable',
-        message: '⚠️ Using temporary storage - data will not persist across restarts. Please configure PostgreSQL database.',
-        priority: 'critical',
-        read: false,
-        createdAt: new Date().toISOString(),
-        persistent: true // This notification should persist until database is restored
-      };
-
-      // Store in a file that frontend can read
-      const fs = require('fs');
-      const path = require('path');
-      const notificationFile = path.join(__dirname, '../../data/database-notifications.json');
-      
-      let notifications = [];
-      try {
-        const existing = fs.readFileSync(notificationFile, 'utf8');
-        notifications = JSON.parse(existing);
-      } catch {
-        // File doesn't exist, start fresh
-      }
-
-      // Remove any existing database fallback notifications
-      notifications = notifications.filter((n: any) => !n.id.startsWith('db-fallback-'));
-      
-      // Add new notification
-      notifications.unshift(notification);
-      
-      // Keep only the latest 10 notifications
-      notifications = notifications.slice(0, 10);
-      
-      fs.writeFileSync(notificationFile, JSON.stringify(notifications, null, 2));
-    } catch (error) {
-      console.error('Failed to store database fallback notification:', error);
     }
   }
 
   // User operations
   async findUserByEmail(email: string) {
-    await this.checkConnection();
-    
     try {
-      return await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { email },
-        include: {
-          manager: true,
-          subordinates: true,
-        },
       });
+      return user;
     } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.findUserByEmail(email);
+      console.error('Database error finding user by email:', error);
+      throw new Error('Failed to find user by email');
     }
   }
 
   async findUserById(id: string) {
-    await this.checkConnection();
-    
-    if (this.useMock) {
-      return await fileBasedMockDb.findUserById(id);
-    }
-    
     try {
-      return await this.prisma.user.findUnique({ where: { id } });
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+      });
+      return user;
     } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.findUserById(id);
+      console.error('Database error finding user by ID:', error);
+      throw new Error('Failed to find user by ID');
     }
   }
 
   async findUserByEmployeeId(employeeId: string) {
-    await this.checkConnection();
-    
-    if (this.useMock) {
-      return await fileBasedMockDb.findUserByEmployeeId(employeeId);
-    }
-    
     try {
-      return await this.prisma.user.findUnique({ where: { employeeId } });
+      const user = await this.prisma.user.findUnique({
+        where: { employeeId },
+      });
+      return user;
     } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.findUserByEmployeeId(employeeId);
+      console.error('Database error finding user by employee ID:', error);
+      throw new Error('Failed to find user by employee ID');
     }
   }
 
-  async createUser(userData: any) {
-    await this.checkConnection();
-    
-    if (this.useMock) {
-      return await fileBasedMockDb.createUser(userData);
-    }
-    
+  async getCustomRoles() {
     try {
-      return await this.prisma.user.create({ data: userData });
+      // For now, return empty array since custom roles are handled by the enum in Prisma schema
+      // This method exists for compatibility with the auth routes
+      return [];
     } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.createUser(userData);
+      console.error('Database error getting custom roles:', error);
+      return [];
     }
   }
 
-  async updateUser(id: string, userData: any) {
-    await this.checkConnection();
-    
-    if (this.useMock) {
-      return await fileBasedMockDb.updateUser(id, userData);
+  async createUser(data: any) {
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          employeeId: data.employeeId,
+          role: data.role,
+          designation: data.designation,
+          managerId: data.managerId || null,
+          department: data.department,
+          skills: data.skills || [],
+          phoneNumber: data.phoneNumber,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          workloadCap: data.workloadCap || 100,
+          overBeyondCap: data.overBeyondCap || 120,
+          preferredCurrency: data.preferredCurrency || 'USD',
+          timezone: data.timezone || 'UTC',
+          notificationSettings: data.notificationSettings || {},
+        },
+      });
+      return user;
+    } catch (error) {
+      console.error('Database error creating user:', error);
+      throw new Error('Failed to create user');
     }
-    
+  }
+
+  async updateUser(id: string, data: any) {
     try {
       const user = await this.prisma.user.update({
         where: { id },
-        data: userData,
+        data,
+      });
+      return user;
+    } catch (error) {
+      console.error('Database error updating user:', error);
+      throw new Error('Failed to update user');
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      await this.prisma.user.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Database error deleting user:', error);
+      throw new Error('Failed to delete user');
+    }
+  }
+
+  async getAllUsers(filters: any = {}) {
+    try {
+      const where: any = {};
+      
+      if (filters.role) {
+        where.role = filters.role;
+      }
+      
+      if (filters.isActive !== undefined) {
+        where.isActive = filters.isActive;
+      }
+      
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } },
+          { employeeId: { contains: filters.search, mode: 'insensitive' } },
+        ];
+      }
+
+      const users = await this.prisma.user.findMany({
+        where,
         select: {
           id: true,
           email: true,
           name: true,
+          employeeId: true,
           role: true,
           designation: true,
-        managerId: true,
-        department: true,
-        skills: true,
-        workloadCap: true,
-        overBeyondCap: true,
-        avatar: true,
-        phoneNumber: true,
-        timezone: true,
-        preferredCurrency: true,
-        notificationSettings: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLoginAt: true
-      }
+          managerId: true,
+          isActive: true,
+          workloadCap: true,
+          overBeyondCap: true,
+          preferredCurrency: true,
+          timezone: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
       });
-      
-      return {
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-        lastLoginAt: user.lastLoginAt?.toISOString() || null
-      };
+
+      return users;
     } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.updateUser(id, userData);
+      console.error('Database error getting all users:', error);
+      throw new Error('Failed to get users');
     }
-  }
-
-  async getAllUsers() {
-    await this.checkConnection();
-    
-    if (this.useMock) {
-      return await fileBasedMockDb.getAllUsers();
-    }
-    
-    try {
-      const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        designation: true,
-        managerId: true,
-        department: true,
-        skills: true,
-        workloadCap: true,
-        overBeyondCap: true,
-        avatar: true,
-        phoneNumber: true,
-        timezone: true,
-        preferredCurrency: true,
-        notificationSettings: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLoginAt: true
-      }
-      });
-      
-      return users.map((user: any) => ({
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-        lastLoginAt: user.lastLoginAt?.toISOString() || null
-      }));
-    } catch (error) {
-      console.log('Database error, falling back to mock data:', error);
-      this.useMock = true;
-      return await fileBasedMockDb.getAllUsers();
-    }
-  }
-
-  // Initialize database connection
-  async initialize() {
-    await this.testConnection();
-  }
-
-  // Get Prisma client for direct access when needed
-  getPrisma() {
-    return this.prisma;
-  }
-
-  // Check if using mock data
-  isUsingMock() {
-    return this.useMock;
-  }
-
-  // Activity log operations
-  async createActivityLog(data: any) {
-    if (this.useMock) {
-      return await fileBasedMockDb.createActivityLog(data);
-    }
-    return await this.prisma.activityLog.create({ data });
   }
 
   // Project operations
-  async createProject(projectData: any) {
-    if (this.useMock) {
-      return await fileBasedMockDb.createProject(projectData);
-    }
-    const project = await this.prisma.project.create({
-      data: projectData,
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        }
-      }
-    });
-    
-    return {
-      ...project,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
-    };
-  }
-
-  async updateProject(projectId: string, updateData: any) {
-    console.log('DatabaseService.updateProject called with:', { projectId, updateData, useMock: this.useMock });
-    
-    if (this.useMock) {
-      console.log('Using mock database for updateProject');
-      const result = await fileBasedMockDb.updateProject(projectId, updateData);
-      console.log('Mock database updateProject result:', result);
-      return result;
-    }
-    
-    console.log('Using Prisma for updateProject');
-    const project = await this.prisma.project.update({
-      where: { id: projectId },
-      data: updateData,
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        }
-      }
-    });
-    
-    return {
-      ...project,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString()
-    };
-  }
-
-  async getAllProjects() {
-    if (this.useMock) {
-      return await fileBasedMockDb.getAllProjects();
-    }
-    const projects = await this.prisma.project.findMany({
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            designation: true
-          }
+  async createProject(data: any) {
+    try {
+      const project = await this.prisma.project.create({
+        data: {
+          title: data.title || data.name, // Support both 'title' and 'name' fields
+          description: data.description,
+          managerId: data.managerId,
+          status: (data.status || 'PENDING').toUpperCase(), // Convert to uppercase for enum
+          priority: (data.priority || 'MEDIUM').toUpperCase(), // Convert to uppercase for enum
+          estimatedHours: data.estimatedHours || 0,
+          actualHours: data.actualHours || 0,
+          budgetAmount: data.budgetAmount || null,
+          budgetCurrency: data.budgetCurrency || 'USD',
+          timeline: data.timeline || null,
+          tags: data.tags || [],
         },
-        assignments: {
-          include: {
-            employee: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                designation: true
-              }
-            }
-          }
-        },
-        milestones: {
-          orderBy: { dueDate: 'asc' }
-        }
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
-    
-    return projects.map((project: any) => ({
-      ...project,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString(),
-      assignments: project.assignments?.map((assignment: any) => ({
-        ...assignment,
-        assignedAt: assignment.assignedAt.toISOString(),
-        updatedAt: assignment.updatedAt.toISOString(),
-        employee: assignment.employee
-      })),
-      milestones: project.milestones?.map((milestone: any) => ({
-        ...milestone,
-        dueDate: milestone.dueDate.toISOString(),
-        completedAt: milestone.completedAt?.toISOString(),
-        createdAt: milestone.createdAt.toISOString(),
-        updatedAt: milestone.updatedAt.toISOString()
-      }))
-    }));
+      });
+      return project;
+    } catch (error) {
+      console.error('Database error creating project:', error);
+      throw new Error('Failed to create project');
+    }
   }
 
   async getProjectById(id: string) {
-    if (this.useMock) {
-      const projects = await fileBasedMockDb.getAllProjects();
-      return projects.find(project => project.id === id) || null;
-    }
-    const project = await this.prisma.project.findUnique({
-      where: { id },
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            designation: true
-          }
-        },
-        assignments: {
-          include: {
-            employee: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                designation: true,
-                avatar: true
-              }
-            }
-          }
-        },
-        milestones: {
-          orderBy: { dueDate: 'asc' }
-        },
-        comments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true
-              }
-            }
+    try {
+      const project = await this.prisma.project.findUnique({
+        where: { id },
+        include: {
+          manager: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              employeeId: true,
+            },
           },
-          orderBy: { createdAt: 'desc' }
+          assignments: {
+            include: {
+              employee: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  employeeId: true,
+                  role: true,
+                },
+              },
+            },
+          },
+          milestones: {
+            orderBy: { dueDate: 'asc' },
+          },
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
-        versions: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      }
-    });
-    
-    if (!project) return null;
-    
-    return {
-      ...project,
-      createdAt: project.createdAt.toISOString(),
-      updatedAt: project.updatedAt.toISOString(),
-      assignments: project.assignments?.map((assignment: any) => ({
-        ...assignment,
-        assignedAt: assignment.assignedAt.toISOString(),
-        updatedAt: assignment.updatedAt.toISOString(),
-        employee: assignment.employee
-      })),
-      milestones: project.milestones?.map((milestone: any) => ({
-        ...milestone,
-        dueDate: milestone.dueDate.toISOString(),
-        completedAt: milestone.completedAt?.toISOString(),
-        createdAt: milestone.createdAt.toISOString(),
-        updatedAt: milestone.updatedAt.toISOString()
-      })),
-      comments: project.comments?.map((comment: any) => ({
-        ...comment,
-        createdAt: comment.createdAt.toISOString(),
-        updatedAt: comment.updatedAt.toISOString()
-      })),
-      versions: project.versions?.map((version: any) => ({
-        ...version,
-        createdAt: version.createdAt.toISOString()
-      }))
-    };
+      });
+      return project;
+    } catch (error) {
+      console.error('Database error getting project:', error);
+      throw new Error('Failed to get project');
+    }
   }
 
+  async getAllProjects(filters: any = {}) {
+    try {
+      const where: any = {};
+      
+      if (filters.status) {
+        where.status = filters.status;
+      }
+      
+      if (filters.priority) {
+        where.priority = filters.priority;
+      }
+      
+      if (filters.managerId) {
+        where.managerId = filters.managerId;
+      }
+      
+      if (filters.department) {
+        where.department = filters.department;
+      }
+
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search, mode: 'insensitive' } },
+        ];
+      }
+
+      const projects = await this.prisma.project.findMany({
+        where,
+        include: {
+          manager: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          assignments: {
+            include: {
+              employee: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              milestones: true,
+              comments: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return projects;
+    } catch (error) {
+      console.error('Database error getting projects:', error);
+      throw new Error('Failed to get projects');
+    }
+  }
+
+  async updateProject(id: string, data: any) {
+    try {
+      const project = await this.prisma.project.update({
+        where: { id },
+        data,
+      });
+      return project;
+    } catch (error) {
+      console.error('Database error updating project:', error);
+      throw new Error('Failed to update project');
+    }
+  }
+
+  async deleteProject(id: string) {
+    try {
+      await this.prisma.project.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Database error deleting project:', error);
+      throw new Error('Failed to delete project');
+    }
+  }
+
+  // Project Assignment operations
   async assignEmployeeToProject(projectId: string, assignmentData: any, managerId: string) {
-    await this.checkConnection();
-    if (this.useMock) {
-      return await fileBasedMockDb.assignEmployeeToProject(projectId, assignmentData, managerId);
-    }
+    try {
+      // Check if project exists
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+      });
+      if (!project) {
+        throw new Error('Project not found');
+      }
 
-    // Check if project exists
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId }
-    });
+      // Check if employee exists
+      const employee = await this.prisma.user.findUnique({
+        where: { id: assignmentData.employeeId },
+      });
+      if (!employee) {
+        throw new Error('Employee not found');
+      }
 
-    if (!project) {
-      throw new Error('Project not found');
-    }
+      // Check if already assigned
+      const existingAssignment = await this.prisma.projectAssignment.findUnique({
+        where: {
+          projectId_employeeId: {
+            projectId: projectId,
+            employeeId: assignmentData.employeeId,
+          },
+        },
+      });
+      if (existingAssignment) {
+        throw new Error('Employee is already assigned to this project');
+      }
 
-    // Check if employee exists
-    const employee = await this.prisma.user.findUnique({
-      where: { id: assignmentData.employeeId }
-    });
+      // Check workload capacity
+      const currentAssignments = await this.prisma.projectAssignment.findMany({
+        where: { employeeId: assignmentData.employeeId },
+        include: {
+          project: {
+            select: { status: true },
+          },
+        },
+      });
 
-    if (!employee) {
-      throw new Error('Employee not found');
-    }
+      const currentWorkload = currentAssignments
+        .filter((a: any) => a.project.status === 'ACTIVE')
+        .reduce((sum: number, a: any) => sum + a.involvementPercentage, 0);
 
-    // Check if already assigned
-    const existingAssignment = await this.prisma.projectAssignment.findUnique({
-      where: {
-        projectId_employeeId: {
+      if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
+        throw new Error('Assignment would exceed employee workload capacity');
+      }
+
+      // Create assignment
+      const assignment = await this.prisma.projectAssignment.create({
+        data: {
           projectId: projectId,
-          employeeId: assignmentData.employeeId
-        }
-      }
-    });
+          employeeId: assignmentData.employeeId,
+          involvementPercentage: assignmentData.involvementPercentage || 100,
+        },
+        include: {
+          employee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              employeeId: true,
+            },
+          },
+        },
+      });
 
-    if (existingAssignment) {
-      throw new Error('Employee is already assigned to this project');
+      return assignment;
+    } catch (error) {
+      console.error('Database error assigning employee to project:', error);
+      throw error;
     }
-
-    // Check workload capacity
-    const currentAssignments = await this.prisma.projectAssignment.findMany({
-      where: { employeeId: assignmentData.employeeId },
-      include: {
-        project: {
-          select: { status: true }
-        }
-      }
-    });
-
-    const currentWorkload = currentAssignments
-      .filter((a: any) => a.project.status === 'ACTIVE')
-      .reduce((sum: number, a: any) => sum + a.involvementPercentage, 0);
-
-    if (currentWorkload + assignmentData.involvementPercentage > employee.workloadCap) {
-      throw new Error(`Assignment would exceed employee's workload capacity (${employee.workloadCap}%)`);
-    }
-
-    // Create assignment
-    const assignment = await this.prisma.projectAssignment.create({
-      data: {
-        projectId: projectId,
-        employeeId: assignmentData.employeeId,
-        involvementPercentage: assignmentData.involvementPercentage,
-        role: assignmentData.role
-      },
-      include: {
-        employee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            designation: true
-          }
-        }
-      }
-    });
-
-    // Log activity
-    await this.prisma.activityLog.create({
-      data: {
-        userId: managerId,
-        action: 'USER_ASSIGNED',
-        entityType: 'PROJECT',
-        entityId: projectId,
-        projectId: projectId,
-        details: `Assigned ${employee.name} to project with ${assignmentData.involvementPercentage}% involvement`
-      }
-    });
-
-    return {
-      ...assignment,
-      assignedAt: assignment.assignedAt.toISOString(),
-      updatedAt: assignment.updatedAt.toISOString()
-    };
   }
 
-  async unassignEmployeeFromProject(projectId: string, employeeId: string, managerId: string) {
-    if (this.useMock) {
-      return await fileBasedMockDb.unassignEmployeeFromProject(projectId, employeeId, managerId);
+  // Unassign employee from project
+  async unassignEmployeeFromProject(projectId: string, employeeId: string) {
+    try {
+      await this.prisma.projectAssignment.delete({
+        where: {
+          projectId_employeeId: {
+            projectId,
+            employeeId,
+          },
+        },
+      });
+      return { projectId, employeeId };
+    } catch (error) {
+      console.error('Database error unassigning employee:', error);
+      throw new Error('Failed to unassign employee from project');
     }
+  }
 
-    // Check if assignment exists
-    const assignment = await this.prisma.projectAssignment.findUnique({
-      where: {
-        projectId_employeeId: {
-          projectId: projectId,
-          employeeId: employeeId
-        }
-      },
-      include: {
-        employee: {
-          select: { name: true }
-        }
-      }
-    });
-
-    if (!assignment) {
-      throw new Error('Assignment not found');
+  // Create milestone
+  async createMilestone(data: any) {
+    try {
+      const milestone = await this.prisma.milestone.create({
+        data: {
+          projectId: data.projectId,
+          title: data.title,
+          description: data.description || '',
+          dueDate: data.dueDate ? new Date(data.dueDate) : new Date(),
+        },
+      });
+      return milestone;
+    } catch (error) {
+      console.error('Database error creating milestone:', error);
+      throw new Error('Failed to create milestone');
     }
+  }
 
-    // Delete assignment
-    await this.prisma.projectAssignment.delete({
-      where: {
-        projectId_employeeId: {
-          projectId: projectId,
-          employeeId: employeeId
-        }
+  // Create comment
+  async createComment(data: any) {
+    try {
+      const comment = await this.prisma.comment.create({
+        data: {
+          content: data.content,
+          userId: data.userId,
+          projectId: data.projectId || null,
+          initiativeId: data.initiativeId || null,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+      return comment;
+    } catch (error) {
+      console.error('Database error creating comment:', error);
+      throw new Error('Failed to create comment');
+    }
+  }
+
+  // Initiative operations
+  async createInitiative(data: any) {
+    try {
+      const initiative = await this.prisma.initiative.create({
+        data: {
+          title: data.title,
+          description: data.description,
+          category: data.category || null,
+          assignedTo: data.assignedTo,
+          createdBy: data.createdBy,
+          status: (data.status || 'PENDING').toUpperCase(), // Convert to uppercase for enum
+          priority: (data.priority || 'MEDIUM').toUpperCase(), // Convert to uppercase for enum
+          estimatedHours: data.estimatedHours || 0,
+          actualHours: data.actualHours || 0,
+          workloadPercentage: data.workloadPercentage || 0,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        },
+      });
+      return initiative;
+    } catch (error) {
+      console.error('Database error creating initiative:', error);
+      throw new Error('Failed to create initiative');
+    }
+  }
+
+  async getInitiativeById(id: string) {
+    try {
+      const initiative = await this.prisma.initiative.findUnique({
+        where: { id },
+        include: {
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+      return initiative;
+    } catch (error) {
+      console.error('Database error getting initiative:', error);
+      throw new Error('Failed to get initiative');
+    }
+  }
+
+  async getAllInitiatives(filters: any = {}) {
+    try {
+      const where: any = {};
+      
+      if (filters.status) {
+        where.status = filters.status;
       }
-    });
-
-    // Log activity
-    await this.prisma.activityLog.create({
-      data: {
-        userId: managerId,
-        action: 'USER_UNASSIGNED',
-        entityType: 'PROJECT',
-        entityId: projectId,
-        projectId: projectId,
-        details: `Unassigned ${assignment.employee.name} from project`
+      
+      if (filters.assignedTo) {
+        where.assignedTo = filters.assignedTo;
       }
-    });
+      
+      if (filters.projectId) {
+        where.projectId = filters.projectId;
+      }
 
-    return { success: true };
+      const initiatives = await this.prisma.initiative.findMany({
+        where,
+        include: {
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return initiatives;
+    } catch (error) {
+      console.error('Database error getting initiatives:', error);
+      throw new Error('Failed to get initiatives');
+    }
+  }
+
+  async updateInitiative(id: string, data: any) {
+    try {
+      const initiative = await this.prisma.initiative.update({
+        where: { id },
+        data,
+      });
+      return initiative;
+    } catch (error) {
+      console.error('Database error updating initiative:', error);
+      throw new Error('Failed to update initiative');
+    }
+  }
+
+  async deleteInitiative(id: string) {
+    try {
+      await this.prisma.initiative.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Database error deleting initiative:', error);
+      throw new Error('Failed to delete initiative');
+    }
   }
 
   // Notification operations
   async createNotification(data: any) {
-    if (this.useMock) {
-      return await fileBasedMockDb.createNotification(data);
-    }
-    return await this.prisma.notification.create({ data });
-  }
-
-  // Custom roles operations
-  async getCustomRoles() {
-    if (this.useMock) {
-      return await fileBasedMockDb.getCustomRoles();
-    }
-    // For real database, you would implement this
-    return [];
-  }
-
-  // Initiative methods
-  async getInitiatives(options: any) {
-    if (this.useMock) {
-      return { data: [], total: 0 };
-    }
-    return { data: [], total: 0 };
-  }
-
-  async createInitiative(data: any) {
-    if (this.useMock) {
-      return { id: `initiative-${Date.now()}`, ...data };
-    }
-    return { id: `initiative-${Date.now()}`, ...data };
-  }
-
-  async getInitiativeById(id: string) {
-    if (this.useMock) {
-      return null;
-    }
-    return null;
-  }
-
-  async updateInitiative(id: string, data: any) {
-    if (this.useMock) {
-      return { id, ...data };
-    }
-    return { id, ...data };
-  }
-
-  async deleteInitiative(id: string) {
-    if (this.useMock) {
-      return true;
-    }
-    return true;
-  }
-
-  async assignUsersToInitiative(initiativeId: string, userIds: string[]) {
-    if (this.useMock) {
-      return true;
-    }
-    return true;
-  }
-
-  async getInitiativeAssignments(initiativeId: string) {
-    if (this.useMock) {
-      return [];
-    }
-    return [];
-  }
-
-  async getInitiativeProjects(initiativeId: string) {
-    if (this.useMock) {
-      return [];
-    }
-    return [];
-  }
-
-  async getInitiativeActivityLogs(initiativeId: string) {
-    if (this.useMock) {
-      return [];
-    }
-    return [];
-  }
-
-  // Analytics methods
-  async getProjectAnalytics(options: any) {
-    if (this.useMock) {
-      return { total: 0, completed: 0, active: 0, onHold: 0 };
-    }
-    return { total: 0, completed: 0, active: 0, onHold: 0 };
-  }
-
-  async getUserAnalytics(options: any) {
-    if (this.useMock) {
-      return { total: 0, active: 0, workload: [] };
-    }
-    return { total: 0, active: 0, workload: [] };
-  }
-
-  async getInitiativeAnalytics(options: any) {
-    if (this.useMock) {
-      return { total: 0, completed: 0, active: 0 };
-    }
-    return { total: 0, completed: 0, active: 0 };
-  }
-
-  async getActivityAnalytics(options: any) {
-    if (this.useMock) {
-      return { total: 0, recent: [] };
-    }
-    return { total: 0, recent: [] };
-  }
-
-  async getWorkloadAnalytics(options: any) {
-    if (this.useMock) {
-      return { total: 0, overloaded: 0, available: 0 };
-    }
-    return { total: 0, overloaded: 0, available: 0 };
-  }
-
-  async generateReport(options: any) {
-    if (this.useMock) {
-      return { type: options.type, data: [], generatedAt: new Date().toISOString() };
-    }
-    return { type: options.type, data: [], generatedAt: new Date().toISOString() };
-  }
-
-  // Notification methods
-  async getUserNotifications(userId: string, options: any) {
-    // Always include system notifications (like database fallback warnings)
-    const systemNotifications = await this.getSystemNotifications();
-    
-    if (this.useMock) {
-      // Mock notifications
-      const mockNotifications = [
-        {
-          id: 'mock-1',
-          type: 'project',
-          title: 'Project Update',
-          message: 'Your project "Website Redesign" has been updated',
-          priority: 'medium',
-          read: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'mock-2',
-          type: 'deadline',
-          title: 'Deadline Reminder',
-          message: 'Task "User Research" is due tomorrow',
-          priority: 'high',
-          read: false,
-          createdAt: new Date(Date.now() - 7200000).toISOString()
-        }
-      ];
-      
-      const allNotifications = [...systemNotifications, ...mockNotifications];
-      
-      return {
-        data: allNotifications,
-        total: allNotifications.length,
-        unreadCount: allNotifications.filter(n => !n.read).length
-      };
-    }
-    
     try {
-      // Try to get notifications from database
+      const notification = await this.prisma.notification.create({
+        data: {
+          userId: data.userId,
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          entityType: data.entityType || null,
+          entityId: data.entityId || null,
+          read: false,
+        },
+      });
+      return notification;
+    } catch (error) {
+      console.error('Database error creating notification:', error);
+      throw new Error('Failed to create notification');
+    }
+  }
+
+  async getNotificationsByUserId(userId: string, filters: any = {}) {
+    try {
+      const where: any = { userId };
+      
+      if (filters.read !== undefined) {
+        where.read = filters.read;
+      }
+
       const notifications = await this.prisma.notification.findMany({
-        where: { userId },
+        where,
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: filters.limit || 50,
       });
 
-      const formattedNotifications = notifications.map((notification: any) => ({
-        id: notification.id,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        priority: notification.priority,
-        read: notification.read,
-        createdAt: notification.createdAt.toISOString(),
-        persistent: notification.persistent || false
-      }));
-
-      const allNotifications = [...systemNotifications, ...formattedNotifications];
-
-      return {
-        data: allNotifications,
-        total: allNotifications.length,
-        unreadCount: allNotifications.filter(n => !n.read).length
-      };
+      return notifications;
     } catch (error) {
-      console.error('Database error, falling back to mock notifications:', error);
-      this.useMock = true;
-      
-      // Return mock notifications with system notifications
-      const mockNotifications = [
-        {
-          id: 'mock-1',
-          type: 'project',
-          title: 'Project Update',
-          message: 'Your project "Website Redesign" has been updated',
-          priority: 'medium',
-          read: false,
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'mock-2',
-          type: 'deadline',
-          title: 'Deadline Reminder',
-          message: 'Task "User Research" is due tomorrow',
-          priority: 'high',
-          read: false,
-          createdAt: new Date(Date.now() - 7200000).toISOString()
-        }
-      ];
-      
-      const allNotifications = [...systemNotifications, ...mockNotifications];
-      
-      return {
-        data: allNotifications,
-        total: allNotifications.length,
-        unreadCount: allNotifications.filter(n => !n.read).length
-      };
+      console.error('Database error getting notifications:', error);
+      throw new Error('Failed to get notifications');
     }
   }
 
-  async getNotificationById(id: string) {
-    if (this.useMock) {
-      return null;
-    }
-    return null;
-  }
-
-  // Get system notifications (like database fallback warnings)
-  private async getSystemNotifications(): Promise<any[]> {
+  async markNotificationAsRead(id: string) {
     try {
-      const fs = require('fs');
-      const path = require('path');
-      const notificationFile = path.join(__dirname, '../../data/database-notifications.json');
-      
-      if (fs.existsSync(notificationFile)) {
-        const data = fs.readFileSync(notificationFile, 'utf8');
-        return JSON.parse(data);
-      }
+      const notification = await this.prisma.notification.update({
+        where: { id },
+        data: { read: true },
+      });
+      return notification;
     } catch (error) {
-      console.error('Error reading system notifications:', error);
+      console.error('Database error marking notification as read:', error);
+      throw new Error('Failed to mark notification as read');
     }
-    
-    return [];
-  }
-
-  async markNotificationAsRead(id: string, userId: string) {
-    if (this.useMock) {
-      return true;
-    }
-    return true;
-  }
-
-  async markNotificationAsUnread(id: string, userId: string) {
-    if (this.useMock) {
-      return true;
-    }
-    return true;
   }
 
   async markAllNotificationsAsRead(userId: string) {
-    if (this.useMock) {
-      return 0;
-    }
-    return 0;
-  }
-
-  async deleteNotification(id: string) {
-    if (this.useMock) {
+    try {
+        await this.prisma.notification.updateMany({
+          where: { userId, read: false },
+          data: { read: true },
+        });
       return true;
+    } catch (error) {
+      console.error('Database error marking all notifications as read:', error);
+      throw new Error('Failed to mark all notifications as read');
     }
-    return true;
   }
 
-  async getUserNotificationPreferences(userId: string) {
-    if (this.useMock) {
-      return { email: true, inApp: true, projectUpdates: true };
+  // Activity Log operations
+  async createActivityLog(data: any) {
+    try {
+      const log = await this.prisma.activityLog.create({
+        data: {
+          userId: data.userId,
+          action: data.action,
+          entityType: data.entityType,
+          entityId: data.entityId,
+          details: data.details || null,
+        },
+      });
+      return log;
+    } catch (error) {
+      console.error('Database error creating activity log:', error);
+      throw new Error('Failed to create activity log');
     }
-    return { email: true, inApp: true, projectUpdates: true };
   }
 
-  async updateUserNotificationPreferences(userId: string, preferences: any) {
-    if (this.useMock) {
-      return { ...preferences, updatedAt: new Date().toISOString() };
+  async getActivityLogs(filters: any = {}) {
+    try {
+      const where: any = {};
+      
+      if (filters.userId) {
+        where.userId = filters.userId;
+      }
+      
+      if (filters.entityType) {
+        where.entityType = filters.entityType;
+      }
+      
+      if (filters.entityId) {
+        where.entityId = filters.entityId;
+      }
+
+      const logs = await this.prisma.activityLog.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { timestamp: 'desc' },
+        take: filters.limit || 100,
+      });
+
+      return logs;
+    } catch (error) {
+      console.error('Database error getting activity logs:', error);
+      throw new Error('Failed to get activity logs');
     }
-    return { ...preferences, updatedAt: new Date().toISOString() };
+  }
+
+  // Analytics placeholder methods
+  async getProjectAnalytics(options: any) {
+      return {
+      message: 'Project analytics placeholder',
+    };
+  }
+
+  async getUserAnalytics(options: any) {
+    return {
+      message: 'User analytics placeholder',
+    };
+  }
+
+  async getInitiativeAnalytics(options: any) {
+      return {
+      message: 'Initiative analytics placeholder',
+    };
+  }
+
+  async getActivityAnalytics(options: any) {
+    return {
+      message: 'Activity analytics placeholder',
+    };
+  }
+
+  // Disconnect
+  async disconnect() {
+    await this.prisma.$disconnect();
   }
 }
 
+// Export singleton instance
 export const db = new DatabaseService();
+export { DatabaseService };

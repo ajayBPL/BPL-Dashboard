@@ -723,6 +723,39 @@ class FileBasedMockDatabase {
     this.writeToFile(this.customDepartmentsFile, departments);
     return newDepartment;
   }
+
+  async updateCustomDepartment(departmentId: string, departmentData: { name: string; description: string; headId: string | null }) {
+    const departments = this.readFromFile(this.customDepartmentsFile);
+    const index = departments.findIndex((dept: any) => dept.id === departmentId);
+    
+    if (index === -1) {
+      return null; // Department not found
+    }
+    
+    departments[index] = {
+      ...departments[index],
+      name: departmentData.name,
+      description: departmentData.description,
+      headId: departmentData.headId,
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.writeToFile(this.customDepartmentsFile, departments);
+    return departments[index];
+  }
+
+  async deleteCustomDepartment(departmentId: string) {
+    const departments = this.readFromFile(this.customDepartmentsFile);
+    const index = departments.findIndex((dept: any) => dept.id === departmentId);
+    
+    if (index === -1) {
+      return false; // Department not found
+    }
+    
+    departments.splice(index, 1);
+    this.writeToFile(this.customDepartmentsFile, departments);
+    return true;
+  }
 }
 
 export const fileBasedMockDb = new FileBasedMockDatabase();

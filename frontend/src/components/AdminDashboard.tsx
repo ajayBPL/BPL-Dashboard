@@ -45,7 +45,8 @@ import {
   Clock,
   Mail,
   Phone,
-  Plus
+  Plus,
+  Save
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -64,6 +65,8 @@ export function AdminDashboard() {
   const [showDepartmentManagement, setShowDepartmentManagement] = useState(false)
   const [newRole, setNewRole] = useState({ name: '', description: '', permissions: [] as string[] })
   const [newDepartment, setNewDepartment] = useState({ name: '', description: '', headId: '' })
+  const [editingDepartment, setEditingDepartment] = useState<any>(null)
+  const [showEditDepartment, setShowEditDepartment] = useState(false)
   const [customRoles, setCustomRoles] = useState<any[]>([])
   const [customDepartments, setCustomDepartments] = useState<any[]>([])
   const [subordinateEmployees, setSubordinateEmployees] = useState<any[]>([])
@@ -429,6 +432,60 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('Error creating department:', error)
       toast.error('Failed to create department')
+    }
+  }
+
+  const handleUpdateDepartment = async () => {
+    if (!editingDepartment || !editingDepartment.name.trim()) {
+      toast.error('Department name is required')
+      return
+    }
+
+    try {
+      const response = await apiService.request(`/departments/${editingDepartment.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editingDepartment.name,
+          description: editingDepartment.description,
+          headId: editingDepartment.headId
+        })
+      });
+
+      if (response.success) {
+        toast.success(`Department "${editingDepartment.name}" updated successfully!`)
+        // Reload custom departments
+        await loadCustomDepartments();
+        setEditingDepartment(null)
+        setShowEditDepartment(false)
+      } else {
+        toast.error(response.error || 'Failed to update department')
+      }
+    } catch (error) {
+      console.error('Error updating department:', error)
+      toast.error('Failed to update department')
+    }
+  }
+
+  const handleDeleteDepartment = async (departmentId: string, departmentName: string) => {
+    if (!confirm(`Are you sure you want to delete the department "${departmentName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await apiService.request(`/departments/${departmentId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.success) {
+        toast.success(`Department "${departmentName}" deleted successfully!`)
+        // Reload custom departments
+        await loadCustomDepartments();
+      } else {
+        toast.error(response.error || 'Failed to delete department')
+      }
+    } catch (error) {
+      console.error('Error deleting department:', error)
+      toast.error('Failed to delete department')
     }
   }
 
@@ -1134,35 +1191,53 @@ export function AdminDashboard() {
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Current Departments</h3>
                   <div className="grid gap-4">
-                    {/* Demo departments - in real app, these would come from database */}
-                    {[
-                      { name: 'Engineering', description: 'Software development and technical teams', head: 'John Doe', userCount: 12 },
-                      { name: 'Product Management', description: 'Product strategy and management', head: 'Jane Smith', userCount: 8 },
-                      { name: 'Quality Assurance', description: 'Testing and quality control', head: 'Bob Johnson', userCount: 6 },
-                      { name: 'DevOps', description: 'Infrastructure and deployment', head: 'Alice Brown', userCount: 4 },
-                      { name: 'Research & Development', description: 'Innovation and new technology research', head: 'Charlie Wilson', userCount: 5 }
-                    ].map((dept, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold">{dept.name}</h4>
-                            <p className="text-sm text-muted-foreground">{dept.description}</p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="text-sm">Head: {dept.head}</span>
-                              <Badge variant="outline">{dept.userCount} members</Badge>
+                    {customDepartments.length > 0 ? (
+                      customDepartments.map((dept, index) => {
+                        // Find department head details
+                        const head = dept.headId ? users.find(u => u.id === dept.headId) : null;
+                        // Count users in this department
+                        const userCount = users.filter(u => u.department === dept.name).length;
+                        
+                        return (
+                          <Card key={dept.id || index} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold">{dept.name}</h4>
+                                <p className="text-sm text-muted-foreground">{dept.description || 'No description'}</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                  <span className="text-sm">Head: {head ? head.name : 'Not assigned'}</span>
+                                  <Badge variant="outline">{userCount} member{userCount !== 1 ? 's' : ''}</Badge>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingDepartment(dept)
+                                    setShowEditDepartment(true)
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => handleDeleteDepartment(dept.id, dept.name)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-destructive">
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+                          </Card>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>No departments found. Create your first department below.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1588,6 +1663,83 @@ export function AdminDashboard() {
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Department
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={showEditDepartment} onOpenChange={setShowEditDepartment}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Department</DialogTitle>
+            <DialogDescription>
+              Update department information and settings
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => { e.preventDefault(); handleUpdateDepartment(); }} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editDeptName">Department Name *</Label>
+                <Input
+                  id="editDeptName"
+                  value={editingDepartment?.name || ''}
+                  onChange={(e) => setEditingDepartment({ ...editingDepartment, name: e.target.value })}
+                  placeholder="e.g., Engineering, Marketing, Sales"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editDeptDescription">Description</Label>
+                <Textarea
+                  id="editDeptDescription"
+                  value={editingDepartment?.description || ''}
+                  onChange={(e) => setEditingDepartment({ ...editingDepartment, description: e.target.value })}
+                  placeholder="Brief description of the department's responsibilities"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editDeptHead">Department Head (Optional)</Label>
+                <Select
+                  value={editingDepartment?.headId || ''}
+                  onValueChange={(value) => setEditingDepartment({ ...editingDepartment, headId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department head" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {managers.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.name} ({getRoleDisplay(manager.role)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditingDepartment(null);
+                  setShowEditDepartment(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!editingDepartment?.name?.trim()}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Update Department
               </Button>
             </div>
           </form>

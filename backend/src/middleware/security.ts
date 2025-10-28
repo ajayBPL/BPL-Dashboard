@@ -47,7 +47,7 @@ export const generalRateLimit = createRateLimit(
 // Authentication rate limiting (stricter)
 export const authRateLimit = createRateLimit(
   15 * 60 * 1000, // 15 minutes
-  5, // 5 login attempts per window
+  25, // 25 login attempts per window
   'Too many authentication attempts, please try again later'
 );
 

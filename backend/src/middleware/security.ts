@@ -94,25 +94,65 @@ export const corsConfig = cors({
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = [
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Get allowed origins from environment variable (can be comma-separated)
+    const corsOriginEnv = process.env.CORS_ORIGIN || '';
+    const allowedOriginsFromEnv = corsOriginEnv
+      ? corsOriginEnv.split(',').map(o => o.trim()).filter(o => o.length > 0)
+      : [];
+    
+    // Development-only origins
+    const devOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:3002',
       'http://localhost:3003',
-      'http://localhost:5173',
+      'http://localhost:5173'
+    ];
+    
+    // Allow localhost in development mode only
+    const isLocalhost = origin?.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
+    if (!isProduction && isLocalhost) {
+      return callback(null, true);
+    }
+    
+    // Allow development network IPs in development mode only
+    if (!isProduction) {
+      const isDevNetwork = origin?.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11|9\.91)(:\d+)?$/);
+      if (isDevNetwork) {
+        return callback(null, true);
+      }
+    }
+    
+    // Check environment variable origins (required in production)
+    if (allowedOriginsFromEnv.length > 0) {
+      if (allowedOriginsFromEnv.includes(origin)) {
+        return callback(null, true);
+      }
+    }
+    
+    // Fallback: check hardcoded production origins (for backward compatibility)
+    const hardcodedOrigins = [
       'https://bplcommander.com',
       'https://www.bplcommander.com'
     ];
-    
-    // Allow localhost and development IPs
-    const isLocalhost = origin?.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/);
-    const isDevNetwork = origin?.match(/^https?:\/\/192\.168\.(10\.205|29\.213|10\.11|9\.91)(:\d+)?$/);
-    
-    if (isLocalhost || isDevNetwork || (origin && allowedOrigins.includes(origin))) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    if (hardcodedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+    
+    // In production, if CORS_ORIGIN is set but origin doesn't match, reject
+    if (isProduction && allowedOriginsFromEnv.length > 0) {
+      return callback(new Error('Not allowed by CORS'));
+    }
+    
+    // In development, allow common dev origins even if not in CORS_ORIGIN
+    if (!isProduction && devOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Reject if no match
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

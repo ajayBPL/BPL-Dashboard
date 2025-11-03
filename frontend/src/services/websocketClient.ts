@@ -172,10 +172,54 @@ class WebSocketClient {
    */
   private getWebSocketUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.hostname === 'localhost'
-      ? 'localhost:3000'
-      : window.location.hostname + ':3000'
-
+    
+    // Use environment variable if set, otherwise derive from current location
+    if (import.meta.env.VITE_WS_URL) {
+      const wsUrl = import.meta.env.VITE_WS_URL
+      // Ensure proper protocol (ws:// or wss://)
+      if (wsUrl.startsWith('http://')) {
+        return wsUrl.replace('http://', 'ws://').replace('/api', '').replace(/\/$/, '') + '/ws'
+      } else if (wsUrl.startsWith('https://')) {
+        return wsUrl.replace('https://', 'wss://').replace('/api', '').replace(/\/$/, '') + '/ws'
+      } else if (wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://')) {
+        return wsUrl
+      }
+      // If just hostname:port, add protocol
+      return `${protocol}//${wsUrl}`
+    }
+    
+    // Detect if we're in production
+    const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
+    const hostname = window.location.hostname
+    
+    // Try to derive WebSocket URL from API URL
+    // WebSocket typically runs on the same server as the API backend
+    let apiBaseUrl = import.meta.env.VITE_API_URL
+    
+    if (apiBaseUrl) {
+      try {
+        // Parse API URL to get hostname and port
+        const apiUrl = new URL(apiBaseUrl.replace('/api', ''))
+        const wsHostname = apiUrl.hostname
+        const wsPort = apiUrl.port ? `:${apiUrl.port}` : (apiUrl.protocol === 'https:' ? '' : ':3001')
+        const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+        return `${wsProtocol}//${wsHostname}${wsPort}/ws`
+      } catch (e) {
+        // If parsing fails, fall through to default logic
+      }
+    }
+    
+    // Fallback: derive from current window location
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Development mode - use backend API port (3001)
+      return 'ws://localhost:3001/ws'
+    }
+    
+    // Production mode - use same hostname, default to port 3001 for backend
+    // If frontend and backend share a domain (reverse proxy), WebSocket might be on same port
+    // Otherwise, backend typically on port 3001
+    const wsPort = ':3001' // Default backend port
+    const host = hostname + wsPort
     return `${protocol}//${host}/ws`
   }
 

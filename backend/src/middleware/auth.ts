@@ -10,6 +10,8 @@ declare global {
       user?: User;
     }
   }
+  // Declare global variable for JWT secret logging flag
+  var jwtSecretLogged: boolean | undefined;
 }
 
 export interface JwtPayload {
@@ -46,6 +48,16 @@ export const authenticateToken = async (
         error: 'Server configuration error'
       });
       return;
+    }
+    
+    // Log JWT_SECRET info in development mode (for debugging)
+    if (process.env.NODE_ENV === 'development' && !global.jwtSecretLogged) {
+      console.log('🔐 JWT_SECRET loaded:', {
+        length: jwtSecret.length,
+        firstChars: jwtSecret.substring(0, 10) + '...',
+        isDefault: jwtSecret === 'your_super_secret_jwt_key_change_this_in_production'
+      });
+      global.jwtSecretLogged = true; // Prevent spam
     }
 
     // Check if it's a demo token (for development ONLY)
@@ -117,14 +129,28 @@ export const authenticateToken = async (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
+      // Provide more helpful error message in development
+      const errorMessage = process.env.NODE_ENV === 'development' 
+        ? 'Invalid token - This usually means the token was signed with a different JWT_SECRET. Clear your browser localStorage and log in again.'
+        : 'Invalid token';
+      
+      console.warn('⚠️  JWT validation failed:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('💡 Suggestion: Clear localStorage (bpl-token) and log in again');
+      }
+      
       res.status(401).json({
         success: false,
-        error: 'Invalid token'
+        error: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { 
+          hint: 'Token may have been signed with old JWT_SECRET. Please clear localStorage and log in again.' 
+        })
       });
     } else if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
-        error: 'Token expired'
+        error: 'Token expired',
+        message: 'Please log in again'
       });
     } else {
       console.error('Authentication error:', error);

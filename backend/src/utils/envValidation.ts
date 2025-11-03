@@ -6,9 +6,29 @@
  */
 
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from backend/.env
+// Supports .env.development, .env.production, or .env based on NODE_ENV
+// Find backend directory: __dirname is backend/dist/utils (prod) or backend/src/utils (dev)
+const backendDir = path.resolve(__dirname, '../..');
+
+// Determine which .env file to load based on NODE_ENV
+// Priority: .env.{NODE_ENV} > .env
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFiles = [
+  path.resolve(backendDir, `.env.${nodeEnv}`), // .env.development or .env.production
+  path.resolve(backendDir, '.env'),            // Fallback to .env
+];
+
+// Load the first available .env file
+for (const envFile of envFiles) {
+  if (fs.existsSync(envFile)) {
+    dotenv.config({ path: envFile });
+    break;
+  }
+}
 
 interface EnvConfig {
   DATABASE_URL: string;
@@ -72,12 +92,17 @@ export function validateEnvironment(): EnvConfig {
   }
 
   // Validate JWT_SECRET strength
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   if (process.env.JWT_SECRET) {
     if (process.env.JWT_SECRET.length < 32) {
       errors.push('JWT_SECRET must be at least 32 characters long for security');
     }
-    if (process.env.JWT_SECRET === 'your_super_secret_jwt_key_change_this_in_production') {
+    // Only block default value in production
+    if (isProduction && process.env.JWT_SECRET === 'your_super_secret_jwt_key_change_this_in_production') {
       errors.push('JWT_SECRET must be changed from the default value');
+    } else if (!isProduction && process.env.JWT_SECRET === 'your_super_secret_jwt_key_change_this_in_production') {
+      console.warn('⚠️  WARNING: JWT_SECRET is using default value - update before production deployment');
     }
   }
 
@@ -98,8 +123,11 @@ export function validateEnvironment(): EnvConfig {
   }
 
   if (process.env.SUPABASE_ANON_KEY) {
-    if (process.env.SUPABASE_ANON_KEY.length < 50) {
+    // Only enforce length check in production
+    if (isProduction && process.env.SUPABASE_ANON_KEY.length < 50) {
       errors.push('SUPABASE_ANON_KEY appears to be invalid (too short)');
+    } else if (!isProduction && process.env.SUPABASE_ANON_KEY.length < 50) {
+      console.warn('⚠️  WARNING: SUPABASE_ANON_KEY appears to be a placeholder - update with actual Supabase key');
     }
   }
 

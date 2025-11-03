@@ -30,13 +30,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [supabaseConfig] = useState<{ projectId: string; publicAnonKey: string; supabaseUrl: string }>({
-    projectId: 'mwrdlemotjhrnjzncbxk',
-    publicAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cmRsZW1vdGpocm5qem5jYnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDQxNDMsImV4cCI6MjA2OTM4MDE0M30.b-0QzJwCbxlEqb6koGIUiEU6bC0J1zkLN0eMV5E3_Dg',
-    supabaseUrl: 'https://mwrdlemotjhrnjzncbxk.supabase.co'
+  // ⚠️  SECURITY: Get Supabase config from environment variables (DO NOT hardcode)
+  const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
+  
+  const [supabaseConfig] = useState<{ projectId: string; publicAnonKey: string; supabaseUrl: string }>(() => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'your-project-id';
+    const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your_supabase_anon_key_here';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-id.supabase.co';
+    
+    // Validate in production
+    if (isProduction && (projectId === 'your-project-id' || publicAnonKey === 'your_supabase_anon_key_here')) {
+      console.error('⚠️  CRITICAL: Supabase environment variables not set in production!');
+      console.error('   Required: VITE_SUPABASE_PROJECT_ID, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_URL');
+      console.error('   Create frontend/.env.production before building for production.');
+    }
+    
+    return { projectId, publicAnonKey, supabaseUrl };
   })
 
-  useEffect(() => { 
+  useEffect(() => {
+    // Listen for invalid token events from API service
+    const handleTokenInvalid = (event: CustomEvent) => {
+      console.warn('🔒 Token invalid event received:', event.detail);
+      // Clear user and token
+      setUser(null);
+      setAccessToken(null);
+      localStorage.removeItem('bpl-user');
+      localStorage.removeItem('bpl-token');
+      apiService.clearToken();
+      // Optionally show a notification (if you have a toast system)
+      // toast.error(event.detail.message || 'Your session has expired. Please log in again.');
+    };
+
+    window.addEventListener('auth:token-invalid', handleTokenInvalid as EventListener);
+
     // Check for existing session in localStorage
     const storedUser = localStorage.getItem('bpl-user')
     const storedToken = localStorage.getItem('bpl-token')
@@ -85,6 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     setLoading(false)
+
+    // Cleanup: Remove event listener
+    return () => {
+      window.removeEventListener('auth:token-invalid', handleTokenInvalid as EventListener);
+    };
   }, [])
 
   // Listen to Supabase auth changes
@@ -116,29 +148,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔐 Attempting backend API login with:', { email, password: '***' });
       
-      // Call the backend API at localhost:3001
-      const response = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const result = await response.json();
+      // Use apiService which handles environment variables automatically
+      const result = await apiService.login(email, password);
       console.log('📡 Backend API response:', result);
 
-      if (!result.success || !response.ok) {
+      if (!result.success) {
         console.log('❌ Backend login failed:', result.error);
         return { success: false, error: result.error || 'Login failed' };
       }
 
-      if (!result.data?.user) {
+      // apiService wraps the backend response, so result.data contains the backend response
+      // Backend returns: { success: true, data: { user: {...}, token: "..." } }
+      const backendData = result.data?.data || result.data;
+      
+      if (!backendData?.user) {
         return { success: false, error: 'No user data returned' };
       }
 
       // Store the token
-      const token = result.data.token;
+      const token = backendData.token;
       if (token) {
         localStorage.setItem('bpl-token', token);
         setAccessToken(token);
@@ -147,12 +175,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Convert backend user to our User format
       const userData: User = {
-        id: result.data.user.id,
-        email: result.data.user.email,
-        name: result.data.user.name,
-        role: result.data.user.role as any,
-        designation: result.data.user.designation,
-        managerId: result.data.user.managerId
+        id: backendData.user.id,
+        email: backendData.user.email,
+        name: backendData.user.name,
+        role: backendData.user.role as any,
+        designation: backendData.user.designation,
+        managerId: backendData.user.managerId
       }
 
       // Add or update user in centralizedDb

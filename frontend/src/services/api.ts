@@ -43,6 +43,34 @@ class ApiService {
 
       console.log(`📡 API Response: ${response.status}`, data);
 
+      // Handle 401 Unauthorized - Invalid or expired token
+      if (response.status === 401) {
+        const errorMessage = data.error || 'Invalid token';
+        
+        // Check if this is specifically an "Invalid token" error (not just missing auth)
+        if (errorMessage.toLowerCase().includes('invalid token') || 
+            errorMessage.toLowerCase().includes('token expired') ||
+            errorMessage.toLowerCase().includes('token was signed')) {
+          console.warn('⚠️  Invalid token detected - clearing localStorage and redirecting to login');
+          
+          // Clear invalid token
+          this.clearToken();
+          localStorage.removeItem('bpl-user');
+          
+          // Trigger a custom event that AuthContext can listen to
+          window.dispatchEvent(new CustomEvent('auth:token-invalid', { 
+            detail: { message: errorMessage, hint: data.hint } 
+          }));
+          
+          return {
+            success: false,
+            error: errorMessage || 'Your session has expired. Please log in again.',
+            code: 'TOKEN_INVALID',
+            requiresReauth: true,
+          };
+        }
+      }
+
       if (!response.ok) {
         return {
           success: false,

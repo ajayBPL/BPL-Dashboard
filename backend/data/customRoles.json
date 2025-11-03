@@ -34,5 +34,14 @@
     "isActive": true,
     "createdAt": "2025-11-03T10:29:32.687Z",
     "updatedAt": "2025-11-03T10:29:32.687Z"
+  },
+  {
+    "id": "role-1762193899730",
+    "name": "Test Role 4",
+    "description": "",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-11-03T18:18:19.730Z",
+    "updatedAt": "2025-11-03T18:18:19.730Z"
   }
 ]

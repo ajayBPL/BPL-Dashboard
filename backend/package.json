@@ -4,13 +4,17 @@
   "description": "BPL Commander Backend API",
   "main": "dist/backend/src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "dev:prod": "cross-env NODE_ENV=production nodemon src/index.ts",
     "build": "tsc",
-    "start": "node dist/backend/src/index.js",
+    "start": "cross-env NODE_ENV=production node dist/backend/src/index.js",
+    "start:dev": "cross-env NODE_ENV=development node dist/backend/src/index.js",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "ts-node src/prisma/seed.ts",
+    "env:validate": "node scripts/validate-env.js",
+    "env:generate-jwt": "node scripts/generate-jwt-secret.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

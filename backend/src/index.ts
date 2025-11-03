@@ -53,7 +53,30 @@ import { db } from './services/database';                     // Database servic
 import WebSocketService from './services/websocketService';    // Real-time WebSocket service
 
 // Load environment variables from .env file
-dotenv.config();
+// Supports .env.development, .env.production, or .env based on NODE_ENV
+import path from 'path';
+import fs from 'fs';
+
+// Find backend directory (works in both dev and production)
+// __dirname resolution: in dev (ts-node) it's backend/src, in production it's backend/dist
+const backendDir = path.resolve(__dirname, '..');
+
+// Determine which .env file to load based on NODE_ENV
+// Priority: .env.{NODE_ENV} > .env
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFiles = [
+  path.resolve(backendDir, `.env.${nodeEnv}`), // .env.development or .env.production
+  path.resolve(backendDir, '.env'),            // Fallback to .env
+];
+
+// Load the first available .env file
+for (const envFile of envFiles) {
+  if (fs.existsSync(envFile)) {
+    dotenv.config({ path: envFile });
+    console.log(`📁 Loaded environment from: ${path.basename(envFile)}`);
+    break;
+  }
+}
 
 // Validate environment variables and exit if validation fails
 const envConfig = validateEnvironmentOrExit();
@@ -106,16 +129,27 @@ let dbInitialized = false;
 // Start database initialization but don't wait for it
 initializeDatabase().then((success) => {
   if (!success) {
-    console.warn('⚠️  Database connection failed, but continuing startup (will retry on first request)');
-    console.warn('⚠️  Please check your Supabase configuration in .env file');
-    console.warn('⚠️  Required variables: DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY');
+    if (envConfig.NODE_ENV === 'development') {
+      console.warn('⚠️  Database connection failed, but continuing in development mode');
+      console.warn('⚠️  Update DATABASE_URL in .env file with your actual Supabase credentials to enable database features');
+      console.warn('⚠️  Required variables: DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY');
+      console.warn('⚠️  The app will work without database, but data features will be limited');
+    } else {
+      console.error('❌ Database connection failed - required for production');
+      console.error('📝 Please check your Supabase configuration in .env file');
+      console.error('📝 Required variables: DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY');
+    }
   } else {
     dbInitialized = true;
     console.log('✅ Database initialization completed');
   }
 }).catch((error) => {
-  console.error('❌ Database initialization error:', error);
-  console.warn('⚠️  Continuing startup, but database features may not work');
+  if (envConfig.NODE_ENV === 'development') {
+    console.warn('⚠️  Database initialization error, but continuing in development mode:', error?.message || error);
+  } else {
+    console.error('❌ Database initialization error:', error);
+    console.warn('⚠️  Continuing startup, but database features may not work');
+  }
 });
 
 // Don't wait for database - start server immediately
@@ -182,14 +216,26 @@ app.get('/health', (req, res) => {
 /**
  * Database readiness middleware
  * Ensures database is initialized before processing API requests
+ * In development mode, allows requests even if DB isn't connected (with warning)
  */
 app.use('/api', (req, res, next) => {
   if (!dbInitialized) {
-    return res.status(503).json({
-      error: 'Service Unavailable',
-      message: 'Database is still initializing. Please try again in a moment.',
-      retryAfter: 5
-    });
+    // In development, allow requests but log warning
+    if (envConfig.NODE_ENV === 'development') {
+      // Only log once per request cycle to avoid spam
+      if (!req.headers['x-db-warning-sent']) {
+        console.warn('⚠️  Database not connected - some API features may not work');
+        req.headers['x-db-warning-sent'] = 'true';
+      }
+      return next(); // Allow request to proceed
+    } else {
+      // In production, block requests if DB not initialized
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Database is still initializing. Please try again in a moment.',
+        retryAfter: 5
+      });
+    }
   }
   return next();
 });
@@ -251,8 +297,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 BPL Commander API server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${envConfig.NODE_ENV}`);
-  console.log(`🌐 Network access: http://192.168.10.205:${PORT}/health`);
   console.log(`✅ Environment validation passed`);
+  if (envConfig.NODE_ENV === 'production') {
+    console.log(`🌐 CORS Origin: ${envConfig.CORS_ORIGIN || 'Not configured'}`);
+  }
 });
 
 /**

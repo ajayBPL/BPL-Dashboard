@@ -9,7 +9,11 @@
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // Force single React instance to fix "Invalid hook call" errors
+        'react': path.resolve(__dirname, './node_modules/react'),
+        'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
       },
+      dedupe: ['react', 'react-dom'],
     },
     build: {
       target: 'esnext',
@@ -43,5 +47,7 @@
     // Optimize dependencies
     optimizeDeps: {
       include: ['react', 'react-dom', 'lucide-react'],
+      // Force re-optimization
+      force: true,
     },
   });

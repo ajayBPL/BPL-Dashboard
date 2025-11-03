@@ -7,5 +7,32 @@
     "isActive": true,
     "createdAt": "2025-10-27T08:00:38.290Z",
     "updatedAt": "2025-10-27T08:00:38.290Z"
+  },
+  {
+    "id": "role-1762159078028",
+    "name": "Intern",
+    "description": "Internship",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-11-03T08:37:58.028Z",
+    "updatedAt": "2025-11-03T08:37:58.028Z"
+  },
+  {
+    "id": "role-1762165309469",
+    "name": "MD",
+    "description": "Maneging Director",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-11-03T10:21:49.469Z",
+    "updatedAt": "2025-11-03T10:21:49.469Z"
+  },
+  {
+    "id": "role-1762165772687",
+    "name": "IB",
+    "description": "IBIBIB",
+    "permissions": [],
+    "isActive": true,
+    "createdAt": "2025-11-03T10:29:32.687Z",
+    "updatedAt": "2025-11-03T10:29:32.687Z"
   }
 ]

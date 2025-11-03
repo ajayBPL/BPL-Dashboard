@@ -208,10 +208,12 @@ export function ManagerDashboard() {
                 priority: project.priority?.toLowerCase() || 'medium', // Project priority (normalized to lowercase)
                 category: project.category || 'standard',         // Project category
                 assignedEmployees: project.assignments || [],     // List of assigned employees
-                milestones: [],                                   // Project milestones (empty for now)
+                milestones: project.milestones || [],             // Project milestones
                 tags: project.tags || [],                         // Project tags for categorization
                 requiredSkills: [],                              // Required skills (empty for now)
                 estimatedHours: project.estimatedHours,          // Estimated hours to complete
+                progress: project.progress ?? project.manualProgress ?? 0, // Project progress (use manualProgress if available)
+                manualProgress: project.manualProgress ?? null,   // Manual progress override
                 // Budget information if available
                 budget: project.budgetAmount ? {
                   amount: project.budgetAmount,                  // Budget amount
@@ -1107,7 +1109,15 @@ export function ManagerDashboard() {
       <ProjectDetails
         projectId={selectedProjectId}
         isOpen={!!selectedProjectId}
-        onClose={() => setSelectedProjectId(null)}
+        onClose={() => {
+          setSelectedProjectId(null)
+          // Refresh projects list when modal closes to reflect any progress updates
+          fetchData()
+        }}
+        onProjectUpdate={() => {
+          // Refresh projects list when project is updated (e.g., progress change)
+          fetchData()
+        }}
       />
     </div>
   )

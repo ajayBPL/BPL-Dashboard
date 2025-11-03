@@ -16,7 +16,8 @@ import {
   Briefcase,
   AlertCircle,
   User,
-  Loader2
+  Loader2,
+  Lightbulb
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getDepartmentColors, getEnhancedColors } from '../utils/departmentColors'
@@ -33,6 +34,20 @@ interface EmployeeProjectAssignment {
   endDate?: string
 }
 
+interface EmployeeInitiative {
+  id: string
+  title: string
+  description: string
+  category: string
+  priority: string
+  status: string
+  workloadPercentage: number
+  estimatedHours: number
+  actualHours?: number
+  dueDate?: string
+  createdAt: string
+}
+
 interface EmployeeWithProjects {
   id: string
   name: string
@@ -47,6 +62,7 @@ interface EmployeeWithProjects {
   createdAt: string
   lastLoginAt?: string
   projects: EmployeeProjectAssignment[]
+  initiatives: EmployeeInitiative[]
   totalWorkload: number
   availableCapacity: number
   overBeyondWorkload: number
@@ -95,24 +111,29 @@ export function EmployeeOverview() {
         return
       }
 
-      const [usersResponse, projectsResponse] = await Promise.all([
+      const [usersResponse, projectsResponse, initiativesResponse] = await Promise.all([
         fetch(`${API_ENDPOINTS.USERS}?limit=100`, {
           headers: getDefaultHeaders(token)
         }),
         fetch(API_ENDPOINTS.PROJECTS, {
           headers: getDefaultHeaders(token)
+        }),
+        fetch(API_ENDPOINTS.INITIATIVES, {
+          headers: getDefaultHeaders(token)
         })
       ])
 
-      if (!usersResponse.ok || !projectsResponse.ok) {
+      if (!usersResponse.ok || !projectsResponse.ok || !initiativesResponse.ok) {
         throw new Error('Failed to fetch data')
       }
 
       const usersData = await usersResponse.json()
       const projectsData = await projectsResponse.json()
+      const initiativesData = await initiativesResponse.json()
       
       const users = usersData.data || []
       const projects = projectsData.data || []
+      const initiatives = initiativesData.success ? (initiativesData.data || []) : []
 
       // Calculate employee workload and project assignments
       const employeeData: EmployeeWithProjects[] = users
@@ -148,10 +169,37 @@ export function EmployeeOverview() {
             .filter(Boolean)
 
 
-          // Calculate total workload
-          const totalWorkload = employeeProjects.reduce((total, project) => total + project.involvementPercentage, 0)
+          // Find all initiatives assigned to this employee
+          const employeeInitiatives: EmployeeInitiative[] = initiatives
+            .filter((initiative: any) => {
+              const assignedTo = initiative.assignedTo || initiative.assigned_to
+              return assignedTo === user.id && 
+                     (initiative.status === 'ACTIVE' || 
+                      initiative.status === 'active' || 
+                      initiative.status === 'PENDING' || 
+                      initiative.status === 'pending')
+            })
+            .map((initiative: any) => ({
+              id: initiative.id,
+              title: initiative.title,
+              description: initiative.description || '',
+              category: initiative.category || '',
+              priority: initiative.priority || 'medium',
+              status: initiative.status,
+              workloadPercentage: initiative.workloadPercentage || 0,
+              estimatedHours: initiative.estimatedHours || 0,
+              actualHours: initiative.actualHours,
+              dueDate: initiative.dueDate || initiative.due_date,
+              createdAt: initiative.createdAt || initiative.created_at
+            }))
+
+          // Calculate total workload from projects
+          const projectWorkload = employeeProjects.reduce((total, project) => total + project.involvementPercentage, 0)
+          // Calculate over & beyond workload from initiatives
+          const overBeyondWorkload = employeeInitiatives.reduce((total, initiative) => total + initiative.workloadPercentage, 0)
+          
           const workloadCap = user.workloadCap || 100
-          const availableCapacity = Math.max(0, workloadCap - totalWorkload)
+          const availableCapacity = Math.max(0, workloadCap - projectWorkload)
 
           return {
             id: user.id,
@@ -167,9 +215,10 @@ export function EmployeeOverview() {
             createdAt: user.createdAt,
             lastLoginAt: user.lastLoginAt,
             projects: employeeProjects,
-            totalWorkload,
+            initiatives: employeeInitiatives,
+            totalWorkload: projectWorkload,
             availableCapacity,
-            overBeyondWorkload: 0 // TODO: Calculate from initiatives if needed
+            overBeyondWorkload
           }
         })
 
@@ -557,10 +606,10 @@ export function EmployeeOverview() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              {selectedEmployee?.name} - Project Assignments
+              {selectedEmployee?.name} - Assignments & Workload
             </DialogTitle>
             <DialogDescription>
-              Detailed view of all project assignments and workload distribution
+              Detailed view of project assignments, Over & Beyond initiatives, and workload distribution
             </DialogDescription>
           </DialogHeader>
 
@@ -637,10 +686,14 @@ export function EmployeeOverview() {
                   <CardTitle className="text-lg">Workload Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">{selectedEmployee.totalWorkload.toFixed(1)}%</div>
-                      <div className="text-sm text-muted-foreground">Total Workload</div>
+                      <div className="text-sm text-muted-foreground">Project Workload</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{selectedEmployee.overBeyondWorkload.toFixed(1)}%</div>
+                      <div className="text-sm text-muted-foreground">Over & Beyond</div>
                     </div>
                     <div className="text-center">
                       <div className={`text-2xl font-bold ${getWorkloadColor(selectedEmployee.totalWorkload, selectedEmployee.workloadCap)}`}>
@@ -649,19 +702,33 @@ export function EmployeeOverview() {
                       <div className="text-sm text-muted-foreground">Available Capacity</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">{selectedEmployee.projects.length}</div>
+                      <div className="text-2xl font-bold text-green-600">{selectedEmployee.projects.length}</div>
                       <div className="text-sm text-muted-foreground">Active Projects</div>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Workload Distribution</span>
-                      <span>{selectedEmployee.totalWorkload.toFixed(1)}% / {selectedEmployee.workloadCap}%</span>
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Project Workload Distribution</span>
+                        <span>{selectedEmployee.totalWorkload.toFixed(1)}% / {selectedEmployee.workloadCap}%</span>
+                      </div>
+                      <Progress 
+                        value={(selectedEmployee.totalWorkload / selectedEmployee.workloadCap) * 100} 
+                        className="h-3"
+                      />
                     </div>
-                    <Progress 
-                      value={(selectedEmployee.totalWorkload / selectedEmployee.workloadCap) * 100} 
-                      className="h-3"
-                    />
+                    {selectedEmployee.overBeyondWorkload > 0 && (
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Over & Beyond Workload</span>
+                          <span>{selectedEmployee.overBeyondWorkload.toFixed(1)}% / {selectedEmployee.overBeyondCap}%</span>
+                        </div>
+                        <Progress 
+                          value={(selectedEmployee.overBeyondWorkload / selectedEmployee.overBeyondCap) * 100} 
+                          className="h-3"
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -669,7 +736,10 @@ export function EmployeeOverview() {
               {/* Project Assignments */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Project Assignments</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Project Assignments
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {selectedEmployee.projects.length > 0 ? (
@@ -731,6 +801,131 @@ export function EmployeeOverview() {
                       <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-muted-foreground">No Project Assignments</h3>
                       <p className="text-sm text-muted-foreground">This employee is not currently assigned to any projects.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Over & Beyond Initiatives */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-purple-600" />
+                    Over & Beyond (Initiatives)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedEmployee.initiatives.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedEmployee.initiatives.map((initiative) => {
+                        const completionRate = initiative.actualHours && initiative.estimatedHours 
+                          ? (initiative.actualHours / initiative.estimatedHours) * 100 
+                          : 0
+                        
+                        return (
+                          <div key={initiative.id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-semibold">{initiative.title}</h4>
+                                  {initiative.category && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {initiative.category}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {initiative.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge 
+                                  variant="outline"
+                                  className={initiative.status === 'ACTIVE' || initiative.status === 'active' 
+                                    ? 'border-green-500 text-green-700' 
+                                    : initiative.status === 'COMPLETED' || initiative.status === 'completed'
+                                    ? 'border-blue-500 text-blue-700'
+                                    : ''}
+                                >
+                                  {initiative.status}
+                                </Badge>
+                                <Badge 
+                                  variant="outline"
+                                  className={initiative.priority === 'high' 
+                                    ? 'border-red-500 text-red-700' 
+                                    : initiative.priority === 'medium'
+                                    ? 'border-yellow-500 text-yellow-700'
+                                    : 'border-gray-500 text-gray-700'}
+                                >
+                                  {initiative.priority}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <span className="text-sm text-muted-foreground">Workload: </span>
+                                    <span className="text-sm font-medium">{initiative.workloadPercentage}%</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Target className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <span className="text-sm text-muted-foreground">Est. Hours: </span>
+                                    <span className="text-sm font-medium">{initiative.estimatedHours}h</span>
+                                  </div>
+                                </div>
+                                {initiative.dueDate && (
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Due Date: </span>
+                                      <span className="text-sm font-medium">
+                                        {new Date(initiative.dueDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                {initiative.actualHours && (
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Actual Hours: </span>
+                                      <span className="text-sm font-medium">{initiative.actualHours}h</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {initiative.estimatedHours > 0 && (
+                                <div className="mt-3">
+                                  <div className="flex justify-between text-sm mb-2">
+                                    <span>Progress ({initiative.estimatedHours}h estimated)</span>
+                                    <span>{completionRate.toFixed(1)}%</span>
+                                  </div>
+                                  <Progress value={completionRate} className="h-2" />
+                                </div>
+                              )}
+                              <div className="mt-2">
+                                <Progress value={initiative.workloadPercentage} className="h-2" />
+                                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                  <span>Workload: {initiative.workloadPercentage}%</span>
+                                  <span>Cap: {selectedEmployee.overBeyondCap}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-muted-foreground">No Over & Beyond Initiatives</h3>
+                      <p className="text-sm text-muted-foreground">
+                        This employee is not currently assigned to any Over & Beyond initiatives.
+                      </p>
                     </div>
                   )}
                 </CardContent>

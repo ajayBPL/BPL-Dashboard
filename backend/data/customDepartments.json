@@ -16,5 +16,14 @@
     "isActive": true,
     "createdAt": "2025-10-27T19:30:10.365Z",
     "updatedAt": "2025-10-27T19:30:10.365Z"
+  },
+  {
+    "id": "dept-1762165350343",
+    "name": "MD New",
+    "description": "MD New",
+    "headId": null,
+    "isActive": true,
+    "createdAt": "2025-11-03T10:22:30.343Z",
+    "updatedAt": "2025-11-03T10:22:30.343Z"
   }
 ]

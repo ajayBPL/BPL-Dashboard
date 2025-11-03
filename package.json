@@ -9,7 +9,8 @@
     "shared"
   ],
   "scripts": {
-    "predev": "cross-env-shell \"taskkill /f /im node.exe 2>nul || taskkill /f /im nodemon.exe 2>nul || taskkill /f /im vite.exe 2>nul || true\"",
+    "predev": "echo Skipping predev cleanup...",
+    "kill:ports": "powershell -Command \"$ports = @(3001, 5173); foreach ($port in $ports) { $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue; foreach ($conn in $conns) { $procId = $conn.OwningProcess; Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Write-Host ('Killed process ' + $procId + ' on port ' + $port) } }\"",
     "setup:windows": "powershell -ExecutionPolicy Bypass -File setup-windows.ps1",
     "setup:registry": "npm config set registry https://registry.npmjs.org/ && npm config delete proxy && npm config delete https-proxy",
     "setup:clean": "npm cache clean --force && rimraf node_modules package-lock.json backend/node_modules backend/package-lock.json frontend/node_modules frontend/package-lock.json shared/node_modules shared/package-lock.json",
@@ -41,8 +42,8 @@
     "db:studio:yarn": "cd backend && yarn db:studio",
     "db:generate": "cd backend && npm run db:generate",
     "db:generate:yarn": "cd backend && yarn db:generate",
-    "clean": "cross-env-shell \"taskkill /f /im node.exe 2>nul || taskkill /f /im nodemon.exe 2>nul || taskkill /f /im vite.exe 2>nul || true\"",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../shared && npm install",
+    "clean": "taskkill /f /im node.exe 2>nul || taskkill /f /im nodemon.exe 2>nul || taskkill /f /im vite.exe 2>nul || exit /b 0",
+    "install:all": "npm install",
     "install:all:yarn": "yarn install"
   },
   "devDependencies": {
@@ -54,7 +55,6 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "dependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.50.1",
     "@types/nodemailer": "^7.0.1",

@@ -8,21 +8,100 @@ class DatabaseService {
   constructor() {
     this.prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
     });
   }
 
-  // Test database connection
-  async testConnection(): Promise<boolean> {
-    try {
-      await this.prisma.$connect();
-      await this.prisma.$queryRaw`SELECT 1`;
-      console.log('✅ Connected to Supabase PostgreSQL database');
-          this.isConnected = true;
-      return true;
-    } catch (error) {
-      console.error('❌ Database connection failed:', error);
-      return false;
+  // Test database connection with retries and detailed error handling
+  async testConnection(retries: number = 3): Promise<boolean> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        // Set connection timeout (increased to 10 seconds for VM environments)
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Connection timeout after 10 seconds')), 10000);
+        });
+        
+        // First, disconnect if already connected (clean state)
+        try {
+          await this.prisma.$disconnect();
+        } catch {}
+        
+        await Promise.race([
+          this.prisma.$connect(),
+          timeoutPromise
+        ]);
+        
+        await Promise.race([
+          this.prisma.$queryRaw`SELECT 1 as test`,
+          timeoutPromise
+        ]);
+        
+        console.log('✅ Connected to Supabase PostgreSQL database');
+        this.isConnected = true;
+        return true;
+      } catch (error: any) {
+        const errorMsg = error?.message || String(error);
+        
+        // Provide detailed error diagnostics
+        if (errorMsg.includes('timeout') || errorMsg.includes('ECONNREFUSED')) {
+          console.warn(`⏱️  Connection attempt ${attempt}/${retries} failed: Server unreachable or timeout`);
+          if (attempt < retries) {
+            console.warn(`   Retrying in ${attempt * 2} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            continue;
+          } else {
+            console.error('❌ Database connection failed: Network timeout or unreachable');
+            console.error('💡 Possible causes:');
+            console.error('   - Firewall blocking ports 5432 or 6543');
+            console.error('   - VM network connectivity issues');
+            console.error('   - Supabase project might be paused (check dashboard)');
+          }
+        } else if (errorMsg.includes('Tenant or user not found') || errorMsg.includes('password')) {
+          console.error(`❌ Database connection failed (attempt ${attempt}/${retries}): Authentication error`);
+          console.error(`   Error: ${errorMsg}`);
+          console.error('💡 Possible causes:');
+          console.error('   - Incorrect password in DATABASE_URL');
+          console.error('   - Wrong project reference in connection string');
+          console.error('   - Password needs URL encoding (special characters)');
+          console.error('   - Check connection string format from Supabase dashboard');
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+        } else if (errorMsg.includes('P1001') || errorMsg.includes("Can't reach database server")) {
+          console.error(`❌ Database connection failed (attempt ${attempt}/${retries}): Cannot reach server`);
+          console.error(`   Error: ${errorMsg}`);
+          console.error('💡 Possible causes:');
+          console.error('   - Supabase project is paused (resume in dashboard)');
+          console.error('   - Network/firewall blocking connection');
+          console.error('   - IP address might be banned (check Supabase dashboard → Database → Unban IP)');
+          console.error('   - VM might not support IPv6 (Supabase uses IPv6)');
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            continue;
+          }
+        } else {
+          console.error(`❌ Database connection failed (attempt ${attempt}/${retries}): ${errorMsg}`);
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+        }
+        
+        // Ensure we disconnect on error
+        try {
+          await this.prisma.$disconnect();
+        } catch {}
+        
+        this.isConnected = false;
+      }
     }
+    
+    return false;
   }
 
   // User operations
@@ -96,9 +175,35 @@ class DatabaseService {
         },
       });
       return user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Database error creating user:', error);
-      throw new Error('Failed to create user');
+      
+      // Provide more specific error messages
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        if (error.meta?.target?.includes('email')) {
+          throw new Error('User with this email already exists');
+        }
+        if (error.meta?.target?.includes('employee_id')) {
+          throw new Error('User with this employee ID already exists');
+        }
+        throw new Error('A user with this information already exists');
+      }
+      
+      if (error.code === 'P2003') {
+        throw new Error('Invalid reference: ' + (error.meta?.field_name || 'foreign key constraint failed'));
+      }
+      
+      // Check for enum validation error (invalid role)
+      if (error.message?.includes('Invalid enum value') || error.message?.includes('Unknown arg `role`')) {
+        throw new Error(
+          `Invalid role "${data.role}". Valid roles are: ADMIN, PROGRAM_MANAGER, RD_MANAGER, MANAGER, EMPLOYEE. ` +
+          `Please ensure the role is one of these valid enum values.`
+        );
+      }
+      
+      // Generic error with more details
+      throw new Error(`Failed to create user: ${error.message || 'Unknown database error'}`);
     }
   }
 

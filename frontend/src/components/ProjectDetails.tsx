@@ -40,14 +40,16 @@ import {
   Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ProgressCalculationService } from '../utils/progressCalculationService'
 
 interface ProjectDetailsProps {
   projectId: string | null
   isOpen: boolean
   onClose: () => void
+  onProjectUpdate?: () => void  // Optional callback when project is updated
 }
 
-export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsProps) {
+export function ProjectDetails({ projectId, isOpen, onClose, onProjectUpdate }: ProjectDetailsProps) {
   const { user: currentUser, loading: authLoading } = useAuth()
   const [project, setProject] = useState<CentralizedProject | null>(null)
   const [loading, setLoading] = useState(false)
@@ -264,6 +266,8 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                 tags: projectData.data.tags || [],
                 requiredSkills: [],
                 estimatedHours: projectData.data.estimatedHours,
+                progress: projectData.data.progress ?? projectData.data.manualProgress ?? 0, // Project progress
+                manualProgress: projectData.data.manualProgress ?? null, // Manual progress override
                 budget: projectData.data.budgetAmount ? {
                   amount: projectData.data.budgetAmount,
                   currency: projectData.data.budgetCurrency || 'USD',
@@ -575,7 +579,9 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
 
   const completedMilestones = project?.milestones.filter(m => m.completed).length || 0
   const totalMilestones = project?.milestones.length || 0
-  const progressPercentage = project?.progress || 0
+  // Use unified progress calculation service for consistency
+  const progressData = project ? ProgressCalculationService.calculateProjectProgress(project) : null
+  const progressPercentage = progressData?.finalProgress ?? 0
 
   const totalInvolvement = assignedEmployees.reduce((sum, emp) => sum + emp.involvementPercentage, 0)
   const canManageProject = currentUser && (
@@ -686,17 +692,6 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
                       <div>
                         <p className="text-sm text-muted-foreground">Progress</p>
                         <p className="text-2xl font-bold">{progressPercentage.toFixed(1)}%</p>
-                        {canEditProgress && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setShowProgressEditor(true)}
-                            className="mt-2"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                        )}
                       </div>
                       <TrendingUp className="h-8 w-8 text-green-600" />
                     </div>
@@ -1414,8 +1409,12 @@ export function ProjectDetails({ projectId, isOpen, onClose }: ProjectDetailsPro
           onClose={() => setShowProgressEditor(false)}
           onProjectUpdate={(updatedProject) => {
             setProject(updatedProject)
-            // Don't call fetchProjectDetails() here as it might override the updated data
-            // The updatedProject already contains the latest milestone states
+            // Notify parent component (ManagerDashboard) to refresh projects list
+            if (onProjectUpdate) {
+              onProjectUpdate()
+            }
+            // Also refresh project details from API to ensure consistency
+            fetchProjectDetails()
           }}
         />
       )}

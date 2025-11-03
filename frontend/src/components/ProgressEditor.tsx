@@ -113,6 +113,7 @@ export function ProgressEditor({ project, isOpen, onClose, onProjectUpdate }: Pr
         const updatedProject = {
           ...project,
           progress: newProgress,
+          manualProgress: newProgress, // Set manual progress to override milestone-based calculation
           lastActivity: new Date().toISOString()
         }
         

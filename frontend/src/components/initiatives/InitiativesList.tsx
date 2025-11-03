@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { CentralizedInitiative, centralizedDb } from '../../utils/centralizedDb'
+import { useUsers } from '../../contexts/UsersContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
@@ -30,6 +31,7 @@ export function InitiativesList({
   onCreateInitiative,
   onDeleteInitiative
 }: InitiativesListProps) {
+  const { users, getUserById } = useUsers()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [initiativeToDelete, setInitiativeToDelete] = useState<{ id: string; title: string } | null>(null)
@@ -75,8 +77,20 @@ export function InitiativesList({
   return (
     <div className="space-y-4">
       {initiatives.map((initiative) => {
-        const creator = centralizedDb.getUserById(initiative.createdBy)
-        const assignee = initiative.assignedTo ? centralizedDb.getUserById(initiative.assignedTo) : null
+        // Try to get creator from API users first, then fallback to centralizedDb
+        let creator = getUserById(initiative.createdBy)
+        if (!creator) {
+          creator = centralizedDb.getUserById(initiative.createdBy)
+        }
+        
+        // Try to get assignee from API users first, then fallback to centralizedDb
+        let assignee = null
+        if (initiative.assignedTo) {
+          assignee = getUserById(initiative.assignedTo)
+          if (!assignee) {
+            assignee = centralizedDb.getUserById(initiative.assignedTo)
+          }
+        }
         const completionRate = initiative.actualHours && initiative.estimatedHours 
           ? (initiative.actualHours / initiative.estimatedHours) * 100 
           : 0

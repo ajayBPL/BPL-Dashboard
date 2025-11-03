@@ -155,6 +155,123 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
     throw new ValidationError('User with this email already exists');
   }
 
+  // Validate role against Prisma enum values
+  // Prisma schema only supports: ADMIN, PROGRAM_MANAGER, RD_MANAGER, MANAGER, EMPLOYEE
+  const validPrismaRoles = ['ADMIN', 'PROGRAM_MANAGER', 'RD_MANAGER', 'MANAGER', 'EMPLOYEE'];
+  const roleUpper = userData.role.toUpperCase();
+  
+  // Get custom roles from database to check if role is a known custom role
+  const customRoles = await db.getCustomRoles();
+  const customRoleNames = customRoles.map((role: any) => role.name.toUpperCase());
+  
+  // Map common custom roles to valid enum values
+  const roleMapping: { [key: string]: string } = {
+    'INTERN': 'EMPLOYEE',
+    'LAB IN CHARGE': 'MANAGER',
+    'LAB_IN_CHARGE': 'MANAGER',
+    'LAB_INCHARGE': 'MANAGER',
+    'SUPERVISOR': 'MANAGER',
+    'LEAD': 'MANAGER',
+    'SENIOR_EMPLOYEE': 'EMPLOYEE',
+    'SENIOR EMPLOYEE': 'EMPLOYEE',
+    'JUNIOR_EMPLOYEE': 'EMPLOYEE',
+    'JUNIOR EMPLOYEE': 'EMPLOYEE',
+    // Executive/High-level roles map to ADMIN or PROGRAM_MANAGER
+    'MD': 'ADMIN',  // Managing Director
+    'CEO': 'ADMIN',  // Chief Executive Officer
+    'CTO': 'ADMIN',  // Chief Technology Officer
+    'CFO': 'ADMIN',  // Chief Financial Officer
+    'DIRECTOR': 'PROGRAM_MANAGER',  // Director
+    'VP': 'PROGRAM_MANAGER',  // Vice President
+    'VICE PRESIDENT': 'PROGRAM_MANAGER',
+    'GENERAL MANAGER': 'PROGRAM_MANAGER',
+    'GM': 'PROGRAM_MANAGER',
+    'SENIOR MANAGER': 'MANAGER',
+    'SR MANAGER': 'MANAGER',
+    'SR_MANAGER': 'MANAGER',
+    'ASSOCIATE': 'EMPLOYEE',
+    'CONSULTANT': 'EMPLOYEE',
+    'ANALYST': 'EMPLOYEE'
+  };
+  
+  // Check if role is valid or can be mapped
+  let finalRole = roleUpper;
+  if (!validPrismaRoles.includes(roleUpper)) {
+    // First check explicit mappings
+    if (roleMapping[roleUpper]) {
+      finalRole = roleMapping[roleUpper];
+      console.log(`Mapping custom role "${userData.role}" to valid enum role "${finalRole}"`);
+    } 
+    // Check if it's a known custom role from database
+    else if (customRoleNames.includes(roleUpper)) {
+      // Custom roles from database - map based on naming pattern or default to MANAGER
+      const customRoleLower = userData.role.toLowerCase();
+      if (customRoleLower.includes('director') || customRoleLower.includes('executive') || 
+          customRoleLower.includes('president') || customRoleLower.includes('chief')) {
+        finalRole = 'PROGRAM_MANAGER';
+      } else if (customRoleLower.includes('manager') || customRoleLower.includes('supervisor') || 
+                 customRoleLower.includes('lead') || customRoleLower.includes('head')) {
+        finalRole = 'MANAGER';
+      } else {
+        // Default custom role to MANAGER for database-defined custom roles
+        finalRole = 'MANAGER';
+      }
+      console.log(`Mapping database custom role "${userData.role}" to valid enum role "${finalRole}"`);
+    }
+    // Pattern-based matching for unrecognized roles
+    else {
+      const customRoleLower = userData.role.toLowerCase();
+      
+      // Executive/High-level patterns → ADMIN or PROGRAM_MANAGER
+      if (customRoleLower.includes('director') || 
+          customRoleLower.includes('executive') || 
+          customRoleLower.includes('president') ||
+          customRoleLower.includes('chief') ||
+          customRoleLower.includes('md') ||
+          customRoleLower.includes('ceo') ||
+          customRoleLower.includes('cfo') ||
+          customRoleLower.includes('cto')) {
+        // Very high-level roles (MD, CEO, etc.) → ADMIN, others → PROGRAM_MANAGER
+        if (roleUpper === 'MD' || roleUpper === 'CEO' || roleUpper === 'CFO' || roleUpper === 'CTO') {
+          finalRole = 'ADMIN';
+        } else {
+          finalRole = 'PROGRAM_MANAGER';
+        }
+        console.log(`Mapping executive role "${userData.role}" to ${finalRole}`);
+      }
+      // Management patterns → MANAGER
+      else if (customRoleLower.includes('manager') || 
+               customRoleLower.includes('supervisor') || 
+               customRoleLower.includes('lead') ||
+               customRoleLower.includes('lab') ||
+               customRoleLower.includes('head')) {
+        finalRole = 'MANAGER';
+        console.log(`Mapping management role "${userData.role}" to MANAGER`);
+      }
+      // Employee-level patterns → EMPLOYEE
+      else if (customRoleLower.includes('intern') || 
+               customRoleLower.includes('junior') || 
+               customRoleLower.includes('trainee') ||
+               customRoleLower.includes('associate') ||
+               customRoleLower.includes('analyst') ||
+               customRoleLower.includes('consultant') ||
+               customRoleLower.includes('staff')) {
+        finalRole = 'EMPLOYEE';
+        console.log(`Mapping employee-level role "${userData.role}" to EMPLOYEE`);
+      }
+      // For very short roles (2-3 letters) that might be acronyms, default to MANAGER
+      else if (roleUpper.length <= 3) {
+        finalRole = 'MANAGER';
+        console.log(`Mapping short role/acronym "${userData.role}" to MANAGER (please verify this mapping is correct)`);
+      }
+      // Unknown role - default to EMPLOYEE as safest option
+      else {
+        finalRole = 'EMPLOYEE';
+        console.log(`Unknown role "${userData.role}" - defaulting to EMPLOYEE. Please verify this mapping is correct.`);
+      }
+    }
+  }
+
   // Hash password
   const hashedPassword = await bcrypt.hash(userData.password, 12);
 
@@ -164,7 +281,7 @@ async function handleCreateUser(req: Request, res: Response, userData: any): Pro
     password: hashedPassword,
     name: userData.name,
     employeeId: userData.employeeId,
-    role: userData.role.toUpperCase(),
+    role: finalRole,
     designation: userData.designation,
     managerId: userData.managerId,
     department: userData.department,

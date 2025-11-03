@@ -70,9 +70,9 @@ async function initializeDatabase() {
   try {
     console.log('🔄 Initializing Supabase database connection...');
     
-    // Add timeout to prevent hanging
+    // Add timeout to prevent hanging - reduced to 5 seconds
     const timeoutPromise = new Promise<boolean>((_, reject) => {
-      setTimeout(() => reject(new Error('Database connection timeout')), 10000); // 10 second timeout
+      setTimeout(() => reject(new Error('Database connection timeout after 5 seconds')), 5000); // 5 second timeout
     });
     
     const connectionPromise = db.testConnection();
@@ -87,24 +87,39 @@ async function initializeDatabase() {
       console.error('📝 Required variables: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY');
       return false;
     }
-  } catch (error) {
-    console.error('❌ Supabase database initialization failed:', error);
-    console.error('📝 Please check your Supabase configuration in .env file');
+  } catch (error: any) {
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes('timeout')) {
+      console.warn('⚠️  Database connection timed out - continuing without database connection');
+      console.warn('⚠️  Database features will not work until connection is established');
+    } else {
+      console.error('❌ Supabase database initialization failed:', errorMessage);
+      console.error('📝 Please check your Supabase configuration in .env file');
+    }
     return false;
   }
 }
 
-// Initialize database connection and wait for it to complete
+// Initialize database connection in background (non-blocking)
+// Server will start immediately regardless of database connection status
 let dbInitialized = false;
+// Start database initialization but don't wait for it
 initializeDatabase().then((success) => {
   if (!success) {
-    console.error('💥 Application startup failed due to database connection issues');
-    console.error('💥 Please fix the Supabase configuration and restart the application');
-    process.exit(1);
+    console.warn('⚠️  Database connection failed, but continuing startup (will retry on first request)');
+    console.warn('⚠️  Please check your Supabase configuration in .env file');
+    console.warn('⚠️  Required variables: DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY');
+  } else {
+    dbInitialized = true;
+    console.log('✅ Database initialization completed');
   }
-  dbInitialized = true;
-  console.log('✅ Database initialization completed');
+}).catch((error) => {
+  console.error('❌ Database initialization error:', error);
+  console.warn('⚠️  Continuing startup, but database features may not work');
 });
+
+// Don't wait for database - start server immediately
+console.log('🚀 Starting server (database connection in background)...');
 
 /**
  * Security middleware configuration

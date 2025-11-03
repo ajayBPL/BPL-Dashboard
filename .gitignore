@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 */node_modules/
 
 # Build outputs
@@ -60,6 +61,7 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
+.yarn-cache/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

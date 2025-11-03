@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Alert, AlertDescription } from './ui/alert'
 import { Building2, Eye, EyeOff } from 'lucide-react'
 import { ForgotPassword } from './ForgotPassword'
+import { Watermark } from './Watermark'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
@@ -32,7 +33,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 pb-20">
       <div className="w-full max-w-md space-y-6">
         <Card>
           <CardHeader className="space-y-1">
@@ -114,6 +115,7 @@ export function LoginForm() {
           onClose={() => setShowForgotPassword(false)} 
         />
       </div>
+      <Watermark />
     </div>
   )
 }

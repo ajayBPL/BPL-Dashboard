@@ -148,8 +148,8 @@ export function Navigation() {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {/* API Tester Button (Admin Only) */}
-              {user.role === 'admin' && (
+              {/* API Tester Button (admin@bpl.com only) */}
+              {user.email === 'admin@bpl.com' && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -227,8 +227,8 @@ export function Navigation() {
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <UserProfile isOpen={showProfile} onClose={() => setShowProfile(false)} />
       
-      {/* API Tester Dialog */}
-      {showApiTester && (
+      {/* API Tester Dialog (admin@bpl.com only) */}
+      {showApiTester && user.email === 'admin@bpl.com' && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">

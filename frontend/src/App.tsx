@@ -10,6 +10,7 @@ import { AdminDashboard } from './components/AdminDashboard'
 import { ManagerDashboard } from './components/ManagerDashboard'
 import { EmployeeDashboard } from './components/EmployeeDashboard'
 import { Toaster } from './components/ui/sonner'
+import { Watermark } from './components/Watermark'
 
 function AppContent() {
   const { user, loading } = useAuth()
@@ -50,13 +51,14 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-background transition-colors duration-300 pb-16">
       <Navigation />
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <ErrorBoundary>
           {renderDashboard()}
         </ErrorBoundary>
       </main>
+      <Watermark />
       <Toaster />
     </div>
   )
